@@ -1,7 +1,7 @@
 import { MealLogForm } from "@/components/meal-logs/meal-log-form";
 import { MealLogList } from "@/components/meal-logs/meal-log-list";
 
-export default function MealLogsPage(): JSX.Element {
+export default function MealLogsPage() {
   return (
     <div className="space-y-6">
       <div>

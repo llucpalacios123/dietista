@@ -1,7 +1,7 @@
 import { getProfile } from "@/actions/profile";
 import { ProfileForm } from "@/components/profile/profile-form";
 
-export default async function ProfilePage(): Promise<JSX.Element> {
+export default async function ProfilePage() {
   const { profile } = await getProfile();
 
   return (

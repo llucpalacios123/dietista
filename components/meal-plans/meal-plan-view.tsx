@@ -44,7 +44,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function MealPlanView({ plan }: { plan: MealPlanData }): JSX.Element {
+export function MealPlanView({ plan }: { plan: MealPlanData }) {
   const mealsByDayAndType = new Map<string, MealData>();
   for (const meal of plan.meals) {
     mealsByDayAndType.set(`${meal.dayOfWeek}-${meal.mealType}`, meal);

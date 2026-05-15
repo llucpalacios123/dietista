@@ -22,7 +22,7 @@ const MEAL_TYPES = [
 
 const initialState: MealLogActionResult = { success: false };
 
-export function MealLogForm(): JSX.Element {
+export function MealLogForm() {
   const [state, formAction, isPending] = useActionState(
     createMealLog,
     initialState

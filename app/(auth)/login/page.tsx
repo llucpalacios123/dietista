@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Sign in to your Dietista account",
 };
 
-export default function LoginPage(): JSX.Element {
+export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
       <div className="w-full max-w-md">

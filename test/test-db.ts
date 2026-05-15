@@ -1,4 +1,4 @@
-import { PostgreSqlContainer } from "@testcontainers/postgresql";
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { PrismaClient } from "@prisma/client";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -6,7 +6,7 @@ import path from "path";
 
 const execAsync = promisify(exec);
 
-let globalContainer: PostgreSqlContainer | undefined;
+let globalContainer: StartedPostgreSqlContainer | undefined;
 let globalPrisma: PrismaClient | undefined;
 let globalDbUrl: string | undefined;
 
@@ -23,13 +23,14 @@ export async function setupTestDB(): Promise<{
   }
 
   // Start PostgreSQL container
-  globalContainer = await new PostgreSqlContainer("postgres:16-alpine")
+  const container = await new PostgreSqlContainer("postgres:16-alpine")
     .withDatabase("testdb")
     .withUsername("testuser")
     .withPassword("testpass")
     .start();
 
-  globalDbUrl = globalContainer.getConnectionUri();
+  globalContainer = container;
+  globalDbUrl = container.getConnectionUri();
 
   // Create a temporary .env file for prisma to use
   const tempEnv = `DATABASE_URL="${globalDbUrl}"`;

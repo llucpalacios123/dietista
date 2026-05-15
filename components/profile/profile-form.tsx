@@ -64,7 +64,7 @@ interface ProfileFormProps {
   existingProfile?: Profile | null;
 }
 
-export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element {
+export function ProfileForm({ existingProfile }: ProfileFormProps) {
   const isUpdate = !!existingProfile;
   const action = isUpdate ? updateProfile : createProfile;
   const [result, formAction] = useActionState<ProfileActionResult | null, FormData>(

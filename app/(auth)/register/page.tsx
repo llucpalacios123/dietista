@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Create your Dietista account",
 };
 
-export default function RegisterPage(): JSX.Element {
+export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
       <div className="w-full max-w-md">

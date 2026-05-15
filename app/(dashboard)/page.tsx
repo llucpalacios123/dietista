@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default async function DashboardPage(): Promise<JSX.Element | null> {
+export default async function DashboardPage() {
   const session = await auth();
   if (!session?.userId) return null;
 

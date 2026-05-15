@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
-}): Promise<JSX.Element> {
+}) {
   const session = await auth();
   if (!session?.userId) {
     redirect("/login");

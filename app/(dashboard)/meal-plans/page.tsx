@@ -47,7 +47,7 @@ interface JobStatusResponse {
 
 // ─── Page Component ───────────────────────────────────────────────────────
 
-export default function MealPlansPage(): JSX.Element {
+export default function MealPlansPage() {
   const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

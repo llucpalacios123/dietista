@@ -8,7 +8,7 @@ export default function GlobalError({
 }: {
   error: Error & { digest?: string };
   reset: () => void;
-}): JSX.Element {
+}) {
   useEffect(() => {
     console.error("Global error:", error);
   }, [error]);

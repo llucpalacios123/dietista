@@ -64,7 +64,7 @@ function getWeekAgoISO(): string {
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function MealLogList(): JSX.Element {
+export function MealLogList() {
   const [logs, setLogs] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
