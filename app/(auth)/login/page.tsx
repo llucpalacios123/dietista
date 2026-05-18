@@ -1,10 +1,23 @@
+import { Suspense } from "react";
 import { Metadata } from "next";
 import { LoginForm } from "@/components/auth/login-form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Login — Dietista",
   description: "Sign in to your Dietista account",
 };
+
+function LoginFormFallback() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Sign In</CardTitle>
+        <CardDescription>Loading...</CardDescription>
+      </CardHeader>
+    </Card>
+  );
+}
 
 export default function LoginPage() {
   return (
@@ -16,7 +29,9 @@ export default function LoginPage() {
             AI-powered meal planning made simple
           </p>
         </div>
-        <LoginForm />
+        <Suspense fallback={<LoginFormFallback />}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

@@ -1,76 +1,40 @@
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
-import { PrismaClient } from "@prisma/client";
-import { exec } from "child_process";
-import { promisify } from "util";
-import path from "path";
-
-const execAsync = promisify(exec);
-
-let globalContainer: StartedPostgreSqlContainer | undefined;
-let globalPrisma: PrismaClient | undefined;
-let globalDbUrl: string | undefined;
+import { prisma as appPrisma } from "@/lib/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 /**
- * Start a test PostgreSQL container and return a PrismaClient connected to it.
- * Uses a singleton pattern so all tests share the same container.
+ * Use the application's singleton PrismaClient for integration tests.
+ * This ensures tests and server code (route handlers, server actions)
+ * share the SAME Prisma instance connected to the dev Docker database.
  */
 export async function setupTestDB(): Promise<{
   prisma: PrismaClient;
   dbUrl: string;
 }> {
-  if (globalContainer && globalPrisma && globalDbUrl) {
-    return { prisma: globalPrisma, dbUrl: globalDbUrl };
-  }
-
-  // Start PostgreSQL container
-  const container = await new PostgreSqlContainer("postgres:16-alpine")
-    .withDatabase("testdb")
-    .withUsername("testuser")
-    .withPassword("testpass")
-    .start();
-
-  globalContainer = container;
-  globalDbUrl = container.getConnectionUri();
-
-  // Create a temporary .env file for prisma to use
-  const tempEnv = `DATABASE_URL="${globalDbUrl}"`;
-
-  // Run prisma migrate to set up the schema
-  await execAsync(`DATABASE_URL="${globalDbUrl}" npx prisma migrate deploy`, {
-    cwd: path.resolve(__dirname, ".."),
-  });
-
-  globalPrisma = new PrismaClient({
-    datasources: { db: { url: globalDbUrl } },
-  });
-
-  return { prisma: globalPrisma, dbUrl: globalDbUrl };
+  await appPrisma.$connect();
+  return { prisma: appPrisma, dbUrl: process.env.DATABASE_URL! };
 }
 
 /**
- * Stop the test PostgreSQL container.
+ * Disconnect the Prisma client.
  */
 export async function teardownTestDB(): Promise<void> {
-  if (globalPrisma) {
-    await globalPrisma.$disconnect();
-    globalPrisma = undefined;
-  }
-  if (globalContainer) {
-    await globalContainer.stop();
-    globalContainer = undefined;
-    globalDbUrl = undefined;
-  }
+  await appPrisma.$disconnect();
 }
 
 /**
  * Clean all data from the database between tests.
+ * Deletes in reverse dependency order to avoid FK violations.
  */
 export async function cleanDatabase(prisma: PrismaClient): Promise<void> {
-  // Delete in reverse dependency order
   await prisma.meal.deleteMany();
   await prisma.mealPlan.deleteMany();
   await prisma.mealLog.deleteMany();
   await prisma.profile.deleteMany();
   await prisma.user.deleteMany();
   await prisma.food.deleteMany();
+  await prisma.foodOption.deleteMany();
+  await prisma.mealTemplateGroup.deleteMany();
+  await prisma.mealTemplate.deleteMany();
+  await prisma.mealPlanTemplate.deleteMany();
+  await prisma.recipe.deleteMany();
 }

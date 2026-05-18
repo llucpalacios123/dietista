@@ -13,7 +13,7 @@ const MODEL = "gpt-4o-mini";
 
 export const DIET_GENERATION_SYSTEM = `You are a nutritionist AI. Generate a weekly meal plan as valid JSON.
 Requirements:
-- 7 days (dayOfWeek: 0=Monday to 6=Sunday) × 4 meal types (breakfast, lunch, dinner, snack)
+- 7 days (dayOfWeek: 0=Monday to 6=Sunday) × 5 meal types (breakfast, mid_morning, lunch, dinner, snack)
 - Each meal: {dayOfWeek, mealType, name, description, calories, protein, carbs, fat}
 - Total daily calories should match target: {targetCalories} kcal
 - Daily macros: Protein {targetProtein}g, Carbs {targetCarbs}g, Fat {targetFat}g

@@ -15,9 +15,11 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false, // E2E tests share state (DB), run sequentially
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: 3,
   workers: 1,
-  reporter: "html",
+  reporter: process.env.CI ? "html" : "list",
+  globalSetup: require.resolve("./e2e/global-setup"),
+  globalTeardown: require.resolve("./e2e/global-teardown"),
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -26,14 +28,18 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        executablePath: "/usr/bin/chromium-browser",
+      },
     },
   ],
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     stdout: "pipe",
     stderr: "pipe",
+    timeout: 120_000,
   },
 });

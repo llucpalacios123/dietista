@@ -1,1 +1,3 @@
-export { handlers, signIn, signOut, auth } from "@/lib/auth-config";
+import { handlers } from "@/lib/auth-config";
+
+export const { GET, POST } = handlers;

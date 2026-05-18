@@ -94,7 +94,8 @@ export async function createProfile(
 
   revalidatePath("/dashboard");
   revalidatePath("/profile");
-  redirect("/dashboard");
+
+  return { success: true, data: { message: "Profile created successfully" } };
 }
 
 export async function updateProfile(
