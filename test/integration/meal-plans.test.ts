@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
-import { setupTestDB, teardownTestDB, cleanDatabase } from "../../test-db";
+import { setupTestDB, teardownTestDB, cleanDatabase } from "../test-db";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "@/lib/auth";
 import { checkRateLimit, cleanupRateLimit } from "@/lib/rate-limit";

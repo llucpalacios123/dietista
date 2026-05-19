@@ -107,7 +107,9 @@ export function ProfileForm({ existingProfile }: ProfileFormProps) {
   );
 
   // Intercept form submission to convert comma-separated strings to arrays
-  const onSubmit = form.handleSubmit((data) => {
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = form.getValues();
     const fd = new FormData();
     fd.set("weight", String(data.weight));
     fd.set("height", String(data.height));
@@ -122,7 +124,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps) {
     fd.set("allergies", JSON.stringify(stringToArray(allergiesStr)));
     fd.set("forbiddenFoods", JSON.stringify(stringToArray(forbiddenFoodsStr)));
     formAction(fd);
-  });
+  };
 
   return (
     <Card>

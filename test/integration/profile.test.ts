@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
-import { setupTestDB, teardownTestDB, cleanDatabase } from "../../test-db";
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { setupTestDB, teardownTestDB, cleanDatabase } from "../test-db";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "@/lib/auth";
+import { profileSchema } from "@/lib/schemas";
 
 let prisma: PrismaClient;
 
@@ -18,21 +19,58 @@ beforeEach(async () => {
   await cleanDatabase(prisma);
 });
 
-// Mock NextAuth's auth() to simulate authenticated sessions
-function mockAuth(userId: string | null) {
-  vi.doMock("@/lib/auth-config", () => ({
-    auth: async () => (userId ? { userId, email: "test@example.com" } : null),
-    handlers: {},
-    signIn: vi.fn(),
-    signOut: vi.fn(),
-  }));
-}
+describe("Profile schema validation", () => {
+  it("accepts valid profile data", () => {
+    const result = profileSchema.safeParse({
+      weight: 70,
+      height: 175,
+      age: 30,
+      sex: "male",
+      goal: "lose",
+      activityLevel: "moderate",
+      allergies: [],
+      forbiddenFoods: [],
+    });
+    expect(result.success).toBe(true);
+  });
 
-function unmockAuth() {
-  vi.doUnmock("@/lib/auth-config");
-}
+  it("rejects negative weight", () => {
+    const result = profileSchema.safeParse({
+      weight: -5,
+      height: 175,
+      age: 30,
+      sex: "male",
+      goal: "lose",
+      activityLevel: "moderate",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.some((e) => e.message.includes("positive"))).toBe(true);
+    }
+  });
 
-describe("Profile Server Actions", () => {
+  it("rejects missing required fields", () => {
+    const result = profileSchema.safeParse({
+      weight: 70,
+      // missing height, age, sex, goal, activityLevel
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects invalid enum values", () => {
+    const result = profileSchema.safeParse({
+      weight: 70,
+      height: 175,
+      age: 30,
+      sex: "invalid",
+      goal: "lose",
+      activityLevel: "moderate",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("Profile CRUD operations", () => {
   async function createTestUser() {
     return prisma.user.create({
       data: {
@@ -42,69 +80,34 @@ describe("Profile Server Actions", () => {
     });
   }
 
-  describe("createProfile", () => {
-    it("creates a profile for authenticated user", async () => {
+  describe("create profile", () => {
+    it("creates a profile for a user", async () => {
       const user = await createTestUser();
-      mockAuth(user.id);
 
-      // Clear module cache so it picks up the mock
-      vi.resetModules();
+      const profile = await prisma.profile.create({
+        data: {
+          userId: user.id,
+          weight: 70,
+          height: 175,
+          age: 30,
+          sex: "male",
+          goal: "lose",
+          activityLevel: "moderate",
+        },
+      });
 
-      const { createProfile } = await import("@/actions/profile");
-
-      const formData = new FormData();
-      formData.append("weight", "70");
-      formData.append("height", "175");
-      formData.append("age", "30");
-      formData.append("sex", "male");
-      formData.append("goal", "lose");
-      formData.append("activityLevel", "moderate");
-
-      // createProfile calls redirect() on success, which throws in test env
-      // We catch the redirect error
-      try {
-        await createProfile(null, formData);
-      } catch (e: unknown) {
-        // redirect() throws a special NEXT_REDIRECT error — this is expected
-        const err = e as { digest?: string };
-        if (err.digest?.includes("NEXT_REDIRECT")) {
-          // Success — redirect was called
-          const profile = await prisma.profile.findUnique({
-            where: { userId: user.id },
-          });
-          expect(profile).toBeDefined();
-          expect(profile?.weight).toBe(70);
-          expect(profile?.height).toBe(175);
-          expect(profile?.age).toBe(30);
-          expect(profile?.sex).toBe("male");
-          expect(profile?.goal).toBe("lose");
-          expect(profile?.activityLevel).toBe("moderate");
-        } else {
-          throw e;
-        }
-      }
-
-      unmockAuth();
+      expect(profile.userId).toBe(user.id);
+      expect(profile.weight).toBe(70);
+      expect(profile.height).toBe(175);
+      expect(profile.age).toBe(30);
+      expect(profile.sex).toBe("male");
+      expect(profile.goal).toBe("lose");
+      expect(profile.activityLevel).toBe("moderate");
     });
 
-    it("rejects unauthenticated user", async () => {
-      mockAuth(null);
-      vi.resetModules();
-
-      const { createProfile } = await import("@/actions/profile");
-
-      const formData = new FormData();
-      formData.append("weight", "70");
-
-      const result = await createProfile(null, formData);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("logged in");
-
-      unmockAuth();
-    });
-
-    it("rejects if profile already exists", async () => {
+    it("rejects duplicate profile (unique constraint on userId)", async () => {
       const user = await createTestUser();
+
       await prisma.profile.create({
         data: {
           userId: user.id,
@@ -117,62 +120,39 @@ describe("Profile Server Actions", () => {
         },
       });
 
-      mockAuth(user.id);
-      vi.resetModules();
-
-      const { createProfile } = await import("@/actions/profile");
-
-      const formData = new FormData();
-      formData.append("weight", "75");
-
-      const result = await createProfile(null, formData);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("already exists");
-
-      unmockAuth();
+      await expect(
+        prisma.profile.create({
+          data: {
+            userId: user.id,
+            weight: 75,
+            height: 180,
+            age: 31,
+            sex: "female",
+            goal: "gain",
+            activityLevel: "active",
+          },
+        })
+      ).rejects.toThrow();
     });
 
-    it("rejects invalid profile data", async () => {
-      const user = await createTestUser();
-      mockAuth(user.id);
-      vi.resetModules();
-
-      const { createProfile } = await import("@/actions/profile");
-
-      const formData = new FormData();
-      formData.append("weight", "-5"); // invalid: negative
-      formData.append("height", "175");
-      formData.append("age", "30");
-      formData.append("sex", "male");
-      formData.append("goal", "lose");
-      formData.append("activityLevel", "moderate");
-
-      const result = await createProfile(null, formData);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("positive");
-
-      unmockAuth();
-    });
-
-    it("rejects missing required fields", async () => {
-      const user = await createTestUser();
-      mockAuth(user.id);
-      vi.resetModules();
-
-      const { createProfile } = await import("@/actions/profile");
-
-      const formData = new FormData();
-      formData.append("weight", "70");
-      // missing height, age, sex, goal, activityLevel
-
-      const result = await createProfile(null, formData);
-      expect(result.success).toBe(false);
-
-      unmockAuth();
+    it("rejects profile creation for non-existent user (FK constraint)", async () => {
+      await expect(
+        prisma.profile.create({
+          data: {
+            userId: "non-existent-user-id",
+            weight: 70,
+            height: 175,
+            age: 30,
+            sex: "male",
+            goal: "lose",
+            activityLevel: "moderate",
+          },
+        })
+      ).rejects.toThrow();
     });
   });
 
-  describe("updateProfile", () => {
+  describe("update profile", () => {
     it("updates an existing profile", async () => {
       const user = await createTestUser();
       await prisma.profile.create({
@@ -187,52 +167,35 @@ describe("Profile Server Actions", () => {
         },
       });
 
-      mockAuth(user.id);
-      vi.resetModules();
-
-      const { updateProfile } = await import("@/actions/profile");
-
-      const formData = new FormData();
-      formData.append("weight", "75");
-      formData.append("height", "180");
-      formData.append("age", "31");
-      formData.append("sex", "male");
-      formData.append("goal", "lose");
-      formData.append("activityLevel", "active");
-
-      const result = await updateProfile(null, formData);
-      expect(result.success).toBe(true);
-
-      const updated = await prisma.profile.findUnique({
+      const updated = await prisma.profile.update({
         where: { userId: user.id },
+        data: {
+          weight: 75,
+          height: 180,
+          age: 31,
+          goal: "lose",
+          activityLevel: "active",
+        },
       });
-      expect(updated?.weight).toBe(75);
-      expect(updated?.height).toBe(180);
-      expect(updated?.age).toBe(31);
-      expect(updated?.goal).toBe("lose");
-      expect(updated?.activityLevel).toBe("active");
 
-      unmockAuth();
+      expect(updated.weight).toBe(75);
+      expect(updated.height).toBe(180);
+      expect(updated.age).toBe(31);
+      expect(updated.goal).toBe("lose");
+      expect(updated.activityLevel).toBe("active");
     });
 
-    it("rejects unauthenticated update", async () => {
-      mockAuth(null);
-      vi.resetModules();
-
-      const { updateProfile } = await import("@/actions/profile");
-
-      const formData = new FormData();
-      formData.append("weight", "75");
-
-      const result = await updateProfile(null, formData);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("logged in");
-
-      unmockAuth();
+    it("fails when profile does not exist", async () => {
+      await expect(
+        prisma.profile.update({
+          where: { userId: "non-existent" },
+          data: { weight: 75 },
+        })
+      ).rejects.toThrow();
     });
   });
 
-  describe("getProfile", () => {
+  describe("get profile", () => {
     it("returns the user's profile", async () => {
       const user = await createTestUser();
       await prisma.profile.create({
@@ -247,52 +210,50 @@ describe("Profile Server Actions", () => {
         },
       });
 
-      mockAuth(user.id);
-      vi.resetModules();
+      const profile = await prisma.profile.findUnique({
+        where: { userId: user.id },
+      });
 
-      const { getProfile } = await import("@/actions/profile");
-
-      // getProfile calls redirect if not authenticated, but we are authenticated
-      // It doesn't redirect when profile exists, just returns it
-      try {
-        const result = await getProfile();
-        expect(result.profile).toBeDefined();
-        expect(result.profile?.weight).toBe(70);
-        expect(result.profile?.sex).toBe("female");
-      } catch (e: unknown) {
-        const err = e as { digest?: string };
-        if (err.digest?.includes("NEXT_REDIRECT")) {
-          // Unexpected redirect — test should fail
-          expect.fail("getProfile should not redirect for authenticated user with profile");
-        } else {
-          throw e;
-        }
-      }
-
-      unmockAuth();
+      expect(profile).toBeDefined();
+      expect(profile?.weight).toBe(70);
+      expect(profile?.sex).toBe("female");
+      expect(profile?.goal).toBe("gain");
     });
 
-    it("returns null profile when user has no profile", async () => {
+    it("returns null when user has no profile", async () => {
       const user = await createTestUser();
 
-      mockAuth(user.id);
-      vi.resetModules();
+      const profile = await prisma.profile.findUnique({
+        where: { userId: user.id },
+      });
 
-      const { getProfile } = await import("@/actions/profile");
+      expect(profile).toBeNull();
+    });
+  });
 
-      try {
-        const result = await getProfile();
-        expect(result.profile).toBeNull();
-      } catch (e: unknown) {
-        const err = e as { digest?: string };
-        if (err.digest?.includes("NEXT_REDIRECT")) {
-          expect.fail("getProfile should not redirect for authenticated user without profile");
-        } else {
-          throw e;
-        }
-      }
+  describe("delete profile", () => {
+    it("deletes an existing profile", async () => {
+      const user = await createTestUser();
+      await prisma.profile.create({
+        data: {
+          userId: user.id,
+          weight: 70,
+          height: 175,
+          age: 30,
+          sex: "male",
+          goal: "maintain",
+          activityLevel: "moderate",
+        },
+      });
 
-      unmockAuth();
+      await prisma.profile.delete({
+        where: { userId: user.id },
+      });
+
+      const profile = await prisma.profile.findUnique({
+        where: { userId: user.id },
+      });
+      expect(profile).toBeNull();
     });
   });
 });

@@ -51,6 +51,9 @@ export function RegisterForm() {
       }
 
       // Auto sign in after registration
+      // Small delay to ensure DB transaction is fully committed
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       const result = await signIn("credentials", {
         email: values.email,
         password: values.password,
