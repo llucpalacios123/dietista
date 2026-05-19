@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { setupTestDB, teardownTestDB, cleanDatabase } from "../../test-db";
+import { setupTestDB, teardownTestDB, cleanDatabase } from "../test-db";
 import { PrismaClient } from "@prisma/client";
-import { hashPassword } from "@/lib/auth";
-import { registerSchema } from "@/lib/schemas";
+import { hashPassword, getUserByEmail, verifyPassword } from "@/lib/auth";
 
 let prisma: PrismaClient;
 
@@ -21,7 +20,6 @@ beforeEach(async () => {
 
 describe("POST /api/auth/register", () => {
   async function callRegister(body: Record<string, unknown>) {
-    // Import the route handler dynamically so it uses the test DB
     const { POST } = await import("@/app/api/auth/register/route");
     const request = new Request("http://localhost/api/auth/register", {
       method: "POST",
@@ -42,18 +40,16 @@ describe("POST /api/auth/register", () => {
     expect(status).toBe(201);
     expect(data).toHaveProperty("message", "User created successfully");
 
-    // Verify user was created in DB
     const user = await prisma.user.findUnique({
       where: { email: "newuser@example.com" },
     });
     expect(user).toBeDefined();
     expect(user?.email).toBe("newuser@example.com");
     expect(user?.passwordHash).toBeDefined();
-    expect(user?.passwordHash).not.toBe("SecurePass1"); // Should be hashed
+    expect(user?.passwordHash).not.toBe("SecurePass1");
   });
 
   it("rejects duplicate email", async () => {
-    // Create a user first
     await prisma.user.create({
       data: {
         email: "duplicate@example.com",
@@ -108,7 +104,6 @@ describe("POST /api/auth/register", () => {
   it("rejects missing fields", async () => {
     const { status } = await callRegister({
       email: "test@example.com",
-      // missing password
     });
 
     expect(status).toBe(400);
@@ -125,12 +120,6 @@ describe("Login (authorize function)", () => {
       },
     });
 
-    // Test the authorize logic directly
-    const { handlers, signIn, signOut, auth } = await import("@/lib/auth-config");
-    // The authorize function is internal to NextAuth config, so we test via signIn
-    // For integration, we verify the user can be looked up and password verified
-    const { getUserByEmail, verifyPassword } = await import("@/lib/auth");
-
     const user = await getUserByEmail("login-test@example.com");
     expect(user).toBeDefined();
 
@@ -142,7 +131,6 @@ describe("Login (authorize function)", () => {
   });
 
   it("returns null for non-existent user", async () => {
-    const { getUserByEmail } = await import("@/lib/auth");
     const user = await getUserByEmail("nonexistent@example.com");
     expect(user).toBeNull();
   });

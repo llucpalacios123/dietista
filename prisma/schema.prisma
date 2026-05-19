@@ -37,9 +37,17 @@ enum PlanStatus {
 
 enum MealType {
   breakfast
+  mid_morning    // almuerzo/merienda
   lunch
   dinner
   snack
+}
+
+enum FoodGroup {
+  carbohydrates
+  protein
+  fat
+  other
 }
 
 // ─── Entities ────────────────────────────────────────────────────────────
@@ -80,6 +88,8 @@ model MealPlan {
   id            String     @id @default(cuid())
   userId        String
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId    String?
+  template      MealPlanTemplate? @relation(fields: [templateId], references: [id])
   startDate     DateTime
   endDate       DateTime
   status        PlanStatus @default(draft)
@@ -93,17 +103,18 @@ model MealPlan {
 }
 
 model Meal {
-  id         String   @id @default(cuid())
-  mealPlanId String
-  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
-  dayOfWeek  Int      // 0=Monday, 6=Sunday
-  mealType   MealType
-  name       String
-  description String
-  calories   Float
-  protein    Float
-  carbs      Float
-  fat        Float
+  id              String   @id @default(cuid())
+  mealPlanId      String
+  mealPlan        MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  dayOfWeek       Int      // 0=Monday, 6=Sunday
+  mealType        MealType
+  name            String
+  description     String
+  calories        Float
+  protein         Float
+  carbs           Float
+  fat             Float
+  selectedOptions Json?    // [{foodOptionId, quantity, notes}]
 }
 
 model MealLog {
@@ -133,4 +144,62 @@ model Food {
 
   @@unique([name, brand])
   @@index([name])
+}
+
+// ─── Meal Plan Templates (Carla Bozal style) ─────────────────────────────
+
+model MealPlanTemplate {
+  id          String   @id @default(cuid())
+  name        String   // e.g., "Carla Bozal - 3+ snacks"
+  description String?
+  objective   String?  // e.g., "reducir la inflamación"
+  guidelines  String[] @default([])
+  meals       MealTemplate[]
+  recipes     Recipe[]
+  mealPlans   MealPlan[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MealTemplate {
+  id         String           @id @default(cuid())
+  templateId String
+  template   MealPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  mealType   MealType
+  order      Int              // 1, 2, 3, 4
+  name       String           // e.g., "Desayuno", "Almuerzo"
+  groups     MealTemplateGroup[]
+}
+
+model MealTemplateGroup {
+  id             String       @id @default(cuid())
+  mealTemplateId String
+  mealTemplate   MealTemplate @relation(fields: [mealTemplateId], references: [id], onDelete: Cascade)
+  foodGroup      FoodGroup
+  options        FoodOption[]
+}
+
+model FoodOption {
+  id              String            @id @default(cuid())
+  mealTemplateGroupId String
+  mealTemplateGroup MealTemplateGroup @relation(fields: [mealTemplateGroupId], references: [id], onDelete: Cascade)
+  name            String            // e.g., "pan integral o centeno"
+  quantity        Float             // e.g., 60
+  unit            String            // e.g., "gr"
+  notes           String?           // e.g., "*" means no extra fats needed
+  calories        Float?
+  protein         Float?
+  carbs           Float?
+  fat             Float?
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  templateId  String
+  template    MealPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  ingredients String[] @default([])
+  steps       String[] @default([])
+  mealType    MealType?
 }

@@ -46,7 +46,7 @@ export const profileSchema = z.object({
 
 export const mealLogSchema = z.object({
   date: z.string().datetime("Invalid date format"),
-  mealType: z.enum(["breakfast", "lunch", "dinner", "snack"], {
+  mealType: z.enum(["breakfast", "mid_morning", "lunch", "dinner", "snack"], {
     required_error: "Meal type is required",
   }),
   rawInput: z.string().min(1, "Food description is required"),
@@ -56,7 +56,7 @@ export const mealLogSchema = z.object({
 
 export const mealItemSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
-  mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
+  mealType: z.enum(["breakfast", "mid_morning", "lunch", "dinner", "snack"]),
   name: z.string().min(1),
   description: z.string().min(1),
   calories: z.number().positive(),

@@ -117,6 +117,55 @@ dietista/
 - **JWT sessions** with 24-hour expiry
 - **In-memory rate limiting** (single-instance, Phase 1)
 
+## Testing
+
+### Unit Tests
+
+```bash
+npm test                 # Run unit tests (vitest)
+npm run test:watch       # Watch mode
+npm run test:coverage    # With coverage report
+```
+
+### Integration Tests
+
+```bash
+npm run test:integration  # PostgreSQL integration tests (testcontainers)
+```
+
+### E2E Tests
+
+Playwright end-to-end tests covering the full user journey.
+
+**Prerequisites:**
+1. PostgreSQL running (`docker compose up -d`)
+2. Database migrated (`npm run db:migrate`)
+3. `.env.test` configured (create from `.env.example` if needed)
+
+```bash
+npm run test:e2e         # Run all E2E tests (headless)
+npm run test:e2e:ui      # Run with Playwright UI (interactive)
+npx playwright show-report  # View last HTML report
+```
+
+> **Note**: E2E tests create users with `e2e-*@test.com` emails.
+> Global teardown cleans them automatically. If a run is interrupted,
+> the next `globalSetup` will remove stale users.
+
+> **Note**: Meal plan generation tests use route interception mocks —
+> no OpenAI API key required. Meal logging tests that need real AI
+> interpretation are skipped when `OPENAI_API_KEY` is not set.
+
+### Test Architecture
+
+| Layer | Tool | Location |
+|-------|------|----------|
+| Unit | Vitest | `lib/*.test.ts` |
+| Integration | Vitest + testcontainers | `test/integration/*.test.ts` |
+| E2E | Playwright | `e2e/*.spec.ts` |
+| E2E Helpers | Playwright | `e2e/helpers/*.ts` |
+| E2E Fixtures | Playwright | `e2e/fixtures.ts` |
+
 ## License
 
 MIT

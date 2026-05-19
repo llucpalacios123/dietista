@@ -1,0 +1,50 @@
+{"version":8,"type":"context-options","origin":"library","browserName":"","playwrightVersion":"1.60.0","options":{},"platform":"linux","wallTime":1779130385901,"monotonicTime":215702.802,"sdkLanguage":"javascript","contextId":"request-context@8a3ee30729ce3198a095be6cf9606639","title":"meal-logging.spec.ts:122 › Meal logging › view meal log history"}
+{"type":"before","callId":"call@13","startTime":215705.811,"class":"APIRequestContext","method":"fetch","params":{"url":"/api/auth/register","method":"POST","jsonData":"{\"email\":\"e2e-meallog-1779130385901-htiftp-1@test.com\",\"password\":\"E2eTesta4ak1!\"}","timeout":0},"stepId":"pw:api@37"}
+{"type":"log","callId":"call@13","time":215713.757,"message":"→ POST http://localhost:3000/api/auth/register"}
+{"type":"log","callId":"call@13","time":215713.804,"message":"  user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36"}
+{"type":"log","callId":"call@13","time":215713.818,"message":"  accept: */*"}
+{"type":"log","callId":"call@13","time":215713.866,"message":"  accept-encoding: gzip,deflate,br"}
+{"type":"log","callId":"call@13","time":215713.884,"message":"  content-type: application/json"}
+{"type":"log","callId":"call@13","time":215713.89,"message":"  content-length: 82"}
+{"type":"log","callId":"call@13","time":215804.222,"message":"← 201 Created"}
+{"type":"log","callId":"call@13","time":215804.246,"message":"  vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"}
+{"type":"log","callId":"call@13","time":215804.253,"message":"  content-type: application/json"}
+{"type":"log","callId":"call@13","time":215804.313,"message":"  date: Mon, 18 May 2026 18:53:06 GMT"}
+{"type":"log","callId":"call@13","time":215804.323,"message":"  connection: keep-alive"}
+{"type":"log","callId":"call@13","time":215804.328,"message":"  keep-alive: timeout=5"}
+{"type":"log","callId":"call@13","time":215804.331,"message":"  transfer-encoding: chunked"}
+{"type":"after","callId":"call@13","endTime":215806.115,"result":{"response":{"url":"http://localhost:3000/api/auth/register","status":201,"statusText":"Created","headers":[{"name":"vary","value":"rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"},{"name":"content-type","value":"application/json"},{"name":"Date","value":"Mon, 18 May 2026 18:53:06 GMT"},{"name":"Connection","value":"keep-alive"},{"name":"Keep-Alive","value":"timeout=5"},{"name":"Transfer-Encoding","value":"chunked"}],"body":"<Buffer>","fetchUid":"c7d73611b6b39dd172cfac3c54d89ad7"}}}
+{"type":"before","callId":"call@15","startTime":215807.789,"class":"APIRequestContext","method":"fetch","params":{"url":"/api/auth/csrf","method":"GET","timeout":0},"stepId":"pw:api@38"}
+{"type":"log","callId":"call@15","time":215808.283,"message":"→ GET http://localhost:3000/api/auth/csrf"}
+{"type":"log","callId":"call@15","time":215808.296,"message":"  user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36"}
+{"type":"log","callId":"call@15","time":215808.301,"message":"  accept: */*"}
+{"type":"log","callId":"call@15","time":215808.304,"message":"  accept-encoding: gzip,deflate,br"}
+{"type":"log","callId":"call@15","time":215855.874,"message":"← 200 OK"}
+{"type":"log","callId":"call@15","time":215855.895,"message":"  vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"}
+{"type":"log","callId":"call@15","time":215855.9,"message":"  cache-control: private, no-cache, no-store"}
+{"type":"log","callId":"call@15","time":215855.904,"message":"  content-type: application/json"}
+{"type":"log","callId":"call@15","time":215855.908,"message":"  expires: 0"}
+{"type":"log","callId":"call@15","time":215855.911,"message":"  pragma: no-cache"}
+{"type":"log","callId":"call@15","time":215855.915,"message":"  set-cookie: authjs.csrf-token=d68cb5a434e9db697bf24256a10ffe613f07fe569afb4f0500fa072298e6db0f%7C5922d20259d165c4da9569dc8c0ff988f6744ed66efc5a3e3820988e19bbfd08; Path=/; HttpOnly; SameSite=Lax,authjs.callback-url=http%3A%2F%2Flocalhost%3A3000; Path=/; HttpOnly; SameSite=Lax"}
+{"type":"log","callId":"call@15","time":215855.919,"message":"  date: Mon, 18 May 2026 18:53:06 GMT"}
+{"type":"log","callId":"call@15","time":215855.923,"message":"  connection: keep-alive"}
+{"type":"log","callId":"call@15","time":215855.926,"message":"  keep-alive: timeout=5"}
+{"type":"log","callId":"call@15","time":215855.93,"message":"  transfer-encoding: chunked"}
+{"type":"after","callId":"call@15","endTime":215856.645,"result":{"response":{"url":"http://localhost:3000/api/auth/csrf","status":200,"statusText":"OK","headers":[{"name":"vary","value":"rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"},{"name":"cache-control","value":"private, no-cache, no-store"},{"name":"content-type","value":"application/json"},{"name":"expires","value":"0"},{"name":"pragma","value":"no-cache"},{"name":"set-cookie","value":"authjs.csrf-token=d68cb5a434e9db697bf24256a10ffe613f07fe569afb4f0500fa072298e6db0f%7C5922d20259d165c4da9569dc8c0ff988f6744ed66efc5a3e3820988e19bbfd08; Path=/; HttpOnly; SameSite=Lax"},{"name":"set-cookie","value":"authjs.callback-url=http%3A%2F%2Flocalhost%3A3000; Path=/; HttpOnly; SameSite=Lax"},{"name":"Date","value":"Mon, 18 May 2026 18:53:06 GMT"},{"name":"Connection","value":"keep-alive"},{"name":"Keep-Alive","value":"timeout=5"},{"name":"Transfer-Encoding","value":"chunked"}],"body":"<Buffer>","fetchUid":"c30cd0458ee5c373d6f9f1a2f67d1822"}}}
+{"type":"before","callId":"call@18","startTime":215858.75,"class":"APIRequestContext","method":"fetch","params":{"url":"/api/auth/callback/credentials","method":"POST","headers":[{"name":"Content-Type","value":"application/x-www-form-urlencoded"}],"formData":[{"name":"csrfToken","value":"d68cb5a434e9db697bf24256a10ffe613f07fe569afb4f0500fa072298e6db0f"},{"name":"email","value":"e2e-meallog-1779130385901-htiftp-1@test.com"},{"name":"password","value":"E2eTesta4ak1!"}],"timeout":0,"maxRedirects":0},"stepId":"pw:api@39"}
+{"type":"log","callId":"call@18","time":215859.317,"message":"→ POST http://localhost:3000/api/auth/callback/credentials"}
+{"type":"log","callId":"call@18","time":215859.328,"message":"  user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36"}
+{"type":"log","callId":"call@18","time":215859.332,"message":"  accept: */*"}
+{"type":"log","callId":"call@18","time":215859.336,"message":"  accept-encoding: gzip,deflate,br"}
+{"type":"log","callId":"call@18","time":215859.389,"message":"  Content-Type: application/x-www-form-urlencoded"}
+{"type":"log","callId":"call@18","time":215859.395,"message":"  content-length: 151"}
+{"type":"log","callId":"call@18","time":215859.399,"message":"  cookie: authjs.csrf-token=d68cb5a434e9db697bf24256a10ffe613f07fe569afb4f0500fa072298e6db0f%7C5922d20259d165c4da9569dc8c0ff988f6744ed66efc5a3e3820988e19bbfd08; authjs.callback-url=http%3A%2F%2Flocalhost%3A3000"}
+{"type":"log","callId":"call@18","time":215949.859,"message":"← 302 Found"}
+{"type":"log","callId":"call@18","time":215949.882,"message":"  vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"}
+{"type":"log","callId":"call@18","time":215949.887,"message":"  location: http://localhost:3000"}
+{"type":"log","callId":"call@18","time":215949.89,"message":"  set-cookie: authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoic2ZneWc3QlZKTjdXTjhnenBINFgyRDZlMU96dEhDOGlwRXB2X3BGUTAtQTZBVmNYV1c4dk53Mkh4eUZNOU1uM1NWNEVKVmJiNC1hNGFFRC1aczRPWXcifQ..MgNNPJO08BXNKVSEnUsrRQ.OCh106P0Y_smqMmdcTyUtcjp4ie1J-zN1dRM7c4u3OK8wM2bi2NwqlsZ7aKoOL0b3m4nKQBtzsokW3n1fLMpCmxs21YtEcn7fKL52p8RV3l-n9OnkbwO8SLgdqIYacjXhoAyta2XGS0EtuOsdB2dxUaVZoD_WahaUgKDvMu2qFwySaq-3kh0jOQYJ8Vf8tf3nnZFLFrHXuLvAM9PRQY0gmg7LskNYqHeNxQJRtaI3v2NdF8lqik2SKlHCtDo4xiv83ZkJfJ9TM97LIbHso3DPA.4aN22IJelh5EoA8pBXil-IiqsPMzlEm1w_2qoGkzaWs; Path=/; Expires=Tue, 19 May 2026 18:53:06 GMT; HttpOnly; SameSite=Lax"}
+{"type":"log","callId":"call@18","time":215949.894,"message":"  date: Mon, 18 May 2026 18:53:06 GMT"}
+{"type":"log","callId":"call@18","time":215949.897,"message":"  connection: keep-alive"}
+{"type":"log","callId":"call@18","time":215949.901,"message":"  keep-alive: timeout=5"}
+{"type":"log","callId":"call@18","time":215949.904,"message":"  transfer-encoding: chunked"}
+{"type":"after","callId":"call@18","endTime":215950.439,"result":{"response":{"url":"http://localhost:3000/api/auth/callback/credentials","status":302,"statusText":"Found","headers":[{"name":"vary","value":"rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch"},{"name":"location","value":"http://localhost:3000"},{"name":"set-cookie","value":"authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoic2ZneWc3QlZKTjdXTjhnenBINFgyRDZlMU96dEhDOGlwRXB2X3BGUTAtQTZBVmNYV1c4dk53Mkh4eUZNOU1uM1NWNEVKVmJiNC1hNGFFRC1aczRPWXcifQ..MgNNPJO08BXNKVSEnUsrRQ.OCh106P0Y_smqMmdcTyUtcjp4ie1J-zN1dRM7c4u3OK8wM2bi2NwqlsZ7aKoOL0b3m4nKQBtzsokW3n1fLMpCmxs21YtEcn7fKL52p8RV3l-n9OnkbwO8SLgdqIYacjXhoAyta2XGS0EtuOsdB2dxUaVZoD_WahaUgKDvMu2qFwySaq-3kh0jOQYJ8Vf8tf3nnZFLFrHXuLvAM9PRQY0gmg7LskNYqHeNxQJRtaI3v2NdF8lqik2SKlHCtDo4xiv83ZkJfJ9TM97LIbHso3DPA.4aN22IJelh5EoA8pBXil-IiqsPMzlEm1w_2qoGkzaWs; Path=/; Expires=Tue, 19 May 2026 18:53:06 GMT; HttpOnly; SameSite=Lax"},{"name":"Date","value":"Mon, 18 May 2026 18:53:06 GMT"},{"name":"Connection","value":"keep-alive"},{"name":"Keep-Alive","value":"timeout=5"},{"name":"Transfer-Encoding","value":"chunked"}],"body":"<Buffer>","fetchUid":"ba9030b62e686c1b8ab1fee6cb0739ad"}}}
