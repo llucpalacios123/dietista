@@ -43,6 +43,41 @@ enum MealType {
   snack
 }
 
+enum DietType {
+  omnivore
+  vegetarian
+  vegan
+  pescatarian
+}
+
+enum EatingOutFrequency {
+  never
+  rarely
+  sometimes
+  often
+}
+
+enum MealComplexity {
+  simple
+  moderate
+  advanced
+}
+
+enum VarietyLevel {
+  low
+  medium
+  high
+}
+
+enum ConversationStep {
+  PROFILE_REVIEW
+  PROFILE_MODIFICATION
+  PREFERENCES_COLLECTION
+  GENERATION
+  REVIEW_MODIFICATION
+  CONFIRMATION
+}
+
 enum FoodGroup {
   carbohydrates
   protein
@@ -59,9 +94,10 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  profile   Profile?
-  mealPlans MealPlan[]
-  mealLogs  MealLog[]
+  profile           Profile?
+  conversationState ConversationState?
+  mealPlans          MealPlan[]
+  mealLogs           MealLog[]
 }
 
 model Profile {
@@ -78,10 +114,21 @@ model Profile {
   targetProtein   Float?
   targetCarbs     Float?
   targetFat       Float?
-  allergies       String[]      @default([])
-  forbiddenFoods  String[]      @default([])
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  allergies          String[]          @default([])
+  forbiddenFoods     String[]          @default([])
+  dietType           DietType?
+  cookingTimeAvailable Int?
+  eatingOutFrequency EatingOutFrequency?
+  includeSnacks      Boolean           @default(false)
+  mealComplexity     MealComplexity?
+  mealsPerDay        Int               @default(3)
+  varietyPreference  VarietyLevel?
+  budgetFriendly     Boolean           @default(false)
+  weeklyBudget       Float?
+  trainingRoutine    String?
+  favoriteFoods      String[]          @default([])
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 }
 
 model MealPlan {
@@ -202,4 +249,20 @@ model Recipe {
   ingredients String[] @default([])
   steps       String[] @default([])
   mealType    MealType?
+}
+
+// ─── Conversation State (Nutritionist Wizard) ────────────────────────────
+
+model ConversationState {
+  id            String           @id @default(cuid())
+  userId        String           @unique
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStep   ConversationStep @default(PROFILE_REVIEW)
+  profileData   Json?
+  preferences   Json?
+  generatedPlan Json?
+  modifications Json?
+  validatedJson Json?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }
