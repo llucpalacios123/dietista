@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MealPlanView } from "@/components/meal-plans/meal-plan-view";
+import { MessageSquare } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -167,7 +169,7 @@ export default function MealPlansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-3xl font-bold">Meal Plans</h1>
           <p className="mt-1 text-muted-foreground">
@@ -175,7 +177,15 @@ export default function MealPlansPage() {
           </p>
         </div>
         {!generating && !mealPlan && (
-          <Button onClick={handleGenerate}>Generate Meal Plan</Button>
+          <div className="flex gap-2">
+            <Link href="/meal-plans/new">
+              <Button variant="outline" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Generate via Chat
+              </Button>
+            </Link>
+            <Button onClick={handleGenerate}>Generate Meal Plan</Button>
+          </div>
         )}
       </div>
 
@@ -223,7 +233,13 @@ export default function MealPlansPage() {
           <MealPlanView plan={mealPlan} />
 
           {mealPlan.status === "active" && (
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <Link href="/meal-plans/new">
+                <Button variant="outline" className="gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Generate via Chat
+                </Button>
+              </Link>
               <Button onClick={handleGenerate} variant="outline">
                 Generate New Plan
               </Button>
