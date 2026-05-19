@@ -88,3 +88,70 @@ export type ProfileSchema = z.infer<typeof profileSchema>;
 export type MealLogSchema = z.infer<typeof mealLogSchema>;
 export type MealItemSchema = z.infer<typeof mealItemSchema>;
 export type InterpretedFoodSchema = z.infer<typeof interpretedFoodSchema>;
+
+// ─── Chat Conversation Schemas ───────────────────────────────────────────
+
+/** Nutritional and dietary preferences collected during chat conversation. */
+export const chatUserPreferencesSchema = z.object({
+  goal: z.enum(["lose", "maintain", "gain"]).optional(),
+  activityLevel: z
+    .enum(["sedentary", "light", "moderate", "active", "veryActive"])
+    .optional(),
+  allergies: z.array(z.string()).default([]),
+  forbiddenFoods: z.array(z.string()).default([]),
+  calories: z.number().positive().optional(),
+  protein: z.number().nonnegative().optional(),
+  carbs: z.number().nonnegative().optional(),
+  fat: z.number().nonnegative().optional(),
+  weight: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  age: z.number().int().positive().optional(),
+  sex: z.enum(["male", "female", "other"]).optional(),
+});
+
+/** Data extracted during a chat conversation — preferences and/or PDF content. */
+export const chatExtractedDataSchema = z.object({
+  preferences: chatUserPreferencesSchema.optional(),
+  pdfData: z
+    .object({
+      rawText: z.string().min(1, "PDF text must not be empty"),
+      extractedAt: z.string().datetime().optional(),
+    })
+    .optional(),
+  confidence: z.enum(["high", "medium", "low"]).default("medium"),
+});
+
+/** State machine step identifiers for the chat conversation flow. */
+export type ChatConversationStep =
+  | "collect_preferences"
+  | "collect_dietary_restrictions"
+  | "collect_pdf_input"
+  | "confirm_generation"
+  | "generating"
+  | "complete";
+
+/** Full conversation state tracked by the state machine. */
+export const chatConversationStateSchema = z.object({
+  step: z.enum([
+    "collect_preferences",
+    "collect_dietary_restrictions",
+    "collect_pdf_input",
+    "confirm_generation",
+    "generating",
+    "complete",
+  ] as const satisfies readonly [string, ...string[]]),
+  collectedData: chatExtractedDataSchema,
+  isComplete: z.boolean(),
+});
+
+// ─── Type Exports ────────────────────────────────────────────────────────
+
+export type ChatUserPreferencesSchema = z.infer<
+  typeof chatUserPreferencesSchema
+>;
+export type ChatExtractedDataSchema = z.infer<
+  typeof chatExtractedDataSchema
+>;
+export type ChatConversationStateSchema = z.infer<
+  typeof chatConversationStateSchema
+>;

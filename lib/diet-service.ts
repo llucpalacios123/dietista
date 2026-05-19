@@ -2,6 +2,44 @@ import { prisma } from "./prisma";
 import { generateDiet, type DietGenerationParams } from "./openai";
 
 /**
+ * Build DietGenerationParams from a user's profile.
+ * Exported for reuse by the chat-based generation flow.
+ */
+export function buildDietParamsFromProfile(profile: {
+  goal: string;
+  activityLevel: string;
+  allergies: string[];
+  forbiddenFoods: string[];
+  targetCalories: number | null;
+  targetProtein: number | null;
+  targetCarbs: number | null;
+  targetFat: number | null;
+  weight: number;
+  height: number;
+  age: number;
+  sex: string;
+}): DietGenerationParams {
+  const targetCalories = profile.targetCalories ?? calculateCalories(profile);
+  const targetProtein =
+    profile.targetProtein ?? calculateProtein(profile, targetCalories);
+  const targetCarbs =
+    profile.targetCarbs ?? calculateCarbs(profile, targetCalories);
+  const targetFat =
+    profile.targetFat ?? calculateFat(profile, targetCalories);
+
+  return {
+    targetCalories,
+    targetProtein,
+    targetCarbs,
+    targetFat,
+    goal: profile.goal,
+    activityLevel: profile.activityLevel,
+    allergies: profile.allergies,
+    forbiddenFoods: profile.forbiddenFoods,
+  };
+}
+
+/**
  * Generate a weekly meal plan for a user based on their profile.
  * Creates a MealPlan with status=draft and populates Meal records.
  */
@@ -19,22 +57,7 @@ export async function generateMealPlan(userId: string): Promise<{
   }
 
   // Calculate targets (use profile values or defaults based on goal)
-  const targetCalories = profile.targetCalories ?? calculateCalories(profile);
-  const targetProtein = profile.targetProtein ?? calculateProtein(profile, targetCalories);
-  const targetCarbs = profile.targetCarbs ?? calculateCarbs(profile, targetCalories);
-  const targetFat = profile.targetFat ?? calculateFat(profile, targetCalories);
-
-  // Build OpenAI params
-  const params: DietGenerationParams = {
-    targetCalories,
-    targetProtein,
-    targetCarbs,
-    targetFat,
-    goal: profile.goal,
-    activityLevel: profile.activityLevel,
-    allergies: profile.allergies,
-    forbiddenFoods: profile.forbiddenFoods,
-  };
+  const params = buildDietParamsFromProfile(profile);
 
   // Call OpenAI
   const meals = await generateDiet(params);

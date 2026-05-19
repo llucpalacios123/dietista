@@ -4,6 +4,9 @@ import {
   profileSchema,
   mealLogSchema,
   loginSchema,
+  chatUserPreferencesSchema,
+  chatExtractedDataSchema,
+  chatConversationStateSchema,
 } from "@/lib/schemas";
 
 describe("registerSchema", () => {
@@ -216,5 +219,226 @@ describe("mealLogSchema", () => {
         expect(result.success).toBe(false);
       }
     );
+  });
+});
+
+// ─── Chat Conversation Schemas ──────────────────────────────────────────
+
+describe("chatUserPreferencesSchema", () => {
+  describe("valid inputs", () => {
+    it("accepts complete preferences", () => {
+      const result = chatUserPreferencesSchema.safeParse({
+        goal: "lose",
+        activityLevel: "moderate",
+        allergies: ["nuts"],
+        forbiddenFoods: ["liver"],
+        calories: 2000,
+        protein: 150,
+        carbs: 200,
+        fat: 65,
+        weight: 70,
+        height: 175,
+        age: 30,
+        sex: "male",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts empty preferences (all optional)", () => {
+      const result = chatUserPreferencesSchema.safeParse({});
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.allergies).toEqual([]);
+        expect(result.data.forbiddenFoods).toEqual([]);
+      }
+    });
+
+    it("accepts preferences with only goal", () => {
+      const result = chatUserPreferencesSchema.safeParse({ goal: "maintain" });
+      expect(result.success).toBe(true);
+    });
+
+    it("defaults allergies and forbiddenFoods to empty arrays", () => {
+      const result = chatUserPreferencesSchema.safeParse({ goal: "gain" });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.allergies).toEqual([]);
+        expect(result.data.forbiddenFoods).toEqual([]);
+      }
+    });
+  });
+
+  describe("invalid inputs", () => {
+    const invalidCases = [
+      {
+        data: { goal: "bulk" as const },
+        reason: "invalid goal value",
+      },
+      {
+        data: { activityLevel: "extreme" as const },
+        reason: "invalid activity level",
+      },
+      {
+        data: { calories: -500 },
+        reason: "negative calories",
+      },
+      {
+        data: { weight: 0 },
+        reason: "zero weight",
+      },
+      {
+        data: { age: 0 },
+        reason: "zero age",
+      },
+      {
+        data: { age: 25.5 },
+        reason: "non-integer age",
+      },
+      {
+        data: { sex: "unknown" as const },
+        reason: "invalid sex",
+      },
+    ];
+
+    it.each(invalidCases)(
+      "rejects invalid value: $reason",
+      ({ data }) => {
+        const result = chatUserPreferencesSchema.safeParse(data);
+        expect(result.success).toBe(false);
+      }
+    );
+  });
+});
+
+describe("chatExtractedDataSchema", () => {
+  describe("valid inputs", () => {
+    it("accepts preferences-only data", () => {
+      const result = chatExtractedDataSchema.safeParse({
+        preferences: { goal: "lose", activityLevel: "active" },
+        confidence: "high",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts pdf-only data", () => {
+      const result = chatExtractedDataSchema.safeParse({
+        pdfData: { rawText: "Sample PDF content with nutrition info" },
+        confidence: "low",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts combined preferences and pdf data", () => {
+      const result = chatExtractedDataSchema.safeParse({
+        preferences: { goal: "maintain", allergies: ["dairy"] },
+        pdfData: {
+          rawText: "PDF nutrition report",
+          extractedAt: "2026-01-15T12:00:00.000Z",
+        },
+        confidence: "medium",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("defaults confidence to medium when not provided", () => {
+      const result = chatExtractedDataSchema.safeParse({
+        preferences: { goal: "lose" },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.confidence).toBe("medium");
+      }
+    });
+  });
+
+  describe("invalid inputs", () => {
+    it("rejects empty pdf rawText", () => {
+      const result = chatExtractedDataSchema.safeParse({
+        pdfData: { rawText: "" },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects invalid confidence value", () => {
+      const result = chatExtractedDataSchema.safeParse({
+        confidence: "extreme",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+});
+
+describe("chatConversationStateSchema", () => {
+  describe("valid states", () => {
+    const validSteps = [
+      "collect_preferences",
+      "collect_dietary_restrictions",
+      "collect_pdf_input",
+      "confirm_generation",
+      "generating",
+      "complete",
+    ] as const;
+
+    it.each(validSteps)("accepts valid step: %s", (step) => {
+      const result = chatConversationStateSchema.safeParse({
+        step,
+        collectedData: { confidence: "medium" },
+        isComplete: step === "complete",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts state with full collected data", () => {
+      const result = chatConversationStateSchema.safeParse({
+        step: "confirm_generation",
+        collectedData: {
+          preferences: {
+            goal: "lose",
+            activityLevel: "moderate",
+            allergies: ["nuts"],
+            forbiddenFoods: [],
+            calories: 2000,
+            protein: 150,
+            carbs: 200,
+            fat: 65,
+            weight: 70,
+            height: 175,
+            age: 30,
+            sex: "male",
+          },
+          pdfData: { rawText: "Nutrition data from PDF" },
+          confidence: "high",
+        },
+        isComplete: false,
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("invalid states", () => {
+    it("rejects unknown step", () => {
+      const result = chatConversationStateSchema.safeParse({
+        step: "unknown_step",
+        collectedData: { confidence: "medium" },
+        isComplete: false,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects missing step", () => {
+      const result = chatConversationStateSchema.safeParse({
+        collectedData: { confidence: "medium" },
+        isComplete: false,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects missing isComplete", () => {
+      const result = chatConversationStateSchema.safeParse({
+        step: "collect_preferences",
+        collectedData: { confidence: "medium" },
+      });
+      expect(result.success).toBe(false);
+    });
   });
 });
