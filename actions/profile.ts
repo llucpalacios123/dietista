@@ -63,6 +63,22 @@ export async function createProfile(
     }
   }
 
+  // Convert string booleans from FormData to actual booleans
+  for (const key of ["includeSnacks", "budgetFriendly"]) {
+    if (processed[key] === "true") {
+      processed[key] = true;
+    } else if (processed[key] === "false") {
+      processed[key] = false;
+    }
+  }
+
+  // Convert numeric strings to numbers
+  for (const key of ["weight", "height", "age", "targetCalories", "targetProtein", "targetCarbs", "targetFat", "cookingTimeAvailable", "mealsPerDay", "weeklyBudget"]) {
+    if (typeof processed[key] === "string" && processed[key] !== "") {
+      processed[key] = Number(processed[key]);
+    }
+  }
+
   const parsed = profileSchema.safeParse(processed);
 
   if (!parsed.success) {
@@ -151,6 +167,22 @@ export async function updateProfile(
       } catch {
         processed[key] = [];
       }
+    }
+  }
+
+  // Convert string booleans from FormData to actual booleans
+  for (const key of ["includeSnacks", "budgetFriendly"]) {
+    if (processed[key] === "true") {
+      processed[key] = true;
+    } else if (processed[key] === "false") {
+      processed[key] = false;
+    }
+  }
+
+  // Convert numeric strings to numbers
+  for (const key of ["weight", "height", "age", "targetCalories", "targetProtein", "targetCarbs", "targetFat", "cookingTimeAvailable", "mealsPerDay", "weeklyBudget"]) {
+    if (typeof processed[key] === "string" && processed[key] !== "") {
+      processed[key] = Number(processed[key]);
     }
   }
 
