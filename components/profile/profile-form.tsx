@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useActionState } from "react";
+import { useState, useEffect, useActionState, startTransition } from "react";
 import type { JSX } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -171,7 +171,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
     fd.set("budgetFriendly", String(data.budgetFriendly));
     if (data.weeklyBudget) fd.set("weeklyBudget", String(data.weeklyBudget));
     if (data.trainingRoutine) fd.set("trainingRoutine", data.trainingRoutine);
-    formAction(fd);
+    startTransition(() => formAction(fd));
   });
 
   return (
