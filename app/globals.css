@@ -57,3 +57,108 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ────────────── Dietista Design Tokens ────────────── */
+@layer base {
+  :root {
+    --brand-50: #ecfdf5;
+    --brand-100: #d1fae5;
+    --brand-200: #a7f3d0;
+    --brand-300: #6ee7b7;
+    --brand-400: #34d399;
+    --brand-500: #10b981;
+    --brand-600: #059669;
+    --brand-700: #047857;
+    --brand-800: #065f46;
+    --brand-900: #064e3b;
+
+    --ring-cal: #10b981;
+    --ring-cal-bg: #d1fae5;
+    --ring-pro: #2563eb;
+    --ring-pro-bg: #dbeafe;
+    --ring-carb: #f59e0b;
+    --ring-carb-bg: #fef3c7;
+    --ring-fat: #f43f5e;
+    --ring-fat-bg: #ffe4e6;
+
+    --dietista-success: #10b981;
+    --dietista-warning: #f59e0b;
+    --dietista-danger: #ef4444;
+
+    --dietista-bg: #f5f7f6;
+    --dietista-surface: #ffffff;
+    --dietista-surface-2: #f9faf9;
+    --dietista-elev: #ffffff;
+    --dietista-border: rgba(15, 23, 42, 0.07);
+    --dietista-border-strong: rgba(15, 23, 42, 0.12);
+    --dietista-hairline: rgba(15, 23, 42, 0.06);
+
+    --dietista-text: #0b1411;
+    --dietista-text-2: #5b6b66;
+    --dietista-text-3: #8a9a94;
+    --dietista-text-on-brand: #ffffff;
+
+    --dietista-r-sm: 10px;
+    --dietista-r-md: 14px;
+    --dietista-r-lg: 20px;
+    --dietista-r-xl: 28px;
+
+    --dietista-pad-card: 16px;
+    --dietista-gap-card: 12px;
+
+    --dietista-shadow-sm: 0 1px 2px rgba(11, 20, 17, 0.04), 0 1px 3px rgba(11, 20, 17, 0.05);
+    --dietista-shadow-md: 0 2px 4px rgba(11, 20, 17, 0.04), 0 6px 16px rgba(11, 20, 17, 0.06);
+    --dietista-shadow-lg: 0 4px 8px rgba(11, 20, 17, 0.04), 0 20px 40px rgba(11, 20, 17, 0.08);
+  }
+
+  .dark {
+    --dietista-bg: #0a0f0d;
+    --dietista-surface: #131816;
+    --dietista-surface-2: #181d1b;
+    --dietista-elev: #1b211f;
+    --dietista-border: rgba(255, 255, 255, 0.06);
+    --dietista-border-strong: rgba(255, 255, 255, 0.1);
+    --dietista-hairline: rgba(255, 255, 255, 0.05);
+
+    --dietista-text: #ecf3ef;
+    --dietista-text-2: #98a8a2;
+    --dietista-text-3: #6a7a74;
+
+    --dietista-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --dietista-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
+    --dietista-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+    --ring-cal-bg: rgba(16, 185, 129, 0.16);
+    --ring-pro-bg: rgba(37, 99, 235, 0.18);
+    --ring-carb-bg: rgba(245, 158, 11, 0.16);
+    --ring-fat-bg: rgba(244, 63, 94, 0.16);
+  }
+
+  .density-cozy {
+    --dietista-pad-card: 18px;
+    --dietista-gap-card: 14px;
+  }
+  .density-comfortable {
+    --dietista-pad-card: 14px;
+    --dietista-gap-card: 10px;
+  }
+  .density-compact {
+    --dietista-pad-card: 11px;
+    --dietista-gap-card: 7px;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 220ms ease-out;
+}

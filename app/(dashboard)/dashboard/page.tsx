@@ -1,9 +1,8 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { HeroMacroRing, StatCard, StreakWeek, Sparkline } from "@/components/dietista/atoms";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -24,63 +23,255 @@ export default async function DashboardPage() {
     orderBy: { startDate: "desc" },
   });
 
+  // Fetch today's meal logs for macro calculation
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const todayLogs = await prisma.mealLog.findMany({
+    where: {
+      userId: session.userId,
+      date: {
+        gte: today,
+        lt: tomorrow,
+      },
+    },
+  });
+
+  const consumed = todayLogs.reduce(
+    (acc, log) => {
+      const foods = (log.interpretedFoods as Array<{
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+      }>) ?? [];
+      for (const food of foods) {
+        acc.calories += food.calories ?? 0;
+        acc.protein += food.protein ?? 0;
+        acc.carbs += food.carbs ?? 0;
+        acc.fat += food.fat ?? 0;
+      }
+      return acc;
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+
+  const targets = {
+    calories: profile?.targetCalories ?? 2000,
+    protein: profile?.targetProtein ?? 150,
+    carbs: profile?.targetCarbs ?? 250,
+    fat: profile?.targetFat ?? 65,
+  };
+
+  // Fetch last 7 days of weight for sparkline
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weightLogs = await prisma.weightLog.findMany({
+    where: {
+      userId: session.userId,
+      date: { gte: weekAgo },
+    },
+    orderBy: { date: "asc" },
+    take: 7,
+  });
+
+  const weightTrend = weightLogs.map((w) => w.weight);
+
+  // Calculate streak (consecutive days with meal logs)
+  const streakDays = await calculateStreak(session.userId);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Welcome, {session.email}</h1>
-        <p className="mt-1 text-muted-foreground">
-          Your personalized meal planning dashboard
+    <div className="space-y-6 px-1 pb-4">
+      {/* Greeting */}
+      <div className="px-[18px] pt-4">
+        <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
+          Hola, {session.email?.split("@")[0] ?? "Usuario"}
+        </h1>
+        <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
+          {today.toLocaleDateString("es-AR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })}
         </p>
       </div>
 
-      {!profile && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <CardTitle className="text-lg">Complete Your Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Set up your nutritional profile to generate personalized meal plans.
-            </p>
-            <Link href="/profile">
-              <Button>Set Up Profile</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      {/* Hero Macro Ring */}
+      <div className="flex justify-center py-4">
+        <HeroMacroRing
+          value={consumed.calories}
+          max={targets.calories}
+          current={consumed.calories}
+          label="calorías"
+          subtitle={`${Math.round(targets.calories - consumed.calories)} restantes`}
+          variant="minimal"
+          size={160}
+          strokeWidth={12}
+        />
+      </div>
+
+      {/* Macro Bars */}
+      <div className="space-y-3 px-[var(--dietista-pad-card)]">
+        <MacroBarRow label="Proteína" current={consumed.protein} target={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
+        <MacroBarRow label="Carbos" current={consumed.carbs} target={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
+        <MacroBarRow label="Grasa" current={consumed.fat} target={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
+      </div>
+
+      {/* Streak */}
+      <div className="px-[var(--dietista-pad-card)]">
+        <StreakWeek days={streakDays} label="Racha semanal" />
+      </div>
+
+      {/* Weight Sparkline */}
+      {weightTrend.length >= 2 && (
+        <div className="px-[var(--dietista-pad-card)]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[var(--dietista-text-2)]">
+              Tendencia de peso
+            </span>
+            <span className="text-xs font-semibold text-[var(--dietista-text)] tnum">
+              {weightTrend[weightTrend.length - 1]?.toFixed(1)} kg
+            </span>
+          </div>
+          <div className="mt-2">
+            <Sparkline data={weightTrend} width={280} height={40} />
+          </div>
+        </div>
       )}
 
-      {activePlan ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Current Meal Plan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Week of {new Date(activePlan.startDate).toLocaleDateString()} —{" "}
-              {activePlan.meals.length} meals planned
+      {/* Active Plan Card */}
+      <div className="px-[var(--dietista-pad-card)]">
+        {activePlan ? (
+          <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-[var(--dietista-text-3)]">
+                  Plan activo
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[var(--dietista-text)]">
+                  Semana del {new Date(activePlan.startDate).toLocaleDateString("es-AR")}
+                </p>
+                <p className="text-xs text-[var(--dietista-text-2)]">
+                  {activePlan.meals.length} comidas planificadas
+                </p>
+              </div>
+              <Link
+                href="/planes"
+                className="rounded-lg bg-[var(--brand-500)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
+              >
+                Ver plan
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
+            <p className="text-sm font-semibold text-[var(--dietista-text)]">
+              Sin plan activo
             </p>
-            <Link href="/meal-plans">
-              <Button variant="outline" className="mt-4">
-                View Full Plan
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>No Active Meal Plan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Generate your first personalized weekly meal plan.
+            <p className="mt-1 text-xs text-[var(--dietista-text-2)]">
+              Generá tu primer plan de comidas personalizado.
             </p>
-            <Link href="/meal-plans">
-              <Button>Generate Meal Plan</Button>
+            <Link
+              href="/planes"
+              className="mt-3 inline-block rounded-lg bg-[var(--brand-500)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
+            >
+              Crear plan
             </Link>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-3 px-[var(--dietista-pad-card)]">
+        <Link
+          href="/progreso"
+          className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)] text-center transition-colors hover:border-[var(--brand-300)]"
+        >
+          <span className="text-2xl">📊</span>
+          <p className="mt-1 text-xs font-semibold text-[var(--dietista-text)]">Progreso</p>
+        </Link>
+        <Link
+          href="/objetivos"
+          className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)] text-center transition-colors hover:border-[var(--brand-300)]"
+        >
+          <span className="text-2xl">🎯</span>
+          <p className="mt-1 text-xs font-semibold text-[var(--dietista-text)]">Objetivos</p>
+        </Link>
+      </div>
     </div>
   );
+}
+
+function MacroBarRow({
+  label,
+  current,
+  target,
+  color,
+  bgColor,
+}: {
+  label: string;
+  current: number;
+  target: number;
+  color: string;
+  bgColor: string;
+}) {
+  const percentage = Math.min((current / target) * 100, 100);
+  const isOver = current > target;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-[var(--dietista-text-2)]">{label}</span>
+        <span
+          className={`text-xs font-semibold tnum ${isOver ? "text-[var(--dietista-danger)]" : "text-[var(--dietista-text)]"}`}
+        >
+          {Math.round(current)}g / {Math.round(target)}g
+        </span>
+      </div>
+      <div
+        className="h-2 w-full rounded-full"
+        style={{ backgroundColor: bgColor }}
+        role="progressbar"
+        aria-valuenow={current}
+        aria-valuemin={0}
+        aria-valuemax={target}
+        aria-label={`${label}: ${current}g of ${target}g`}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${percentage}%`,
+            backgroundColor: isOver ? "var(--dietista-danger)" : color,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+async function calculateStreak(userId: string): Promise<boolean[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const days: boolean[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    const count = await prisma.mealLog.count({
+      where: {
+        userId,
+        date: {
+          gte: date,
+          lt: nextDate,
+        },
+      },
+    });
+    days.push(count > 0);
+  }
+  return days;
 }

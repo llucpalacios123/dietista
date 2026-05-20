@@ -63,6 +63,18 @@ enum MealComplexity {
   advanced
 }
 
+enum ShoppingListStatus {
+  draft
+  reviewed
+  purchased
+}
+
+enum ConfidenceLevel {
+  high
+  medium
+  low
+}
+
 enum VarietyLevel {
   low
   medium
@@ -98,6 +110,9 @@ model User {
   conversationState ConversationState?
   mealPlans          MealPlan[]
   mealLogs           MealLog[]
+  weightLogs         WeightLog[]
+  shoppingLists      ShoppingList[]
+  progressSnapshots  ProgressSnapshot[]
 }
 
 model Profile {
@@ -142,6 +157,7 @@ model MealPlan {
   status        PlanStatus @default(draft)
   totalCalories Float?
   meals         Meal[]
+  shoppingLists ShoppingList[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -265,4 +281,74 @@ model ConversationState {
   validatedJson Json?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+}
+
+// ─── Weight Tracking ─────────────────────────────────────────────────────
+
+model WeightLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weight    Float    // kg
+  date      DateTime
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// ─── Shopping Lists ──────────────────────────────────────────────────────
+
+model ShoppingList {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealPlanId    String?
+  mealPlan      MealPlan?         @relation(fields: [mealPlanId], references: [id])
+  budget        Float?
+  totalEstimate Float?
+  status        ShoppingListStatus @default(draft)
+  imageUrl      String?
+  items         ShoppingItem[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([userId, status])
+}
+
+model ShoppingItem {
+  id             String   @id @default(cuid())
+  shoppingListId String
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  name           String
+  quantity       String?
+  price          Float?
+  confidence     ConfidenceLevel @default(medium)
+  checked        Boolean  @default(false)
+  matchedToPlan  Boolean  @default(false)
+  category       String?
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([shoppingListId])
+}
+
+// ─── Progress Snapshots ──────────────────────────────────────────────────
+
+model ProgressSnapshot {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime
+  totalCalories  Float?
+  totalProtein   Float?
+  totalCarbs     Float?
+  totalFat       Float?
+  adherenceScore Float?   // 0-100
+  mealsLogged    Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
 }
