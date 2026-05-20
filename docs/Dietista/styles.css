@@ -1,0 +1,358 @@
+/* ─────────────── Dietista — Design Tokens ─────────────── */
+:root {
+  /* Brand */
+  --brand-50:  #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
+
+  /* Macro ring colors */
+  --ring-cal:     #10b981;   /* calories — emerald (brand) */
+  --ring-cal-bg:  #d1fae5;
+  --ring-pro:     #2563eb;   /* protein — blue */
+  --ring-pro-bg:  #dbeafe;
+  --ring-carb:    #f59e0b;   /* carbs — amber */
+  --ring-carb-bg: #fef3c7;
+  --ring-fat:     #f43f5e;   /* fat — rose */
+  --ring-fat-bg:  #ffe4e6;
+
+  /* Semantic */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger:  #ef4444;
+
+  /* Light surfaces */
+  --bg:        #f5f7f6;
+  --surface:   #ffffff;
+  --surface-2: #f9faf9;
+  --elev:      #ffffff;
+  --border:    rgba(15, 23, 42, 0.07);
+  --border-strong: rgba(15, 23, 42, 0.12);
+  --hairline:  rgba(15, 23, 42, 0.06);
+
+  /* Text */
+  --text:      #0b1411;
+  --text-2:    #5b6b66;
+  --text-3:    #8a9a94;
+  --text-on-brand: #ffffff;
+
+  /* Sizing */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  --pad-card: 16px;
+  --gap-card: 12px;
+
+  /* Type */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-stat: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(11, 20, 17, 0.04), 0 1px 3px rgba(11, 20, 17, 0.05);
+  --shadow-md: 0 2px 4px rgba(11, 20, 17, 0.04), 0 6px 16px rgba(11, 20, 17, 0.06);
+  --shadow-lg: 0 4px 8px rgba(11, 20, 17, 0.04), 0 20px 40px rgba(11, 20, 17, 0.08);
+}
+
+.dark {
+  --bg:        #0a0f0d;
+  --surface:   #131816;
+  --surface-2: #181d1b;
+  --elev:      #1b211f;
+  --border:    rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --hairline:  rgba(255, 255, 255, 0.05);
+
+  --text:      #ecf3ef;
+  --text-2:    #98a8a2;
+  --text-3:    #6a7a74;
+
+  --ring-cal-bg:  rgba(16, 185, 129, 0.16);
+  --ring-pro-bg:  rgba(37, 99, 235, 0.18);
+  --ring-carb-bg: rgba(245, 158, 11, 0.16);
+  --ring-fat-bg:  rgba(244, 63, 94, 0.16);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+}
+
+/* Density variants */
+.density-cozy     { --pad-card: 18px; --gap-card: 14px; }
+.density-comfortable { --pad-card: 14px; --gap-card: 10px; }
+.density-compact  { --pad-card: 11px; --gap-card: 7px; }
+
+/* Accent variants */
+.accent-emerald {
+  --brand-400:#34d399; --brand-500:#10b981; --brand-600:#059669; --brand-700:#047857;
+  --ring-cal:#10b981;
+}
+.accent-lime {
+  --brand-400:#a3e635; --brand-500:#84cc16; --brand-600:#65a30d; --brand-700:#4d7c0f;
+  --ring-cal:#84cc16;
+}
+.accent-forest {
+  --brand-400:#4ade80; --brand-500:#22c55e; --brand-600:#16a34a; --brand-700:#15803d;
+  --ring-cal:#22c55e;
+}
+.accent-teal {
+  --brand-400:#2dd4bf; --brand-500:#14b8a6; --brand-600:#0d9488; --brand-700:#0f766e;
+  --ring-cal:#14b8a6;
+}
+
+/* ─────────────── Base ─────────────── */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: #1a1c1b;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+input, textarea { font: inherit; color: inherit; }
+
+/* hide scrollbar but allow scrolling */
+.scroll-hide { scrollbar-width: none; }
+.scroll-hide::-webkit-scrollbar { display: none; }
+
+/* Tabular numerals everywhere stats appear */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ─────────────── Card primitive ─────────────── */
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  padding: var(--pad-card);
+}
+.card-elev { box-shadow: var(--shadow-sm); }
+.card-flat { border: 1px solid var(--border); }
+.card-inset { background: var(--surface-2); }
+
+/* Pills, chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12.5px; font-weight: 550; color: var(--text-2);
+  letter-spacing: -0.01em;
+}
+.chip.active {
+  background: var(--text);
+  color: var(--surface);
+  border-color: var(--text);
+}
+.chip.brand {
+  background: var(--brand-500);
+  color: var(--text-on-brand);
+  border-color: var(--brand-500);
+}
+.chip.muted {
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+/* Eyebrow caps */
+.eyebrow {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Bottom nav safe area in iPhone frame */
+.bottom-nav-pad { height: 92px; }
+
+/* ─────────────── App-specific ─────────────── */
+.screen-wrap {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.screen-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 100px;
+}
+
+.screen-anim {
+  animation: fadeUp 220ms ease-out;
+}
+.screen-wrap > .screen-anim {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.app-header {
+  padding: 56px 18px 8px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  background: var(--bg);
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--text);
+}
+.app-header .sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* Avatar circle */
+.avatar {
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-700));
+  color: var(--text-on-brand);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; letter-spacing: -0.01em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 -1px 2px rgba(0,0,0,0.1);
+}
+
+/* Bottom nav */
+.bottom-nav {
+  position: absolute; left: 8px; right: 8px; bottom: 16px;
+  background: var(--surface);
+  border-radius: 28px;
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 8px 6px;
+  z-index: 50;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+.dark .bottom-nav {
+  background: rgba(27, 33, 31, 0.92);
+}
+.nav-btn {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  color: var(--text-3);
+  border-radius: 18px;
+  position: relative;
+}
+.nav-btn.active { color: var(--brand-600); }
+.dark .nav-btn.active { color: var(--brand-400); }
+.nav-btn .label {
+  font-size: 10px; font-weight: 600; letter-spacing: -0.005em;
+}
+.nav-btn .dot {
+  position: absolute; bottom: 2px;
+  width: 4px; height: 4px; border-radius: 999px;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 200ms;
+}
+.nav-btn.active .dot { opacity: 1; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 14px; border-radius: 12px;
+  font-weight: 600; font-size: 14px; letter-spacing: -0.01em;
+  transition: transform 120ms, background 120ms;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: var(--text);
+  color: var(--surface);
+}
+.btn-brand {
+  background: var(--brand-500);
+  color: var(--text-on-brand);
+}
+.btn-ghost {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.btn-icon {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* Toggle (segmented) */
+.segmented {
+  display: inline-flex;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+.segmented button {
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: -0.01em;
+}
+.segmented button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Fade-in for screen transitions */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.screen-anim { animation: fadeUp 220ms ease-out; }
+
+/* Ring fill animation */
+@keyframes ringFill {
+  from { stroke-dashoffset: var(--ring-circ); }
+  to { stroke-dashoffset: var(--ring-target); }
+}
+
+/* Frame shell holds the iPhone in the viewport */
+.phone-stage {
+  width: 100vw; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(ellipse at top, #2a302d 0%, #14171600 60%),
+    linear-gradient(180deg, #1a1c1b 0%, #0e1110 100%);
+  overflow: hidden;
+}
+
+/* fix iOS scrolling inside the device */
+.phone-shell { transform-origin: center center; }
+
+@media (max-width: 480px) {
+  .phone-shell { transform: scale(0.94); }
+}
