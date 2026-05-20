@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useEffect, useActionState } from "react";
 import type { JSX } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { ProfileSchema } from "@/lib/schemas";
@@ -84,11 +85,19 @@ interface ProfileFormProps {
 export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element {
   const isUpdate = !!existingProfile;
   const action = isUpdate ? updateProfile : createProfile;
+  const router = useRouter();
   const [result, formAction] = useActionState<ProfileActionResult | null, FormData>(
     action,
     null
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Redirect to dashboard after successful profile creation
+  useEffect(() => {
+    if (result?.success === true && !isUpdate) {
+      router.push("/dashboard");
+    }
+  }, [result?.success, isUpdate, router]);
 
   const form = useForm<ProfileSchema>({
     resolver: zodResolver(profileSchema),
@@ -184,7 +193,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
         {result?.success && !isUpdate && (
           <Alert className="mb-6 border-green-200 bg-green-50">
             <AlertDescription className="text-green-800">
-              Profile created successfully! Redirecting to dashboard...
+              Profile created successfully!
             </AlertDescription>
           </Alert>
         )}
