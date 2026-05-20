@@ -3,6 +3,7 @@ allowBuilds:
   '@prisma/engines': false
   cpu-features: false
   esbuild: false
+  msgpackr-extract: false
   prisma: false
   protobufjs: false
   sharp: false
