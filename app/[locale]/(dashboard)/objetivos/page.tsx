@@ -1,12 +1,15 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 export default async function ObjetivosPage() {
   const session = await auth();
   if (!session?.userId) {
     redirect("/login");
   }
+
+  const t = await getTranslations("Goals");
 
   const profile = await prisma.profile.findUnique({
     where: { userId: session.userId },
@@ -15,15 +18,15 @@ export default async function ObjetivosPage() {
   if (!profile) {
     return (
       <div className="flex flex-col items-center justify-center px-4 pb-4 pt-20">
-        <h1 className="text-[28px] font-bold text-[var(--dietista-text)]">Objetivos</h1>
+        <h1 className="text-[28px] font-bold text-[var(--dietista-text)]">{t("title")}</h1>
         <p className="mt-2 text-sm text-[var(--dietista-text-2)]">
-          Completá tu perfil para ver tus objetivos nutricionales.
+          {t("completeProfileToSee")}
         </p>
         <a
           href="/perfil"
           className="mt-4 rounded-lg bg-[var(--brand-500)] px-4 py-2 text-sm font-semibold text-white"
         >
-          Ir al perfil
+          {t("goToProfile")}
         </a>
       </div>
     );
@@ -38,29 +41,18 @@ export default async function ObjetivosPage() {
     fat: profile.targetFat ?? calculateFat(profile),
   };
 
-  const goalLabels: Record<string, string> = {
-    lose: "Perder peso",
-    maintain: "Mantener peso",
-    gain: "Ganar peso",
-  };
-
-  const activityLabels: Record<string, string> = {
-    sedentary: "Sedentario",
-    light: "Ligero",
-    moderate: "Moderado",
-    active: "Activo",
-    veryActive: "Muy activo",
-  };
+  const goalLabels = t.raw("goalLabels") as unknown as Record<string, string>;
+  const activityLabels = t.raw("activityLabels") as unknown as Record<string, string>;
 
   return (
     <div className="space-y-6 px-1 pb-4">
       {/* Header */}
       <div className="px-[18px] pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Objetivos
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          Tus metas nutricionales personalizadas
+          {t("subtitle")}
         </p>
       </div>
 
@@ -68,7 +60,7 @@ export default async function ObjetivosPage() {
       <div className="mx-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--dietista-text-3)]">
-            Objetivo
+            {t("goal")}
           </p>
           <p className="mt-1 text-xl font-bold text-[var(--brand-600)]">
             {goalLabels[profile.goal] ?? profile.goal}
@@ -83,18 +75,18 @@ export default async function ObjetivosPage() {
       <div className="mx-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
           <h2 className="mb-3 text-sm font-semibold text-[var(--dietista-text)]">
-            Desglose TDEE
+            {t("tdeeBreakdown")}
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-[var(--dietista-text-3)]">TDEE estimado</p>
+              <p className="text-xs text-[var(--dietista-text-3)]">{t("estimatedTDEE")}</p>
               <p className="text-lg font-bold text-[var(--dietista-text)] tnum">{Math.round(tdee)}</p>
-              <p className="text-xs text-[var(--dietista-text-3)]">kcal/día</p>
+              <p className="text-xs text-[var(--dietista-text-3)]">{t("kcalPerDay")}</p>
             </div>
             <div>
-              <p className="text-xs text-[var(--dietista-text-3)]">Target calórico</p>
+              <p className="text-xs text-[var(--dietista-text-3)]">{t("caloricTarget")}</p>
               <p className="text-lg font-bold text-[var(--brand-600)] tnum">{Math.round(targets.calories)}</p>
-              <p className="text-xs text-[var(--dietista-text-3)]">kcal/día</p>
+              <p className="text-xs text-[var(--dietista-text-3)]">{t("kcalPerDay")}</p>
             </div>
           </div>
         </div>
@@ -104,12 +96,12 @@ export default async function ObjetivosPage() {
       <div className="mx-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
           <h2 className="mb-3 text-sm font-semibold text-[var(--dietista-text)]">
-            Macros diarios
+            {t("dailyMacros")}
           </h2>
           <div className="space-y-3">
-            <MacroTargetRow label="Proteína" value={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
-            <MacroTargetRow label="Carbos" value={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
-            <MacroTargetRow label="Grasa" value={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
+            <MacroTargetRow label={t("proteinLabel")} value={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
+            <MacroTargetRow label={t("carbsLabel")} value={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
+            <MacroTargetRow label={t("fatLabel")} value={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
           </div>
         </div>
       </div>

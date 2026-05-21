@@ -1,13 +1,18 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { DayStrip } from "@/components/dietista/atoms";
+import { formatDateLong } from "@/lib/dates";
 
 export default async function DiarioPage() {
   const session = await auth();
   if (!session?.userId) {
     redirect("/login");
   }
+
+  const locale = await getLocale();
+  const t = await getTranslations("Journal");
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -55,22 +60,20 @@ export default async function DiarioPage() {
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
-  const dayLabels = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  const dayLabels = t.raw("dayLabels") as unknown as string[];
   const todayIndex = (today.getDay() + 6) % 7; // Convert to Monday=0
+
+  const mealTypeLabels = t.raw("mealTypes") as unknown as Record<string, string>;
 
   return (
     <div className="space-y-4 px-1 pb-4">
       {/* Header */}
       <div className="px-[18px] pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Diario
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          {today.toLocaleDateString("es-AR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
+          {formatDateLong(today, locale)}
         </p>
       </div>
 
@@ -79,29 +82,29 @@ export default async function DiarioPage() {
 
       {/* Macro Summary */}
       <div className="flex justify-center gap-6 py-4">
-        <MacroRingSmall label="Cal" value={consumed.calories} max={targets.calories} color="var(--ring-cal)" bgColor="var(--ring-cal-bg)" />
-        <MacroRingSmall label="Prot" value={consumed.protein} max={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
-        <MacroRingSmall label="Carb" value={consumed.carbs} max={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
-        <MacroRingSmall label="Grasa" value={consumed.fat} max={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
+        <MacroRingSmall label={t("calories")} value={consumed.calories} max={targets.calories} color="var(--ring-cal)" bgColor="var(--ring-cal-bg)" />
+        <MacroRingSmall label={t("protein")} value={consumed.protein} max={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
+        <MacroRingSmall label={t("carbs")} value={consumed.carbs} max={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
+        <MacroRingSmall label={t("fat")} value={consumed.fat} max={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
       </div>
 
       {/* Meal Timeline */}
       <div className="space-y-3 px-[var(--dietista-pad-card)]">
         <h2 className="text-sm font-semibold text-[var(--dietista-text)]">
-          Comidas de hoy
+          {t("mealsToday")}
         </h2>
         {todayLogs.length === 0 ? (
           <div className="rounded-[var(--dietista-r-lg)] border border-dashed border-[var(--dietista-border)] p-8 text-center">
             <p className="text-sm text-[var(--dietista-text-3)]">
-              No registraste comidas hoy
+              {t("noMealsToday")}
             </p>
             <p className="mt-1 text-xs text-[var(--dietista-text-3)]">
-              Escribí lo que comiste y la IA lo interpretará
+              {t("noMealsTodayHint")}
             </p>
           </div>
         ) : (
           todayLogs.map((log) => (
-            <MealLogEntry key={log.id} log={log} />
+            <MealLogEntry key={log.id} log={log} mealTypeLabels={mealTypeLabels} />
           ))
         )}
       </div>
@@ -172,6 +175,7 @@ function MacroRingSmall({
 
 function MealLogEntry({
   log,
+  mealTypeLabels,
 }: {
   log: {
     id: string;
@@ -180,15 +184,8 @@ function MealLogEntry({
     totalCalories: number | null;
     date: Date;
   };
+  mealTypeLabels: Record<string, string>;
 }) {
-  const mealTypeLabels: Record<string, string> = {
-    breakfast: "Desayuno",
-    mid_morning: "Media mañana",
-    lunch: "Almuerzo",
-    dinner: "Cena",
-    snack: "Merienda",
-  };
-
   return (
     <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
       <div className="flex items-center justify-between">

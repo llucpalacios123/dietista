@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 export default async function PlanesPage() {
@@ -8,6 +9,8 @@ export default async function PlanesPage() {
   if (!session?.userId) {
     redirect("/login");
   }
+
+  const t = await getTranslations("PlansPage");
 
   const activePlan = await prisma.mealPlan.findFirst({
     where: {
@@ -32,10 +35,10 @@ export default async function PlanesPage() {
       {/* Header */}
       <div className="px-[18px] pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Planes
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          Tus planes de comidas
+          {t("subtitle")}
         </p>
       </div>
 
@@ -44,19 +47,19 @@ export default async function PlanesPage() {
         <div className="mx-[var(--dietista-pad-card)]">
           <div className="rounded-[var(--dietista-r-lg)] border border-[var(--brand-200)] bg-[var(--brand-50)] p-[var(--dietista-pad-card)]">
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--brand-700)]">
-              Plan activo
+              {t("activePlan")}
             </p>
             <p className="mt-1 text-lg font-bold text-[var(--brand-800)]">
-              Semana del {new Date(activePlan.startDate).toLocaleDateString("es-AR")}
+              {t("weekOf")} {new Date(activePlan.startDate).toLocaleDateString("es-AR")}
             </p>
             <p className="mt-1 text-sm text-[var(--brand-600)]">
-              {activePlan.meals.length} comidas · {Math.round(activePlan.totalCalories ?? 0)} kcal/día
+              {activePlan.meals.length} {t("meals")} · {Math.round(activePlan.totalCalories ?? 0)} {t("kcalPerDay")}
             </p>
             <Link
               href={`/meal-plans/${activePlan.id}`}
               className="mt-3 inline-block rounded-lg bg-[var(--brand-500)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
             >
-              Ver plan completo
+              {t("viewFullPlan")}
             </Link>
           </div>
         </div>
@@ -71,7 +74,7 @@ export default async function PlanesPage() {
           <div className="text-center">
             <span className="text-2xl">+</span>
             <p className="mt-2 text-sm font-semibold text-[var(--dietista-text)]">
-              Crear nuevo plan
+              {t("createNewPlan")}
             </p>
           </div>
         </Link>
@@ -81,7 +84,7 @@ export default async function PlanesPage() {
       {pastPlans.length > 0 && (
         <div className="mx-[var(--dietista-pad-card)]">
           <h2 className="mb-3 text-sm font-semibold text-[var(--dietista-text)]">
-            Planes anteriores
+            {t("pastPlans")}
           </h2>
           <div className="space-y-2">
             {pastPlans.map((plan) => (
@@ -95,7 +98,7 @@ export default async function PlanesPage() {
                     {new Date(plan.startDate).toLocaleDateString("es-AR")}
                   </p>
                   <p className="text-xs text-[var(--dietista-text-2)]">
-                    {plan.status === "completed" ? "Completado" : "Borrador"}
+                    {plan.status === "completed" ? t("completed") : t("draft")}
                   </p>
                 </div>
                 <svg

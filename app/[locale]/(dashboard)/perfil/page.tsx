@@ -1,13 +1,18 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { formatMonthYear } from "@/lib/dates";
 
 export default async function PerfilPage() {
   const session = await auth();
   if (!session?.userId) {
     redirect("/login");
   }
+
+  const locale = await getLocale();
+  const t = await getTranslations("Profile");
 
   const profile = await prisma.profile.findUnique({
     where: { userId: session.userId },
@@ -18,10 +23,10 @@ export default async function PerfilPage() {
       {/* Header */}
       <div className="px-[18px] pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Perfil
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          Tu información personal y preferencias
+          {t("updateDescription")}
         </p>
       </div>
 
@@ -37,7 +42,7 @@ export default async function PerfilPage() {
                 {session.email}
               </p>
               <p className="text-xs text-[var(--dietista-text-2)]">
-                Miembro desde {new Date().toLocaleDateString("es-AR", { month: "long", year: "numeric" })}
+                {t("memberSince")} {formatMonthYear(new Date(), locale)}
               </p>
             </div>
           </div>

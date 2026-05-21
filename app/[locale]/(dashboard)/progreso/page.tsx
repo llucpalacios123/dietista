@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { WeightChart, MacroStackChart, AdherenceHeatMap } from "@/components/dietista/charts";
 
 export default async function ProgresoPage() {
@@ -8,6 +9,8 @@ export default async function ProgresoPage() {
   if (!session?.userId) {
     redirect("/login");
   }
+
+  const t = await getTranslations("Progress");
 
   // Fetch weight data for chart
   const thirtyDaysAgo = new Date();
@@ -60,10 +63,10 @@ export default async function ProgresoPage() {
       {/* Header */}
       <div className="px-[18px] pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Progreso
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          Seguimiento de tu evolución
+          {t("subtitle")}
         </p>
       </div>
 
@@ -71,7 +74,7 @@ export default async function ProgresoPage() {
       <div className="px-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
           <h2 className="mb-4 text-sm font-semibold text-[var(--dietista-text)]">
-            Peso
+            {t("weight")}
           </h2>
           <WeightChart
             data={weightChartData}
@@ -85,7 +88,7 @@ export default async function ProgresoPage() {
       <div className="px-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
           <h2 className="mb-4 text-sm font-semibold text-[var(--dietista-text)]">
-            Macros semanales
+            {t("weeklyMacros")}
           </h2>
           <MacroStackChart data={macroChartData} height={200} />
         </div>
@@ -95,7 +98,7 @@ export default async function ProgresoPage() {
       <div className="px-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
           <h2 className="mb-4 text-sm font-semibold text-[var(--dietista-text)]">
-            Adherencia
+            {t("adherence")}
           </h2>
           <AdherenceHeatMap data={adherenceData} weeks={4} />
         </div>

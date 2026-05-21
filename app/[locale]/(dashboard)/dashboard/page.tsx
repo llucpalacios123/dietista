@@ -1,22 +1,28 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
-import Link from "next/link";
+import { redirect } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { HeroMacroRing, StatCard, StreakWeek, Sparkline } from "@/components/dietista/atoms";
+
+import type { Locale } from "@/i18n/routing";
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.userId) {
-    redirect("/login");
+    redirect({ href: "/login", locale: "es" as Locale });
   }
 
+  const t = await getTranslations("Dashboard");
+  const c = await getTranslations("Common");
+
   const profile = await prisma.profile.findUnique({
-    where: { userId: session.userId },
+    where: { userId: session!.userId },
   });
 
   const activePlan = await prisma.mealPlan.findFirst({
     where: {
-      userId: session.userId,
+      userId: session!.userId,
       status: "active",
     },
     include: { meals: true },
@@ -31,7 +37,7 @@ export default async function DashboardPage() {
 
   const todayLogs = await prisma.mealLog.findMany({
     where: {
-      userId: session.userId,
+      userId: session!.userId,
       date: {
         gte: today,
         lt: tomorrow,
@@ -70,7 +76,7 @@ export default async function DashboardPage() {
   weekAgo.setDate(weekAgo.getDate() - 7);
   const weightLogs = await prisma.weightLog.findMany({
     where: {
-      userId: session.userId,
+      userId: session!.userId,
       date: { gte: weekAgo },
     },
     orderBy: { date: "asc" },
@@ -80,14 +86,14 @@ export default async function DashboardPage() {
   const weightTrend = weightLogs.map((w) => w.weight);
 
   // Calculate streak (consecutive days with meal logs)
-  const streakDays = await calculateStreak(session.userId);
+  const streakDays = await calculateStreak(session!.userId);
 
   return (
     <div className="space-y-6 px-1 pb-4">
       {/* Greeting */}
       <div className="px-[18px] pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Hola, {session.email?.split("@")[0] ?? "Usuario"}
+          {t("greeting")}, {session!.email?.split("@")[0] ?? "Usuario"}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
           {today.toLocaleDateString("es-AR", {
@@ -104,8 +110,8 @@ export default async function DashboardPage() {
           value={consumed.calories}
           max={targets.calories}
           current={consumed.calories}
-          label="calorías"
-          subtitle={`${Math.round(targets.calories - consumed.calories)} restantes`}
+          label={c("calories")}
+          subtitle={`${Math.round(targets.calories - consumed.calories)} ${c("remaining")}`}
           variant="minimal"
           size={160}
           strokeWidth={12}
@@ -114,14 +120,14 @@ export default async function DashboardPage() {
 
       {/* Macro Bars */}
       <div className="space-y-3 px-[var(--dietista-pad-card)]">
-        <MacroBarRow label="Proteína" current={consumed.protein} target={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
-        <MacroBarRow label="Carbos" current={consumed.carbs} target={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
-        <MacroBarRow label="Grasa" current={consumed.fat} target={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
+        <MacroBarRow label={c("protein")} current={consumed.protein} target={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
+        <MacroBarRow label={c("carbs")} current={consumed.carbs} target={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
+        <MacroBarRow label={c("fat")} current={consumed.fat} target={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
       </div>
 
       {/* Streak */}
       <div className="px-[var(--dietista-pad-card)]">
-        <StreakWeek days={streakDays} label="Racha semanal" />
+        <StreakWeek days={streakDays} label={t("weeklyStreak")} />
       </div>
 
       {/* Weight Sparkline */}
@@ -129,10 +135,10 @@ export default async function DashboardPage() {
         <div className="px-[var(--dietista-pad-card)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[var(--dietista-text-2)]">
-              Tendencia de peso
+              {t("weightTrend")}
             </span>
             <span className="text-xs font-semibold text-[var(--dietista-text)] tnum">
-              {weightTrend[weightTrend.length - 1]?.toFixed(1)} kg
+              {weightTrend[weightTrend.length - 1]?.toFixed(1)} {c("kilograms")}
             </span>
           </div>
           <div className="mt-2">
@@ -148,36 +154,36 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-[var(--dietista-text-3)]">
-                  Plan activo
+                  {t("activePlan")}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[var(--dietista-text)]">
-                  Semana del {new Date(activePlan.startDate).toLocaleDateString("es-AR")}
+                  {t("weekOf")} {new Date(activePlan.startDate).toLocaleDateString("es-AR")}
                 </p>
                 <p className="text-xs text-[var(--dietista-text-2)]">
-                  {activePlan.meals.length} comidas planificadas
+                  {activePlan.meals.length} {t("mealsPlanned")}
                 </p>
               </div>
               <Link
                 href="/planes"
                 className="rounded-lg bg-[var(--brand-500)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
               >
-                Ver plan
+                {t("viewPlan")}
               </Link>
             </div>
           </div>
         ) : (
           <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
             <p className="text-sm font-semibold text-[var(--dietista-text)]">
-              Sin plan activo
+              {t("noActivePlan")}
             </p>
             <p className="mt-1 text-xs text-[var(--dietista-text-2)]">
-              Generá tu primer plan de comidas personalizado.
+              {t("noPlanDescription")}
             </p>
             <Link
               href="/planes"
               className="mt-3 inline-block rounded-lg bg-[var(--brand-500)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
             >
-              Crear plan
+              {t("createPlan")}
             </Link>
           </div>
         )}
@@ -190,14 +196,14 @@ export default async function DashboardPage() {
           className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)] text-center transition-colors hover:border-[var(--brand-300)]"
         >
           <span className="text-2xl">📊</span>
-          <p className="mt-1 text-xs font-semibold text-[var(--dietista-text)]">Progreso</p>
+          <p className="mt-1 text-xs font-semibold text-[var(--dietista-text)]">{t("progress")}</p>
         </Link>
         <Link
           href="/objetivos"
           className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)] text-center transition-colors hover:border-[var(--brand-300)]"
         >
           <span className="text-2xl">🎯</span>
-          <p className="mt-1 text-xs font-semibold text-[var(--dietista-text)]">Objetivos</p>
+          <p className="mt-1 text-xs font-semibold text-[var(--dietista-text)]">{t("goals")}</p>
         </Link>
       </div>
     </div>

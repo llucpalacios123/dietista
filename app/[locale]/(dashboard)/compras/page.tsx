@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useVisionUpload } from "@/hooks/use-vision-upload";
 import { useShoppingList } from "@/hooks/use-shopping-list";
 
 export default function ComprasPage(): React.ReactElement {
+  const t = useTranslations("Shopping");
   const { state, uploadImage, reset } = useVisionUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,10 +26,10 @@ export default function ComprasPage(): React.ReactElement {
       {/* Header */}
       <div className="px-[18px] pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Compras
+          {t("title")}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          Lista de compras inteligente con IA
+          {t("subtitle")}
         </p>
       </div>
 
@@ -36,10 +38,10 @@ export default function ComprasPage(): React.ReactElement {
         <div className="rounded-[var(--dietista-r-lg)] border-2 border-dashed border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-8 text-center">
           <div className="text-4xl">📷</div>
           <p className="mt-3 text-sm font-semibold text-[var(--dietista-text)]">
-            Subí una foto de tu lista
+            {t("uploadTitle")}
           </p>
           <p className="mt-1 text-xs text-[var(--dietista-text-2)]">
-            La IA detectará los productos y creará una checklist categorizada
+            {t("uploadSubtitle")}
           </p>
 
           {state.status === "uploading" && (
@@ -50,7 +52,7 @@ export default function ComprasPage(): React.ReactElement {
                   style={{ width: `${state.progress}%` }}
                 />
               </div>
-              <p className="mt-2 text-xs text-[var(--dietista-text-2)]">Subiendo imagen...</p>
+              <p className="mt-2 text-xs text-[var(--dietista-text-2)]">{t("uploading")}</p>
             </div>
           )}
 
@@ -62,7 +64,7 @@ export default function ComprasPage(): React.ReactElement {
                   style={{ width: `${state.progress}%` }}
                 />
               </div>
-              <p className="mt-2 text-xs text-[var(--dietista-text-2)]">Procesando con IA...</p>
+              <p className="mt-2 text-xs text-[var(--dietista-text-2)]">{t("processing")}</p>
             </div>
           )}
 
@@ -74,7 +76,7 @@ export default function ComprasPage(): React.ReactElement {
                 onClick={reset}
                 className="mt-2 text-xs font-medium text-[var(--brand-600)]"
               >
-                Intentar de nuevo
+                {t("retry")}
               </button>
             </div>
           )}
@@ -95,7 +97,7 @@ export default function ComprasPage(): React.ReactElement {
             disabled={state.status === "uploading" || state.status === "processing"}
             className="mt-4 rounded-lg bg-[var(--brand-500)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-600)] disabled:opacity-50"
           >
-            Elegir foto
+            {t("choosePhoto")}
           </button>
         </div>
       </div>
@@ -104,10 +106,10 @@ export default function ComprasPage(): React.ReactElement {
       <div className="mx-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
           <h2 className="mb-3 text-sm font-semibold text-[var(--dietista-text)]">
-            Sin listas activas
+            {t("noActiveLists")}
           </h2>
           <p className="text-xs text-[var(--dietista-text-2)]">
-            Creá una lista desde tu plan de comidas o subí una foto para detectar productos automáticamente.
+            {t("noActiveListsDescription")}
           </p>
         </div>
       </div>
@@ -116,12 +118,13 @@ export default function ComprasPage(): React.ReactElement {
 }
 
 function ShoppingListView({ id, onBack }: { id: string; onBack: () => void }): React.ReactElement {
+  const t = useTranslations("Shopping");
   const { data, isLoading, toggleItem } = useShoppingList(id);
 
   if (isLoading || !data) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-sm text-[var(--dietista-text-3)]">Cargando lista...</p>
+        <p className="text-sm text-[var(--dietista-text-3)]">{t("loadingList")}</p>
       </div>
     );
   }
@@ -135,14 +138,14 @@ function ShoppingListView({ id, onBack }: { id: string; onBack: () => void }): R
   }, {});
 
   const categoryLabels: Record<string, string> = {
-    frutas_verduras: "Frutas y Verduras",
-    carnes: "Carnes",
-    lacteos: "Lácteos",
-    panaderia: "Panadería",
-    almacen: "Almacén",
-    bebidas: "Bebidas",
-    limpieza: "Limpieza",
-    otros: "Otros",
+    frutas_verduras: t("categories.frutas_verduras"),
+    carnes: t("categories.carnes"),
+    lacteos: t("categories.lacteos"),
+    panaderia: t("categories.panaderia"),
+    almacen: t("categories.almacen"),
+    bebidas: t("categories.bebidas"),
+    limpieza: t("categories.limpieza"),
+    otros: t("categories.otros"),
   };
 
   return (
@@ -152,12 +155,12 @@ function ShoppingListView({ id, onBack }: { id: string; onBack: () => void }): R
           type="button"
           onClick={onBack}
           className="rounded-lg p-2 text-[var(--dietista-text-2)] hover:bg-[var(--dietista-surface-2)]"
-          aria-label="Volver"
+          aria-label={t("back")}
         >
           ←
         </button>
         <h1 className="m-0 text-[28px] font-bold leading-tight tracking-[-0.025em] text-[var(--dietista-text)]">
-          Lista de compras
+          {t("shoppingList")}
         </h1>
       </div>
 
@@ -166,7 +169,7 @@ function ShoppingListView({ id, onBack }: { id: string; onBack: () => void }): R
         <div className="mx-[var(--dietista-pad-card)]">
           <div className="rounded-[var(--dietista-r-md)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--dietista-text-2)]">Presupuesto</span>
+              <span className="text-xs font-medium text-[var(--dietista-text-2)]">{t("budget")}</span>
               <span className="text-sm font-semibold tnum text-[var(--dietista-text)]">
                 ${data.totalEstimate?.toFixed(2) ?? "0.00"} / ${data.budget.toFixed(2)}
               </span>

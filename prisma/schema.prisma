@@ -142,6 +142,7 @@ model Profile {
   weeklyBudget       Float?
   trainingRoutine    String?
   favoriteFoods      String[]          @default([])
+  locale             String            @default("es")
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 }
@@ -178,6 +179,7 @@ model Meal {
   carbs           Float
   fat             Float
   selectedOptions Json?    // [{foodOptionId, quantity, notes}]
+  translations    Json?
 }
 
 model MealLog {
@@ -220,6 +222,7 @@ model MealPlanTemplate {
   meals       MealTemplate[]
   recipes     Recipe[]
   mealPlans   MealPlan[]
+  translations Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -232,6 +235,7 @@ model MealTemplate {
   order      Int              // 1, 2, 3, 4
   name       String           // e.g., "Desayuno", "Almuerzo"
   groups     MealTemplateGroup[]
+  translations Json?
 }
 
 model MealTemplateGroup {
@@ -254,6 +258,7 @@ model FoodOption {
   protein         Float?
   carbs           Float?
   fat             Float?
+  translations    Json?
 }
 
 model Recipe {
@@ -265,6 +270,7 @@ model Recipe {
   ingredients String[] @default([])
   steps       String[] @default([])
   mealType    MealType?
+  translations Json?
 }
 
 // ─── Conversation State (Nutritionist Wizard) ────────────────────────────
