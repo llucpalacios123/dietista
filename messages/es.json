@@ -196,7 +196,24 @@
     "interpreting": "Interpretando...",
     "logMealSuccess": "¡Comida registrada exitosamente!",
     "noMealLogs": "Sin registros de comida",
-    "today": "Hoy"
+    "today": "Hoy",
+    "filterByDateRange": "Filtrar por Rango de Fechas",
+    "from": "Desde",
+    "to": "Hasta",
+    "apply": "Aplicar",
+    "noMealLogsInRange": "Sin registros de comida en este rango de fechas.",
+    "loadingMealLogs": "Cargando registros...",
+    "failedToLoad": "Error al cargar registros",
+    "lowConfidenceNote": "baja confianza",
+    "generateAndManage": "Generá y administrá tus planes de comidas semanales",
+    "generateMealPlan": "Generar Plan de Comidas",
+    "generatingMealPlan": "Generando tu plan de comidas...",
+    "queuedForProcessing": "En cola para procesar",
+    "aiCreatingPlan": "La IA está creando tu plan personalizado",
+    "starting": "Iniciando...",
+    "draftStatusNote": "Este plan está en estado borrador. Revisalo y confirmalo para activarlo.",
+    "confirmPlan": "Confirmar Plan",
+    "generateNewPlan": "Generar Nuevo Plan"
   },
   "Chat": {
     "generating": "Creando tu menú personalizado",
@@ -222,7 +239,9 @@
     "network": "Error de conexión. Verificá tu internet.",
     "notFound": "No encontrado",
     "unauthorized": "No autorizado",
-    "serverError": "Error del servidor"
+    "serverError": "Error del servidor",
+    "authError": "Error de Autenticación",
+    "backToLogin": "Volver al inicio de sesión"
   },
   "Locale": {
     "switchTo": "English",

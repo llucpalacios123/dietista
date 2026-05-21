@@ -196,7 +196,24 @@
     "interpreting": "Interpreting...",
     "logMealSuccess": "Meal logged successfully!",
     "noMealLogs": "No meal logs",
-    "today": "Today"
+    "today": "Today",
+    "filterByDateRange": "Filter by Date Range",
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "noMealLogsInRange": "No meal logs found for this date range.",
+    "loadingMealLogs": "Loading meal logs...",
+    "failedToLoad": "Failed to load meal logs",
+    "lowConfidenceNote": "low confidence",
+    "generateAndManage": "Generate and manage your weekly meal plans",
+    "generateMealPlan": "Generate Meal Plan",
+    "generatingMealPlan": "Generating your meal plan...",
+    "queuedForProcessing": "Queued for processing",
+    "aiCreatingPlan": "AI is creating your personalized plan",
+    "starting": "Starting...",
+    "draftStatusNote": "This plan is in draft status. Review it and confirm to activate.",
+    "confirmPlan": "Confirm Plan",
+    "generateNewPlan": "Generate New Plan"
   },
   "Chat": {
     "generating": "Creating your personalized menu",
@@ -222,7 +239,9 @@
     "network": "Connection error. Check your internet.",
     "notFound": "Not found",
     "unauthorized": "Unauthorized",
-    "serverError": "Server error"
+    "serverError": "Server error",
+    "authError": "Authentication Error",
+    "backToLogin": "Back to Login"
   },
   "Locale": {
     "switchTo": "Español",

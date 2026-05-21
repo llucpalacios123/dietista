@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { registerSchema, type RegisterSchema } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +21,9 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 
-export function RegisterForm() {
+export function RegisterForm(): React.ReactElement {
   const router = useRouter();
+  const t = useTranslations("Auth");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,7 +48,7 @@ export function RegisterForm() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        setError(data.error || "Registration failed");
+        setError(data.error || t("registrationFailed"));
         return;
       }
 
@@ -61,14 +63,14 @@ export function RegisterForm() {
       });
 
       if (result?.error) {
-        setError("Account created but sign in failed. Please log in manually.");
+        setError(t("accountCreatedSignInFailed"));
         return;
       }
 
       router.push("/profile");
       router.refresh();
     } catch {
-      setError("An unexpected error occurred. Please try again.");
+      setError(t("unexpectedError"));
     } finally {
       setIsLoading(false);
     }
@@ -77,9 +79,9 @@ export function RegisterForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create Account</CardTitle>
+        <CardTitle>{t("createAccountTitle")}</CardTitle>
         <CardDescription>
-          Enter your email and password to get started
+          {t("createAccountDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -95,11 +97,11 @@ export function RegisterForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("email")}</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder={t("emailPlaceholder")}
                       disabled={isLoading}
                       {...field}
                     />
@@ -113,11 +115,11 @@ export function RegisterForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t("password")}</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="Min 8 chars, 1 uppercase, 1 number"
+                      placeholder={t("passwordHint")}
                       disabled={isLoading}
                       {...field}
                     />
@@ -127,14 +129,14 @@ export function RegisterForm() {
               )}
             />
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Account"}
+              {isLoading ? t("creatingAccount") : t("createAccount")}
             </Button>
           </form>
         </Form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          {t("hasAccount")}{" "}
           <Link href="/login" className="text-primary hover:underline">
-            Sign in
+            {t("signInLink")}
           </Link>
         </p>
       </CardContent>

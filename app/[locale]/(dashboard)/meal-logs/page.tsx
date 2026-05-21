@@ -1,13 +1,16 @@
 import { MealLogForm } from "@/components/meal-logs/meal-log-form";
 import { MealLogList } from "@/components/meal-logs/meal-log-list";
+import { getTranslations } from "next-intl/server";
 
-export default function MealLogsPage() {
+export default async function MealLogsPage(): Promise<React.ReactElement> {
+  const t = await getTranslations("MealLog");
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Meal Logs</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="mt-1 text-muted-foreground">
-          Track your daily food intake with AI-powered nutrition analysis
+          {t("generateAndManage")}
         </p>
       </div>
 
