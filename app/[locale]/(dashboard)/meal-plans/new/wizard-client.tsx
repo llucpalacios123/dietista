@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { NutritionistStep } from "@/lib/schemas";
 import type { UserProfileSchema, NutritionistPreferencesSchema } from "@/lib/schemas";
 import type { InternalMealPlan, MealModification, ModificationReason } from "@/types/meal-plan";
@@ -17,15 +18,6 @@ import { generateWizardPlan, updateWizardProfile } from "@/actions/wizard";
 import { CheckCircle2, ChevronRight } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────
-
-const STEP_LABELS: Record<NutritionistStep, string> = {
-  PROFILE_REVIEW: "Paso 1 de 6 — Revisar perfil",
-  PROFILE_MODIFICATION: "Paso 2 de 6 — Modificar perfil",
-  PREFERENCES_COLLECTION: "Paso 3 de 6 — Preferencias",
-  GENERATION: "Paso 4 de 6 — Creando plan",
-  REVIEW_MODIFICATION: "Paso 5 de 6 — Revisar plan",
-  CONFIRMATION: "Paso 6 de 6 — Confirmado",
-};
 
 const STEP_NUMBER: Record<NutritionistStep, number> = {
   PROFILE_REVIEW: 1,
@@ -44,7 +36,18 @@ interface WizardClientProps {
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────
 
-function ProgressBar({ step }: { step: NutritionistStep }) {
+function ProgressBar({ step }: { step: NutritionistStep }): React.ReactElement {
+  const t = useTranslations("Wizard");
+
+  const STEP_LABELS: Record<NutritionistStep, string> = {
+    PROFILE_REVIEW: t("step1"),
+    PROFILE_MODIFICATION: t("step2"),
+    PREFERENCES_COLLECTION: t("step3"),
+    GENERATION: t("step4"),
+    REVIEW_MODIFICATION: t("step5"),
+    CONFIRMATION: t("step6"),
+  };
+
   const currentNum = STEP_NUMBER[step];
   const totalSteps = 6;
   const pct = Math.round((currentNum / totalSteps) * 100);
@@ -54,7 +57,7 @@ function ProgressBar({ step }: { step: NutritionistStep }) {
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">{STEP_LABELS[step]}</span>
         <span className="text-muted-foreground">
-          {currentNum} de {totalSteps}
+          {currentNum} {t("stepOf")} {totalSteps}
         </span>
       </div>
       <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -73,19 +76,20 @@ function ConfirmationView({
   springBootJson,
 }: {
   springBootJson: Record<string, unknown>;
-}) {
+}): React.ReactElement {
+  const t = useTranslations("Wizard");
+
   return (
     <Card className="border-green-300 bg-green-50 dark:bg-green-950/20">
       <CardContent className="py-8 space-y-4">
         <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
           <CheckCircle2 className="h-6 w-6" />
           <h3 className="text-lg font-semibold">
-            Plan confirmado exitosamente
+            {t("planConfirmed")}
           </h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Tu plan semanal ha sido guardado. Serás redirigido a la página de
-          planes en unos segundos.
+          {t("planConfirmedDescription")}
         </p>
         <div className="rounded-md bg-background border p-4 overflow-auto max-h-64">
           <pre className="text-xs whitespace-pre-wrap font-mono">
@@ -110,8 +114,10 @@ function ConfirmationView({
  * - Step 5: PlanReview
  * - Step 6: Inline confirmation with JSON preview
  */
-export function WizardClient({ profile }: WizardClientProps) {
+export function WizardClient({ profile }: WizardClientProps): React.ReactElement {
   const router = useRouter();
+  const t = useTranslations("Wizard");
+  const tp = useTranslations("MealPlans");
 
   const [step, setStep] = useState<NutritionistStep>("PROFILE_REVIEW");
   const [editingFields, setEditingFields] = useState<
@@ -199,12 +205,12 @@ export function WizardClient({ profile }: WizardClientProps) {
     } catch (err) {
       clearTimeout(timeoutId);
       setError(
-        err instanceof Error ? err.message : "Failed to generate meal plan"
+        err instanceof Error ? err.message : tp("generateError")
       );
       setTimedOut(true);
       setGenerating(false);
     }
-  }, []);
+  }, [t, tp]);
 
   // Trigger generation when entering Step 4
   useEffect(() => {
@@ -266,9 +272,9 @@ export function WizardClient({ profile }: WizardClientProps) {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold">Nuevo Plan Nutricional</h1>
+        <h1 className="text-3xl font-bold">{t("newPlanTitle")}</h1>
         <p className="mt-1 text-muted-foreground">
-          Completá los pasos para generar tu plan de comidas personalizado.
+          {t("newPlanSubtitle")}
         </p>
       </div>
 
@@ -286,7 +292,7 @@ export function WizardClient({ profile }: WizardClientProps) {
               className="mt-2"
               onClick={handleRetry}
             >
-              Reintentar
+              {t("retry")}
             </Button>
           )}
         </Alert>
@@ -346,9 +352,9 @@ export function WizardClient({ profile }: WizardClientProps) {
         <Card>
           <CardContent className="py-8 text-center space-y-2">
             <CheckCircle2 className="h-6 w-6 mx-auto text-green-600" />
-            <p className="font-medium">Plan confirmado exitosamente</p>
+            <p className="font-medium">{t("planConfirmed")}</p>
             <p className="text-sm text-muted-foreground">
-              Redirigiendo a la página de planes...
+              {t("redirectingToPlans")}
             </p>
           </CardContent>
         </Card>
@@ -358,7 +364,7 @@ export function WizardClient({ profile }: WizardClientProps) {
       {step === "REVIEW_MODIFICATION" && !mealPlan && (
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">Cargando plan...</p>
+            <p className="text-muted-foreground">{t("loadingPlan")}</p>
           </CardContent>
         </Card>
       )}

@@ -474,4 +474,13 @@
       "often": "Seguido"
     }
   },
+  "MealPlans": {
+    "title": "Planes de Comidas",
+    "generateError": "Error al generar el plan de comidas",
+    "confirmError": "Error al confirmar el plan",
+    "generationFailed": "Generación fallida",
+    "abbrProtein": "P:",
+    "abbrCarbs": "C:",
+    "abbrFat": "G:"
+  }
 }

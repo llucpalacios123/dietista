@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -47,7 +48,12 @@ interface JobStatusResponse {
 
 // ─── Page Component ───────────────────────────────────────────────────────
 
-export default function MealPlansPage() {
+export default function MealPlansPage(): React.ReactElement {
+  const t = useTranslations("MealPlans");
+  const tCommon = useTranslations("Common");
+  const tLog = useTranslations("MealLog");
+  const tErr = useTranslations("Errors");
+
   const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -60,7 +66,7 @@ export default function MealPlansPage() {
     try {
       const res = await fetch("/api/meal-plans");
       if (res.ok) {
-        const json = await res.json();
+        const json: { data: MealPlan | null } = await res.json();
         setMealPlan(json.data);
       } else if (res.status === 404) {
         setMealPlan(null);
@@ -93,7 +99,7 @@ export default function MealPlansPage() {
             setJobId(null);
             setGenerating(false);
           } else if (json.data.status === "failed") {
-            setError(json.data.error ?? "Generation failed");
+            setError(json.data.error ?? t("generationFailed"));
             setGenerating(false);
             setJobId(null);
           }
@@ -104,7 +110,7 @@ export default function MealPlansPage() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [jobId, jobStatus, fetchPlan]);
+  }, [jobId, jobStatus, fetchPlan, t]);
 
   // Generate new plan
   const handleGenerate = async () => {
@@ -118,8 +124,8 @@ export default function MealPlansPage() {
       });
 
       if (!res.ok) {
-        const json = await res.json();
-        setError(json.message ?? "Failed to generate meal plan");
+        const json: { message?: string } = await res.json();
+        setError(json.message ?? t("generateError"));
         setGenerating(false);
         return;
       }
@@ -128,7 +134,7 @@ export default function MealPlansPage() {
       setJobId(json.data.jobId);
       setJobStatus("pending");
     } catch {
-      setError("Network error. Please try again.");
+      setError(tErr("network"));
       setGenerating(false);
     }
   };
@@ -143,14 +149,14 @@ export default function MealPlansPage() {
       });
 
       if (!res.ok) {
-        const json = await res.json();
-        setError(json.message ?? "Failed to confirm plan");
+        const json: { message?: string } = await res.json();
+        setError(json.message ?? t("confirmError"));
         return;
       }
 
       await fetchPlan();
     } catch {
-      setError("Network error. Please try again.");
+      setError(tErr("network"));
     }
   };
 
@@ -158,8 +164,8 @@ export default function MealPlansPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Meal Plans</h1>
-          <p className="mt-1 text-muted-foreground">Loading...</p>
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
+          <p className="mt-1 text-muted-foreground">{tCommon("loading")}</p>
         </div>
       </div>
     );
@@ -169,13 +175,15 @@ export default function MealPlansPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Meal Plans</h1>
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
           <p className="mt-1 text-muted-foreground">
-            Generate and manage your weekly meal plans
+            {tLog("generateAndManage")}
           </p>
         </div>
         {!generating && !mealPlan && (
-          <Button onClick={handleGenerate}>Generate Meal Plan</Button>
+          <Button onClick={handleGenerate}>
+            {tLog("generateMealPlan")}
+          </Button>
         )}
       </div>
 
@@ -191,11 +199,11 @@ export default function MealPlansPage() {
             <div className="text-center space-y-4">
               <div className="animate-spin mx-auto h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
               <div>
-                <p className="font-medium">Generating your meal plan...</p>
+                <p className="font-medium">{tLog("generatingMealPlan")}</p>
                 <p className="text-sm text-muted-foreground">
-                  {jobStatus === "pending" && "Queued for processing"}
-                  {jobStatus === "processing" && "AI is creating your personalized plan"}
-                  {!jobStatus && "Starting..."}
+                  {jobStatus === "pending" && tLog("queuedForProcessing")}
+                  {jobStatus === "processing" && tLog("aiCreatingPlan")}
+                  {!jobStatus && tLog("starting")}
                 </p>
               </div>
             </div>
@@ -209,11 +217,9 @@ export default function MealPlansPage() {
             <Card>
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm">
-                    This plan is in <strong>draft</strong> status. Review it and confirm to activate.
-                  </p>
+                  <p className="text-sm">{tLog("draftStatusNote")}</p>
                   <Button onClick={handleConfirm} disabled={mealPlan.meals.length === 0}>
-                    Confirm Plan
+                    {tLog("confirmPlan")}
                   </Button>
                 </div>
               </CardContent>
@@ -225,7 +231,7 @@ export default function MealPlansPage() {
           {mealPlan.status === "active" && (
             <div className="flex justify-end">
               <Button onClick={handleGenerate} variant="outline">
-                Generate New Plan
+                {tLog("generateNewPlan")}
               </Button>
             </div>
           )}

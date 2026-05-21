@@ -9,7 +9,7 @@ export default async function MealPlanDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
-}) {
+}): Promise<React.ReactElement> {
   const session = await auth();
   if (!session?.userId) redirect("/login");
 

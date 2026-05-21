@@ -49,7 +49,7 @@ function profileToUserProfileSchema(profile: Profile): UserProfileSchema {
  * Redirects to /profile if no profile exists (prerequisite for wizard).
  * Passes profile data to the client-side WizardClient state machine.
  */
-export default async function MealPlansNewPage() {
+export default async function MealPlansNewPage(): Promise<React.ReactElement> {
   const { profile } = await getProfile();
 
   if (!profile) {

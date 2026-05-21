@@ -474,4 +474,13 @@
       "often": "Often"
     }
   },
+  "MealPlans": {
+    "title": "Meal Plans",
+    "generateError": "Failed to generate meal plan",
+    "confirmError": "Failed to confirm plan",
+    "generationFailed": "Generation failed",
+    "abbrProtein": "P:",
+    "abbrCarbs": "C:",
+    "abbrFat": "F:"
+  }
 }
