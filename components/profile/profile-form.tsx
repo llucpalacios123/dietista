@@ -5,6 +5,7 @@ import type { JSX } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import type { ProfileSchema } from "@/lib/schemas";
 import { profileSchema } from "@/lib/schemas";
 import { createProfile, updateProfile, type ProfileActionResult } from "@/actions/profile";
@@ -83,6 +84,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element {
+  const t = useTranslations("Profile");
   const isUpdate = !!existingProfile;
   const action = isUpdate ? updateProfile : createProfile;
   const router = useRouter();
@@ -177,11 +179,9 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isUpdate ? "Update Profile" : "Create Profile"}</CardTitle>
+        <CardTitle>{isUpdate ? t("updateProfile") : t("createProfile")}</CardTitle>
         <CardDescription>
-          {isUpdate
-            ? "Edit your nutritional parameters for personalized meal plans."
-            : "Set up your nutritional profile to generate personalized meal plans."}
+          {isUpdate ? t("updateDescription") : t("createDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -193,14 +193,14 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
         {result?.success && !isUpdate && (
           <Alert className="mb-6 border-green-200 bg-green-50">
             <AlertDescription className="text-green-800">
-              Profile created successfully!
+              {t("createSuccess")}
             </AlertDescription>
           </Alert>
         )}
         {result?.success && isUpdate && (
           <Alert className="mb-6 border-green-200 bg-green-50">
             <AlertDescription className="text-green-800">
-              Profile updated successfully!
+              {t("updateSuccess")}
             </AlertDescription>
           </Alert>
         )}
@@ -214,7 +214,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                 name="weight"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Weight (kg)</FormLabel>
+                    <FormLabel>{t("weight")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -237,7 +237,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                 name="height"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Height (cm)</FormLabel>
+                    <FormLabel>{t("height")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -260,7 +260,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                 name="age"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Age</FormLabel>
+                    <FormLabel>{t("age")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -282,17 +282,17 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                 name="sex"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sex</FormLabel>
+                    <FormLabel>{t("sex")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select sex" />
+                          <SelectValue placeholder={t("selectSex")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="male">{t("male")}</SelectItem>
+                        <SelectItem value="female">{t("female")}</SelectItem>
+                        <SelectItem value="other">{t("other")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -305,17 +305,17 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                 name="goal"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Goal</FormLabel>
+                    <FormLabel>{t("goal")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select goal" />
+                          <SelectValue placeholder={t("selectGoal")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="lose">Lose weight</SelectItem>
-                        <SelectItem value="maintain">Maintain weight</SelectItem>
-                        <SelectItem value="gain">Gain weight</SelectItem>
+                        <SelectItem value="lose">{t("lose")}</SelectItem>
+                        <SelectItem value="maintain">{t("maintain")}</SelectItem>
+                        <SelectItem value="gain">{t("gain")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -328,19 +328,19 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                 name="activityLevel"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Activity Level</FormLabel>
+                    <FormLabel>{t("activityLevel")}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select activity level" />
+                          <SelectValue placeholder={t("selectActivity")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
-                        <SelectItem value="light">Light (1-3 days/week)</SelectItem>
-                        <SelectItem value="moderate">Moderate (3-5 days/week)</SelectItem>
-                        <SelectItem value="active">Active (6-7 days/week)</SelectItem>
-                        <SelectItem value="veryActive">Very Active (intense daily)</SelectItem>
+                        <SelectItem value="sedentary">{t("sedentary")}</SelectItem>
+                        <SelectItem value="light">{t("light")}</SelectItem>
+                        <SelectItem value="moderate">{t("moderate")}</SelectItem>
+                        <SelectItem value="active">{t("active")}</SelectItem>
+                        <SelectItem value="veryActive">{t("veryActive")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -357,34 +357,34 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                 size="sm"
                 onClick={() => setShowAdvanced(!showAdvanced)}
               >
-                {showAdvanced ? "Hide" : "Show"} advanced options
+                {showAdvanced ? t("hide") : t("show")} {t("advancedOptions")}
               </Button>
             </div>
 
             {showAdvanced && (
               <div className="space-y-6 rounded-lg border p-4">
-                <h3 className="text-sm font-medium">Diet Preferences</h3>
+                <h3 className="text-sm font-medium">{t("dietPreferences")}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="dietType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Diet Type</FormLabel>
+                        <FormLabel>{t("dietType")}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value ?? ""}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select diet type" />
+                              <SelectValue placeholder={t("selectDietType")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="omnivore">Omnivore</SelectItem>
-                            <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                            <SelectItem value="vegan">Vegan</SelectItem>
-                            <SelectItem value="pescatarian">Pescatarian</SelectItem>
+                            <SelectItem value="omnivore">{t("omnivore")}</SelectItem>
+                            <SelectItem value="vegetarian">{t("vegetarian")}</SelectItem>
+                            <SelectItem value="vegan">{t("vegan")}</SelectItem>
+                            <SelectItem value="pescatarian">{t("pescatarian")}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -397,7 +397,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="mealsPerDay"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Meals per Day</FormLabel>
+                        <FormLabel>{t("mealsPerDay")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -413,7 +413,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                             }
                           />
                         </FormControl>
-                        <FormDescription>1 to 6 meals</FormDescription>
+                        <FormDescription>{t("mealsPerDayHint")}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -432,7 +432,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                             className="h-4 w-4 rounded border-gray-300"
                           />
                         </FormControl>
-                        <FormLabel className="!mt-0">Include Snacks</FormLabel>
+                        <FormLabel className="!mt-0">{t("includeSnacks")}</FormLabel>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -443,20 +443,20 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="varietyPreference"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Variety Preference</FormLabel>
+                        <FormLabel>{t("varietyPreference")}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value ?? ""}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select variety level" />
+                              <SelectValue placeholder={t("selectVariety")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="low">{t("low")}</SelectItem>
+                            <SelectItem value="medium">{t("medium")}</SelectItem>
+                            <SelectItem value="high">{t("high")}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -465,14 +465,14 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                   />
                 </div>
 
-                <h3 className="text-sm font-medium pt-2">Cooking &amp; Eating Habits</h3>
+                <h3 className="text-sm font-medium pt-2">{t("cookingHabits")}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="cookingTimeAvailable"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Cooking Time (minutes)</FormLabel>
+                        <FormLabel>{t("cookingTime")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -496,21 +496,21 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="eatingOutFrequency"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Eating Out Frequency</FormLabel>
+                        <FormLabel>{t("eatingOutFrequency")}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value ?? ""}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="How often?" />
+                              <SelectValue placeholder={t("howOften")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="never">Never</SelectItem>
-                            <SelectItem value="rarely">Rarely</SelectItem>
-                            <SelectItem value="sometimes">Sometimes</SelectItem>
-                            <SelectItem value="often">Often</SelectItem>
+                            <SelectItem value="never">{t("never")}</SelectItem>
+                            <SelectItem value="rarely">{t("rarely")}</SelectItem>
+                            <SelectItem value="sometimes">{t("sometimes")}</SelectItem>
+                            <SelectItem value="often">{t("often")}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -523,20 +523,20 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="mealComplexity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Meal Complexity</FormLabel>
+                        <FormLabel>{t("mealComplexity")}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value ?? ""}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select complexity" />
+                              <SelectValue placeholder={t("selectComplexity")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="simple">Simple (quick meals)</SelectItem>
-                            <SelectItem value="moderate">Moderate</SelectItem>
-                            <SelectItem value="advanced">Advanced (gourmet)</SelectItem>
+                            <SelectItem value="simple">{t("simple")}</SelectItem>
+                            <SelectItem value="moderate">{t("complexityModerate")}</SelectItem>
+                            <SelectItem value="advanced">{t("advanced")}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -545,7 +545,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                   />
                 </div>
 
-                <h3 className="text-sm font-medium pt-2">Budget &amp; Training</h3>
+                <h3 className="text-sm font-medium pt-2">{t("budgetTraining")}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -560,7 +560,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                             className="h-4 w-4 rounded border-gray-300"
                           />
                         </FormControl>
-                        <FormLabel className="!mt-0">Budget Friendly</FormLabel>
+                        <FormLabel className="!mt-0">{t("budgetFriendly")}</FormLabel>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -571,7 +571,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="weeklyBudget"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Weekly Budget ($)</FormLabel>
+                        <FormLabel>{t("weeklyBudget")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -596,10 +596,10 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="trainingRoutine"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-2">
-                        <FormLabel>Training Routine</FormLabel>
+                        <FormLabel>{t("trainingRoutine")}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g., strength 4x/week, cardio 2x/week"
+                            placeholder={t("trainingPlaceholder")}
                             {...field}
                             value={field.value ?? ""}
                           />
@@ -610,14 +610,14 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                   />
                 </div>
 
-                <h3 className="text-sm font-medium pt-2">Target Macros (optional)</h3>
+                <h3 className="text-sm font-medium pt-2">{t("targetMacros")}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="targetCalories"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Calories (kcal)</FormLabel>
+                        <FormLabel>{t("targetCalories")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -641,7 +641,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="targetProtein"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Protein (g)</FormLabel>
+                        <FormLabel>{t("targetProtein")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -666,7 +666,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="targetCarbs"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Carbs (g)</FormLabel>
+                        <FormLabel>{t("targetCarbs")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -691,7 +691,7 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                     name="targetFat"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Fat (g)</FormLabel>
+                        <FormLabel>{t("targetFat")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -712,42 +712,42 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
                   />
                 </div>
 
-                <h3 className="text-sm font-medium pt-2">Food Preferences &amp; Restrictions</h3>
+                <h3 className="text-sm font-medium pt-2">{t("foodPreferences")}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormItem>
-                    <FormLabel>Allergies</FormLabel>
+                    <FormLabel>{t("allergies")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="peanuts, shellfish, gluten"
+                        placeholder={t("allergiesPlaceholder")}
                         value={allergiesStr}
                         onChange={(e) => setAllergiesStr(e.target.value)}
                       />
                     </FormControl>
-                    <FormDescription>Comma-separated list</FormDescription>
+                    <FormDescription>{t("commaSeparated")}</FormDescription>
                   </FormItem>
 
                   <FormItem>
-                    <FormLabel>Forbidden Foods</FormLabel>
+                    <FormLabel>{t("forbiddenFoods")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="pork, dairy, eggs"
+                        placeholder={t("forbiddenPlaceholder")}
                         value={forbiddenFoodsStr}
                         onChange={(e) => setForbiddenFoodsStr(e.target.value)}
                       />
                     </FormControl>
-                    <FormDescription>Comma-separated list</FormDescription>
+                    <FormDescription>{t("commaSeparated")}</FormDescription>
                   </FormItem>
 
                   <FormItem>
-                    <FormLabel>Favorite Foods</FormLabel>
+                    <FormLabel>{t("favoriteFoods")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="chicken, salmon, avocado"
+                        placeholder={t("favoritesPlaceholder")}
                         value={favoriteFoodsStr}
                         onChange={(e) => setFavoriteFoodsStr(e.target.value)}
                       />
                     </FormControl>
-                    <FormDescription>Comma-separated list</FormDescription>
+                    <FormDescription>{t("commaSeparated")}</FormDescription>
                   </FormItem>
                 </div>
               </div>
@@ -755,10 +755,10 @@ export function ProfileForm({ existingProfile }: ProfileFormProps): JSX.Element 
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting
-                ? "Saving..."
+                ? t("saving")
                 : isUpdate
-                  ? "Update Profile"
-                  : "Create Profile"}
+                  ? t("updateProfile")
+                  : t("createProfile")}
             </Button>
           </form>
         </Form>
