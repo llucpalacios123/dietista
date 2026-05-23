@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit2, Check, User, Target, Activity, Dumbbell, Utensils } from "lucide-react";
+import { Edit2, Check, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { UserProfileSchema } from "@/lib/schemas";
 
