@@ -22,6 +22,8 @@
     "close": "Cerrar",
     "retry": "Reintentar",
     "noData": "Sin datos",
+    "yes": "Sí",
+    "no": "No",
     "calories": "calorías",
     "protein": "Proteína",
     "carbs": "Carbos",
@@ -475,7 +477,8 @@
       "rarely": "Rara vez",
       "sometimes": "A veces",
       "often": "Seguido"
-    }
+    },
+    "mealsCount": "{count, plural, one {# comida} other {# comidas}}"
   },
   "MealPlans": {
     "title": "Planes de Comidas",

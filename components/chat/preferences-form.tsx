@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 import type { NutritionistPreferencesSchema } from "@/lib/schemas";
 import { ChefHat, BadgeDollarSign, Apple, Clock, Heart } from "lucide-react";
 
@@ -41,6 +42,14 @@ const DEFAULTS: NutritionistPreferencesSchema = {
   cookingTimeAvailable: null,
 };
 
+const VARIETY_KEY_MAP: Record<string, string> = {
+  low: "varietyLow",
+  medium: "varietyMedium",
+  high: "varietyHigh",
+};
+
+const MEAL_COUNT_OPTIONS = [2, 3, 4, 5, 6] as const;
+
 // ─── Component ────────────────────────────────────────────────────────────
 
 /**
@@ -54,6 +63,8 @@ export function PreferencesForm({
   initialValues = {},
   onSubmit,
 }: PreferencesFormProps) {
+  const t = useTranslations("Preferences");
+  const tc = useTranslations("Common");
   const [values, setValues] = useState<NutritionistPreferencesSchema>({
     ...DEFAULTS,
     ...initialValues,
@@ -61,6 +72,8 @@ export function PreferencesForm({
   const [allergyInput, setAllergyInput] = useState("");
   const [dislikeInput, setDislikeInput] = useState("");
   const [favoriteInput, setFavoriteInput] = useState("");
+
+  const eatingOutLabels = t.raw("eatingOutFrequency") as unknown as Record<string, string>;
 
   const update = useCallback(
     <K extends keyof NutritionistPreferencesSchema>(
@@ -108,10 +121,10 @@ export function PreferencesForm({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <ChefHat className="h-5 w-5" />
-          Tus Preferencias Alimenticias
+          {t("title")}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Contame qué te gusta, qué no, y cómo preferís tus comidas.
+          {t("subtitle")}
         </p>
       </CardHeader>
       <CardContent>
@@ -120,11 +133,11 @@ export function PreferencesForm({
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <Apple className="h-4 w-4" />
-              Alergias alimentarias
+              {t("allergies")}
             </Label>
             <div className="flex gap-2">
               <Input
-                placeholder="Ej: maní, mariscos"
+                placeholder={t("allergiesPlaceholder")}
                 value={allergyInput}
                 onChange={(e) => setAllergyInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -140,7 +153,7 @@ export function PreferencesForm({
                 size="sm"
                 onClick={() => addItem("allergies", allergyInput, () => setAllergyInput(""))}
               >
-                Agregar
+                {t("add")}
               </Button>
             </div>
             {values.allergies.length > 0 && (
@@ -155,7 +168,7 @@ export function PreferencesForm({
                       type="button"
                       onClick={() => removeItem("allergies", i)}
                       className="hover:text-destructive"
-                      aria-label={`Eliminar ${a}`}
+                      aria-label={`${t("removeLabel")} ${a}`}
                     >
                       ×
                     </button>
@@ -167,10 +180,10 @@ export function PreferencesForm({
 
           {/* Disliked Foods */}
           <div className="space-y-2">
-            <Label>Comidas que NO te gustan</Label>
+            <Label>{t("dislikedFoods")}</Label>
             <div className="flex gap-2">
               <Input
-                placeholder="Ej: hígado, berenjena"
+                placeholder={t("dislikedPlaceholder")}
                 value={dislikeInput}
                 onChange={(e) => setDislikeInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -186,7 +199,7 @@ export function PreferencesForm({
                 size="sm"
                 onClick={() => addItem("dislikedFoods", dislikeInput, () => setDislikeInput(""))}
               >
-                Agregar
+                {t("add")}
               </Button>
             </div>
             {values.dislikedFoods.length > 0 && (
@@ -201,7 +214,7 @@ export function PreferencesForm({
                       type="button"
                       onClick={() => removeItem("dislikedFoods", i)}
                       className="hover:text-destructive"
-                      aria-label={`Eliminar ${d}`}
+                      aria-label={`${t("removeLabel")} ${d}`}
                     >
                       ×
                     </button>
@@ -213,7 +226,7 @@ export function PreferencesForm({
 
           {/* Diet Type */}
           <div className="space-y-1.5">
-            <Label>Tipo de dieta</Label>
+            <Label>{t("dietType")}</Label>
             <Select
               value={values.dietType ?? ""}
               onValueChange={(v) =>
@@ -221,13 +234,13 @@ export function PreferencesForm({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar tipo de dieta" />
+                <SelectValue placeholder={t("selectDietType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="omnivore">Omnívoro</SelectItem>
-                <SelectItem value="vegetarian">Vegetariano</SelectItem>
-                <SelectItem value="vegan">Vegano</SelectItem>
-                <SelectItem value="pescatarian">Pescetariano</SelectItem>
+                <SelectItem value="omnivore">{t("omnivore")}</SelectItem>
+                <SelectItem value="vegetarian">{t("vegetarian")}</SelectItem>
+                <SelectItem value="vegan">{t("vegan")}</SelectItem>
+                <SelectItem value="pescatarian">{t("pescatarian")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -236,7 +249,7 @@ export function PreferencesForm({
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5">
               <BadgeDollarSign className="h-4 w-4" />
-              ¿Modo económico?
+              {t("budgetMode")}
             </Label>
             <Select
               value={values.budgetFriendly ? "true" : "false"}
@@ -246,8 +259,8 @@ export function PreferencesForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="false">No, estándar</SelectItem>
-                <SelectItem value="true">Sí, quiero ahorrar</SelectItem>
+                <SelectItem value="false">{t("budgetNo")}</SelectItem>
+                <SelectItem value="true">{t("budgetYes")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -255,10 +268,10 @@ export function PreferencesForm({
           {/* Weekly Budget */}
           {values.budgetFriendly && (
             <div className="space-y-1.5">
-              <Label>Presupuesto semanal ($)</Label>
+              <Label>{t("weeklyBudget")}</Label>
               <Input
                 type="number"
-                placeholder="Ej: 50"
+                placeholder={t("weeklyBudgetPlaceholder")}
                 value={values.weeklyBudget ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -272,7 +285,7 @@ export function PreferencesForm({
 
           {/* Meal Complexity */}
           <div className="space-y-1.5">
-            <Label>Complejidad de las comidas</Label>
+            <Label>{t("complexity")}</Label>
             <Select
               value={values.mealComplexity ?? ""}
               onValueChange={(v) =>
@@ -280,19 +293,19 @@ export function PreferencesForm({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="¿Cuánto tiempo querés cocinar?" />
+                <SelectValue placeholder={t("complexityPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="simple">Simple (20 min o menos)</SelectItem>
-                <SelectItem value="moderate">Moderada (30-45 min)</SelectItem>
-                <SelectItem value="advanced">Avanzada (sin límite)</SelectItem>
+                <SelectItem value="simple">{t("simple")}</SelectItem>
+                <SelectItem value="moderate">{t("moderate")}</SelectItem>
+                <SelectItem value="advanced">{t("advanced")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Meals Per Day */}
           <div className="space-y-1.5">
-            <Label>Comidas por día</Label>
+            <Label>{t("mealsPerDay")}</Label>
             <Select
               value={String(values.mealsPerDay)}
               onValueChange={(v) => update("mealsPerDay", Number(v))}
@@ -301,9 +314,9 @@ export function PreferencesForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[2, 3, 4, 5, 6].map((n) => (
+                {MEAL_COUNT_OPTIONS.map((n) => (
                   <SelectItem key={n} value={String(n)}>
-                    {n} comidas
+                    {t("mealsCount", { count: n })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -312,7 +325,7 @@ export function PreferencesForm({
 
           {/* Include Snacks */}
           <div className="space-y-1.5">
-            <Label>¿Incluir snacks?</Label>
+            <Label>{t("includeSnacks")}</Label>
             <Select
               value={values.includeSnacks ? "true" : "false"}
               onValueChange={(v) => update("includeSnacks", v === "true")}
@@ -321,15 +334,15 @@ export function PreferencesForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="false">No</SelectItem>
-                <SelectItem value="true">Sí</SelectItem>
+                <SelectItem value="false">{tc("no")}</SelectItem>
+                <SelectItem value="true">{tc("yes")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Variety Preference */}
           <div className="space-y-1.5">
-            <Label>Nivel de variedad</Label>
+            <Label>{t("variety")}</Label>
             <Select
               value={values.varietyPreference ?? ""}
               onValueChange={(v) =>
@@ -337,12 +350,12 @@ export function PreferencesForm({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="¿Cuánta variedad querés?" />
+                <SelectValue placeholder={t("varietyPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Baja (repetir comidas)</SelectItem>
-                <SelectItem value="medium">Media</SelectItem>
-                <SelectItem value="high">Alta (máxima variedad)</SelectItem>
+                <SelectItem value="low">{t(VARIETY_KEY_MAP["low"])}</SelectItem>
+                <SelectItem value="medium">{t(VARIETY_KEY_MAP["medium"])}</SelectItem>
+                <SelectItem value="high">{t(VARIETY_KEY_MAP["high"])}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -351,11 +364,11 @@ export function PreferencesForm({
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
               <Heart className="h-4 w-4" />
-              Comidas favoritas
+              {t("favoriteFoods")}
             </Label>
             <div className="flex gap-2">
               <Input
-                placeholder="Ej: pizza, sushi"
+                placeholder={t("favoritePlaceholder")}
                 value={favoriteInput}
                 onChange={(e) => setFavoriteInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -371,7 +384,7 @@ export function PreferencesForm({
                 size="sm"
                 onClick={() => addItem("favoriteFoods", favoriteInput, () => setFavoriteInput(""))}
               >
-                Agregar
+                {t("add")}
               </Button>
             </div>
             {values.favoriteFoods.length > 0 && (
@@ -386,7 +399,7 @@ export function PreferencesForm({
                       type="button"
                       onClick={() => removeItem("favoriteFoods", i)}
                       className="hover:text-destructive"
-                      aria-label={`Eliminar ${f}`}
+                      aria-label={`${t("removeLabel")} ${f}`}
                     >
                       ×
                     </button>
@@ -398,7 +411,7 @@ export function PreferencesForm({
 
           {/* Eating Out Frequency */}
           <div className="space-y-1.5">
-            <Label>¿Comés fuera de casa?</Label>
+            <Label>{t("eatingOut")}</Label>
             <Select
               value={values.eatingOutFrequency ?? ""}
               onValueChange={(v) =>
@@ -406,13 +419,13 @@ export function PreferencesForm({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Frecuencia" />
+                <SelectValue placeholder={t("eatingOutPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="never">Nunca</SelectItem>
-                <SelectItem value="rarely">Rara vez</SelectItem>
-                <SelectItem value="sometimes">A veces</SelectItem>
-                <SelectItem value="often">Seguido</SelectItem>
+                <SelectItem value="never">{eatingOutLabels["never"]}</SelectItem>
+                <SelectItem value="rarely">{eatingOutLabels["rarely"]}</SelectItem>
+                <SelectItem value="sometimes">{eatingOutLabels["sometimes"]}</SelectItem>
+                <SelectItem value="often">{eatingOutLabels["often"]}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -421,11 +434,11 @@ export function PreferencesForm({
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              Tiempo disponible para cocinar (min/día)
+              {t("cookingTime")}
             </Label>
             <Input
               type="number"
-              placeholder="Ej: 45"
+              placeholder={t("cookingTimePlaceholder")}
               value={values.cookingTimeAvailable ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
@@ -439,7 +452,7 @@ export function PreferencesForm({
           {/* Submit */}
           <div className="flex justify-end pt-2">
             <Button type="submit" size="lg">
-              Continuar
+              {t("continue")}
             </Button>
           </div>
         </form>
