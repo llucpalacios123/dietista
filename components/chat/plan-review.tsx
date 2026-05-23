@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 import type { InternalMealPlan, InternalMeal, MealModification, ModificationReason } from "@/types/meal-plan";
 import {
   CalendarDays,
@@ -23,15 +24,15 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
-const DAY_NAMES = [
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-  "Domingo",
-];
+const DAY_KEY_ORDER = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
 
 const MEAL_TYPE_ICONS: Record<string, string> = {
   breakfast: "🌅",
@@ -39,6 +40,13 @@ const MEAL_TYPE_ICONS: Record<string, string> = {
   dinner: "🌙",
   snack: "🍎",
 };
+
+const REASON_KEYS = [
+  "dont_like",
+  "allergy",
+  "too_complex",
+  "other",
+] as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -64,9 +72,11 @@ interface PlanReviewProps {
 function MealCard({
   meal,
   onModify,
+  modifyLabel,
 }: {
   meal: InternalMeal;
   onModify: () => void;
+  modifyLabel: string;
 }) {
   return (
     <div className="group relative rounded-lg border bg-card p-3 text-sm hover:border-primary/50 transition-colors">
@@ -84,7 +94,7 @@ function MealCard({
           size="icon"
           className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={onModify}
-          aria-label="Modificar comida"
+          aria-label={modifyLabel}
         >
           <Pencil className="h-3.5 w-3.5" />
         </Button>
@@ -98,15 +108,6 @@ function MealCard({
     </div>
   );
 }
-
-// ─── Modify Meal Dialog (inline) ──────────────────────────────────────────
-
-const MODIFY_REASONS: Array<{ value: ModificationReason; label: string }> = [
-  { value: "dont_like", label: "No me gusta" },
-  { value: "allergy", label: "Alergia" },
-  { value: "too_complex", label: "Muy complicada" },
-  { value: "other", label: "Otro motivo" },
-];
 
 // ─── Component ────────────────────────────────────────────────────────────
 
@@ -126,11 +127,15 @@ export function PlanReview({
   onUndo,
   onConfirm,
 }: PlanReviewProps) {
+  const t = useTranslations("PlanReview");
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [modifyingMeal, setModifyingMeal] = useState<{
     dayOfWeek: number;
     mealType: string;
   } | null>(null);
+
+  const dayNames = t.raw("days") as unknown as Record<string, string>;
+  const reasonLabels = t.raw("reasons") as unknown as Record<string, string>;
 
   const handleModifyClick = useCallback((dayOfWeek: number, mealType: string) => {
     setModifyingMeal({ dayOfWeek, mealType });
@@ -153,16 +158,17 @@ export function PlanReview({
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <CalendarDays className="h-5 w-5" />
-            Tu Plan Semanal
+            {t("title")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Revisá tus comidas. Podés modificar, regenerar o deshacer cambios.
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {modifications.length > 0 && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-              {modifications.length} comida{modifications.length !== 1 ? "s" : ""} modificada{modifications.length !== 1 ? "s" : ""}
+              {modifications.length}{" "}
+              {modifications.length === 1 ? t("modifications_one") : t("modifications_other")}
             </span>
           )}
         </div>
@@ -181,16 +187,16 @@ export function PlanReview({
         <CardContent className="py-3">
           <div className="flex flex-wrap gap-4 text-sm">
             <span>
-              <strong>Calorías:</strong> {Math.round(mealPlan.weeklyTotals.calories)}/semana
+              <strong>{t("caloriesWeekly")}:</strong> {Math.round(mealPlan.weeklyTotals.calories)}{t("perWeek")}
             </span>
             <span>
-              <strong>Proteína:</strong> {Math.round(mealPlan.weeklyTotals.protein)}g
+              <strong>{t("proteinWeekly")}:</strong> {Math.round(mealPlan.weeklyTotals.protein)}g
             </span>
             <span>
-              <strong>Carbs:</strong> {Math.round(mealPlan.weeklyTotals.carbs)}g
+              <strong>{t("carbsWeekly")}:</strong> {Math.round(mealPlan.weeklyTotals.carbs)}g
             </span>
             <span>
-              <strong>Grasas:</strong> {Math.round(mealPlan.weeklyTotals.fat)}g
+              <strong>{t("fatWeekly")}:</strong> {Math.round(mealPlan.weeklyTotals.fat)}g
             </span>
           </div>
         </CardContent>
@@ -213,7 +219,7 @@ export function PlanReview({
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">
-                  {DAY_NAMES[day.dayOfWeek] ?? `Día ${day.dayOfWeek + 1}`}
+                  {dayNames[DAY_KEY_ORDER[day.dayOfWeek]] ?? `Día ${day.dayOfWeek + 1}`}
                 </CardTitle>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground">
@@ -229,7 +235,7 @@ export function PlanReview({
                     }}
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
-                    Regenerar día
+                    {t("regenerateDay")}
                   </Button>
                 </div>
               </div>
@@ -241,6 +247,7 @@ export function PlanReview({
                     key={meal.id}
                     meal={meal}
                     onModify={() => handleModifyClick(day.dayOfWeek, meal.mealType)}
+                    modifyLabel={t("modifyLabel")}
                   />
                 ))}
               </div>
@@ -254,17 +261,17 @@ export function PlanReview({
         <Card className="border-primary/50">
           <CardContent className="py-4 space-y-3">
             <p className="text-sm font-medium">
-              ¿Por qué querés cambiar esta comida?
+              {t("whyChange")}
             </p>
             <div className="flex flex-wrap gap-2">
-              {MODIFY_REASONS.map((r) => (
+              {REASON_KEYS.map((reasonKey) => (
                 <Button
-                  key={r.value}
+                  key={reasonKey}
                   variant="outline"
                   size="sm"
-                  onClick={() => handleReasonSelect(r.value)}
+                  onClick={() => handleReasonSelect(reasonKey as ModificationReason)}
                 >
-                  {r.label}
+                  {reasonLabels[reasonKey]}
                 </Button>
               ))}
             </div>
@@ -273,7 +280,7 @@ export function PlanReview({
               size="sm"
               onClick={() => setModifyingMeal(null)}
             >
-              Cancelar
+              {t("cancel")}
             </Button>
           </CardContent>
         </Card>
@@ -285,13 +292,13 @@ export function PlanReview({
           {modifications.length > 0 && (
             <Button variant="outline" size="sm" onClick={onUndo}>
               <Undo2 className="h-4 w-4 mr-1" />
-              Deshacer última modificación
+              {t("undoLast")}
             </Button>
           )}
         </div>
         <Button onClick={onConfirm} size="lg" className="gap-2">
           <CheckCircle2 className="h-4 w-4" />
-          Confirmar plan
+          {t("confirmPlan")}
         </Button>
       </div>
     </div>
