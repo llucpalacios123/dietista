@@ -326,7 +326,9 @@
       "moderate": "Moderado",
       "active": "Activo",
       "veryActive": "Muy activo"
-    }
+    },
+    "years": "años",
+    "kg": "kg"
   },
   "PlansPage": {
     "title": "Planes",

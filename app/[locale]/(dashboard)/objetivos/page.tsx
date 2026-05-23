@@ -66,7 +66,7 @@ export default async function ObjetivosPage() {
             {goalLabels[profile.goal] ?? profile.goal}
           </p>
           <p className="mt-1 text-sm text-[var(--dietista-text-2)]">
-            {activityLabels[profile.activityLevel] ?? profile.activityLevel} · {profile.age} años · {profile.weight} kg
+            {activityLabels[profile.activityLevel] ?? profile.activityLevel} · {profile.age} {t("years")} · {profile.weight} {t("kg")}
           </p>
         </div>
       </div>

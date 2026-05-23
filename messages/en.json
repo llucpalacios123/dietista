@@ -326,7 +326,9 @@
       "moderate": "Moderate",
       "active": "Active",
       "veryActive": "Very active"
-    }
+    },
+    "years": "years",
+    "kg": "kg"
   },
   "PlansPage": {
     "title": "Plans",
