@@ -146,6 +146,9 @@
     "allergiesPlaceholder": "peanuts, shellfish, gluten",
     "forbiddenPlaceholder": "pork, dairy, eggs",
     "favoritesPlaceholder": "chicken, salmon, avocado",
+    "yes": "Yes",
+    "no": "No",
+    "currentValue": "Current value:",
     "memberSince": "Member since"
   },
   "MealPlan": {

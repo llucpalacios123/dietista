@@ -146,6 +146,9 @@
     "allergiesPlaceholder": "maní, mariscos, gluten",
     "forbiddenPlaceholder": "cerdo, lácteos, huevos",
     "favoritesPlaceholder": "pollo, salmón, palta",
+    "yes": "Sí",
+    "no": "No",
+    "currentValue": "Valor actual:",
     "memberSince": "Miembro desde"
   },
   "MealPlan": {

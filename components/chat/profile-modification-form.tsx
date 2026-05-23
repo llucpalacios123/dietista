@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Edit2, Save, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { UserProfileSchema } from "@/lib/schemas";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -27,42 +28,46 @@ interface ProfileModificationFormProps {
   onCancel: () => void;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────
+// ─── Field definitions — which fields are numeric vs enum ──────────────────
 
-const FIELD_LABELS: Record<string, string> = {
-  weight: "Peso (kg)",
-  height: "Altura (cm)",
-  age: "Edad",
-  trainingRoutine: "Rutina de entrenamiento",
-  targetCalories: "Calorías objetivo",
-  targetProtein: "Proteína (g)",
-  targetCarbs: "Carbohidratos (g)",
-  targetFat: "Grasas (g)",
+const NUMERIC_FIELDS = new Set([
+  "weight",
+  "height",
+  "age",
+  "targetCalories",
+  "targetProtein",
+  "targetCarbs",
+  "targetFat",
+  "cookingTimeAvailable",
+]);
+
+const ENUM_FIELDS = new Set([
+  "sex",
+  "goal",
+  "activityLevel",
+  "dietType",
+]);
+
+const FIELD_KEYS: Record<string, string> = {
+  weight: "weight",
+  height: "height",
+  age: "age",
+  trainingRoutine: "trainingRoutine",
+  targetCalories: "targetCalories",
+  targetProtein: "targetProtein",
+  targetCarbs: "targetCarbs",
+  targetFat: "targetFat",
+  sex: "sex",
+  goal: "goal",
+  activityLevel: "activityLevel",
+  dietType: "dietType",
 };
 
-const ENUM_OPTIONS: Record<string, Array<{ value: string; label: string }>> = {
-  sex: [
-    { value: "male", label: "Masculino" },
-    { value: "female", label: "Femenino" },
-  ],
-  goal: [
-    { value: "lose", label: "Bajar de peso" },
-    { value: "maintain", label: "Mantener" },
-    { value: "gain", label: "Subir de peso" },
-  ],
-  activityLevel: [
-    { value: "sedentary", label: "Sedentario" },
-    { value: "light", label: "Ligero" },
-    { value: "moderate", label: "Moderado" },
-    { value: "active", label: "Activo" },
-    { value: "veryActive", label: "Muy activo" },
-  ],
-  dietType: [
-    { value: "omnivore", label: "Omnívoro" },
-    { value: "vegetarian", label: "Vegetariano" },
-    { value: "vegan", label: "Vegano" },
-    { value: "pescatarian", label: "Pescetariano" },
-  ],
+const ENUM_VALUE_KEYS: Record<string, string[]> = {
+  sex: ["male", "female"],
+  goal: ["lose", "maintain", "gain"],
+  activityLevel: ["sedentary", "light", "moderate", "active", "veryActive"],
+  dietType: ["omnivore", "vegetarian", "vegan", "pescatarian"],
 };
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -79,23 +84,14 @@ export function ProfileModificationForm({
   onSave,
   onCancel,
 }: ProfileModificationFormProps) {
+  const t = useTranslations("Profile");
+  const tc = useTranslations("Common");
   const [changes, setChanges] = useState<Record<string, string | number>>({});
 
   const handleChange = useCallback(
     (field: string, value: string) => {
       setChanges((prev) => {
-        // Parse numeric fields
-        const numericFields = [
-          "weight",
-          "height",
-          "age",
-          "targetCalories",
-          "targetProtein",
-          "targetCarbs",
-          "targetFat",
-          "cookingTimeAvailable",
-        ];
-        if (numericFields.includes(field)) {
+        if (NUMERIC_FIELDS.has(field)) {
           const num = Number(value);
           if (value === "" || isNaN(num)) {
             const next = { ...prev };
@@ -130,18 +126,20 @@ export function ProfileModificationForm({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Edit2 className="h-5 w-5" />
-          Modificar Perfil
+          {t("updateProfile")}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Editá solo los campos que necesitás cambiar. El resto se mantiene igual.
+          {t("updateDescription")}
         </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-3">
           {fieldsToEdit.map((field) => {
             const currentValue = profile[field];
-            const label = FIELD_LABELS[field] ?? field;
-            const enumOptions = ENUM_OPTIONS[field];
+            const labelKey = FIELD_KEYS[field];
+            const label = labelKey ? t(labelKey) : field;
+            const isEnum = ENUM_FIELDS.has(field);
+            const enumValueKeys = ENUM_VALUE_KEYS[field];
 
             return (
               <div key={field} className="space-y-1">
@@ -149,7 +147,7 @@ export function ProfileModificationForm({
                   {label}
                 </label>
 
-                {enumOptions ? (
+                {isEnum && enumValueKeys ? (
                   <Select
                     value={
                       changes[field] !== undefined
@@ -161,12 +159,12 @@ export function ProfileModificationForm({
                     onValueChange={(value) => handleChange(field, value)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={`Seleccionar ${label.toLowerCase()}`} />
+                      <SelectValue placeholder={label} />
                     </SelectTrigger>
                     <SelectContent>
-                      {enumOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {enumValueKeys.map((valueKey) => (
+                        <SelectItem key={valueKey} value={valueKey}>
+                          {t(valueKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -174,7 +172,7 @@ export function ProfileModificationForm({
                 ) : (
                   <Input
                     type={
-                      field === "age" ? "number" : field === "weight" || field === "height"
+                      field === "age" || field === "weight" || field === "height"
                         ? "number"
                         : "text"
                     }
@@ -192,11 +190,11 @@ export function ProfileModificationForm({
                 {/* Show current value for reference */}
                 {currentValue !== null && currentValue !== undefined && (
                   <p className="text-xs text-muted-foreground">
-                    Valor actual:{" "}
+                    {t("currentValue")}{" "}
                     {typeof currentValue === "boolean"
                       ? currentValue
-                        ? "Sí"
-                        : "No"
+                        ? t("yes")
+                        : t("no")
                       : String(currentValue)}
                   </p>
                 )}
@@ -208,11 +206,11 @@ export function ProfileModificationForm({
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onCancel} size="sm">
               <X className="h-4 w-4 mr-1" />
-              Cancelar
+              {tc("cancel")}
             </Button>
             <Button type="submit" size="sm" disabled={!hasChanges}>
               <Save className="h-4 w-4 mr-1" />
-              Guardar cambios
+              {tc("save")}
             </Button>
           </div>
         </form>
