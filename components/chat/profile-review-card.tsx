@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit2, Check, User, Target, Activity, Dumbbell, Utensils } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { UserProfileSchema } from "@/lib/schemas";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -14,56 +15,6 @@ interface ProfileReviewCardProps {
   onEditField: (field: keyof UserProfileSchema) => void;
   /** Callback when user confirms all data is correct. */
   onAllCorrect: () => void;
-}
-
-// ─── Field Display Helpers ────────────────────────────────────────────────
-
-const FIELD_LABELS: Partial<Record<keyof UserProfileSchema, string>> = {
-  weight: "Peso",
-  height: "Altura",
-  age: "Edad",
-  sex: "Sexo",
-  goal: "Objetivo",
-  activityLevel: "Nivel de actividad",
-  trainingRoutine: "Rutina de entrenamiento",
-  dietType: "Tipo de dieta",
-  mealsPerDay: "Comidas por día",
-  varietyPreference: "Variedad",
-  targetCalories: "Calorías objetivo",
-  targetProtein: "Proteína (g)",
-  targetCarbs: "Carbohidratos (g)",
-  targetFat: "Grasas (g)",
-};
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (typeof value === "boolean") return value ? "Sí" : "No";
-  if (typeof value === "number") return String(Math.round(value));
-  if (typeof value === "string") {
-    // Translate common values
-    const translations: Record<string, string> = {
-      male: "Masculino",
-      female: "Femenino",
-      lose: "Bajar de peso",
-      maintain: "Mantener",
-      gain: "Subir de peso",
-      sedentary: "Sedentario",
-      light: "Ligero",
-      moderate: "Moderado",
-      active: "Activo",
-      veryActive: "Muy activo",
-      omnivore: "Omnívoro",
-      vegetarian: "Vegetariano",
-      vegan: "Vegano",
-      pescatarian: "Pescetariano",
-      low: "Baja",
-      medium: "Media",
-      high: "Alta",
-    };
-    return translations[value] ?? value;
-  }
-  if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : "Ninguno";
-  return String(value);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
@@ -80,6 +31,8 @@ export function ProfileReviewCard({
   onEditField,
   onAllCorrect,
 }: ProfileReviewCardProps) {
+  const t = useTranslations("ProfileReview");
+
   const mainFields: Array<keyof UserProfileSchema> = [
     "weight",
     "height",
@@ -95,15 +48,29 @@ export function ProfileReviewCard({
     "targetFat",
   ];
 
+  const fieldLabels = t.raw("labels") as unknown as Record<string, string>;
+  const translatedValues = t.raw("values") as unknown as Record<string, string>;
+
+  function formatValue(value: unknown): string {
+    if (value === null || value === undefined) return translatedValues["none"] ?? "—";
+    if (typeof value === "boolean") return value ? translatedValues["yes"] : translatedValues["no"];
+    if (typeof value === "number") return String(Math.round(value));
+    if (typeof value === "string") {
+      return translatedValues[value] ?? value;
+    }
+    if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : translatedValues["none"] ?? "Ninguno";
+    return String(value);
+  }
+
   return (
     <Card className="border-primary/30">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <User className="h-5 w-5" />
-          Tu Perfil Actual
+          {t("title")}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Revisá tus datos. Si algo cambió, podés editarlo. Si está todo bien, continuamos.
+          {t("subtitle")}
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -111,7 +78,7 @@ export function ProfileReviewCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {mainFields.map((field) => {
             const value = profile[field];
-            const label = FIELD_LABELS[field] ?? field;
+            const label = fieldLabels[field] ?? field;
             return (
               <div
                 key={field}
@@ -128,7 +95,7 @@ export function ProfileReviewCard({
                   size="icon"
                   className="h-7 w-7 shrink-0"
                   onClick={() => onEditField(field)}
-                  aria-label={`Editar ${label}`}
+                  aria-label={`${t("editLabel")} ${label}`}
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>
@@ -145,7 +112,7 @@ export function ProfileReviewCard({
             className="gap-2"
           >
             <Check className="h-4 w-4" />
-            Todo correcto, continuar
+            {t("allCorrect")}
           </Button>
         </div>
       </CardContent>
