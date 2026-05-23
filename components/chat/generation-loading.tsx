@@ -3,18 +3,19 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
-const LOADING_MESSAGES = [
-  { text: "Calculando calorías...", durationMs: 3000 },
-  { text: "Analizando tu perfil nutricional...", durationMs: 4000 },
-  { text: "Seleccionando comidas ideales...", durationMs: 5000 },
-  { text: "Optimizando macros...", durationMs: 4000 },
-  { text: "Ajustando porciones...", durationMs: 4000 },
-  { text: "Preparando plan semanal...", durationMs: 5000 },
-  { text: "Verificando balance nutricional...", durationMs: 4000 },
-  { text: "Casi listo...", durationMs: 3000 },
+const LOADING_MESSAGES: Array<{ key: string; durationMs: number }> = [
+  { key: "calculating", durationMs: 3000 },
+  { key: "analyzing", durationMs: 4000 },
+  { key: "selectingMeals", durationMs: 5000 },
+  { key: "optimizingMacros", durationMs: 4000 },
+  { key: "adjustingPortions", durationMs: 4000 },
+  { key: "preparingPlan", durationMs: 5000 },
+  { key: "checkingBalance", durationMs: 4000 },
+  { key: "almostReady", durationMs: 3000 },
 ];
 
 const TOTAL_DURATION_MS = LOADING_MESSAGES.reduce((sum, m) => sum + m.durationMs, 0);
@@ -59,6 +60,7 @@ export function GenerationLoading({
   timedOut = false,
   onRetry,
 }: GenerationLoadingProps) {
+  const t = useTranslations("Chat");
   const [messageIndex, setMessageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -91,17 +93,17 @@ export function GenerationLoading({
     };
   }, [timedOut]);
 
-  const currentMessage = LOADING_MESSAGES[messageIndex];
+  const currentMessageKey = LOADING_MESSAGES[messageIndex]?.key;
 
   return (
     <Card className="border-primary/20">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          Creando tu menú personalizado
+          {t("generating")}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Esto puede tomar entre 15 y 30 segundos. Estamos generando un plan equilibrado para vos.
+          {t("generatingDescription")}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -120,7 +122,9 @@ export function GenerationLoading({
           {!timedOut ? (
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
           ) : null}
-          <span className="text-muted-foreground">{currentMessage?.text}</span>
+          <span className="text-muted-foreground">
+            {currentMessageKey ? t(currentMessageKey) : null}
+          </span>
         </div>
 
         {/* Skeleton Loaders */}
@@ -135,7 +139,7 @@ export function GenerationLoading({
         {timedOut && (
           <div className="text-center space-y-3 pt-2">
             <p className="text-sm text-muted-foreground">
-              Está tardando más de lo esperado. ¿Querés reintentar?
+              {t("timeoutMessage")}
             </p>
             {onRetry && (
               <button
@@ -144,7 +148,7 @@ export function GenerationLoading({
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
               >
                 <Loader2 className="h-4 w-4" />
-                Reintentar generación
+                {t("retryGeneration")}
               </button>
             )}
           </div>
