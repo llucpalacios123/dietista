@@ -58,7 +58,7 @@ export function ProfileReviewCard({
     if (typeof value === "string") {
       return translatedValues[value] ?? value;
     }
-    if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : translatedValues["none"] ?? "Ninguno";
+    if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : (translatedValues["none"] ?? "—");
     return String(value);
   }
 
