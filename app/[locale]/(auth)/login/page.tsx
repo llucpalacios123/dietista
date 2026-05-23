@@ -9,12 +9,17 @@ export const metadata: Metadata = {
   description: "Sign in to your Dietista account",
 };
 
-function LoginFormFallback() {
+interface LoginFormFallbackProps {
+  title: string;
+  loadingText: string;
+}
+
+function LoginFormFallback({ title, loadingText }: LoginFormFallbackProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
-        <CardDescription>Loading...</CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{loadingText}</CardDescription>
       </CardHeader>
     </Card>
   );
@@ -22,6 +27,7 @@ function LoginFormFallback() {
 
 export default async function LoginPage(): Promise<React.ReactElement> {
   const t = await getTranslations("Auth");
+  const tc = await getTranslations("Common");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
@@ -32,7 +38,7 @@ export default async function LoginPage(): Promise<React.ReactElement> {
             {t("signInDescription")}
           </p>
         </div>
-        <Suspense fallback={<LoginFormFallback />}>
+        <Suspense fallback={<LoginFormFallback title={t("signInTitle")} loadingText={tc("loading")} />}>
           <LoginForm />
         </Suspense>
       </div>
