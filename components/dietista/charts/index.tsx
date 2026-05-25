@@ -1,3 +1,5 @@
+"use client";
+
 // Lazy-loaded chart wrappers using next/dynamic to avoid SSR issues with Recharts.
 import dynamic from "next/dynamic";
 

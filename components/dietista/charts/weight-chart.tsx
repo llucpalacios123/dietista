@@ -60,7 +60,7 @@ export function WeightChartInner({
 
   const formattedData = data.map((entry) => ({
     ...entry,
-    date: new Date(entry.date).toLocaleDateString("es-AR", {
+    date: new Date(entry.date).toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "short",
     }),

@@ -3,8 +3,8 @@ import { RegisterForm } from "@/components/auth/register-form";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-  title: "Register — Dietista",
-  description: "Create your Dietista account",
+  title: "Registro — Dietista",
+  description: "Crea tu cuenta de Dietista",
 };
 
 export default async function RegisterPage(): Promise<React.ReactElement> {

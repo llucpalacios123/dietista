@@ -9,8 +9,8 @@ import "../globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Dietista — AI-Powered Meal Planning",
-  description: "Generate personalized weekly meal plans powered by AI",
+  title: "Dietista — Planificación de Comidas con IA",
+  description: "Genera planes de comidas semanales personalizados con IA",
 };
 
 interface LocaleLayoutProps {

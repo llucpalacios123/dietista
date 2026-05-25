@@ -10,7 +10,7 @@ export function formatCalories(calories: number): string {
 }
 
 export function formatDate(date: Date | string): string {
-  return new Date(date).toLocaleDateString("en-US", {
+  return new Date(date).toLocaleDateString("es-ES", {
     year: "numeric",
     month: "short",
     day: "numeric",

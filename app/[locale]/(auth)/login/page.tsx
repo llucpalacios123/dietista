@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-  title: "Login — Dietista",
-  description: "Sign in to your Dietista account",
+  title: "Iniciar Sesión — Dietista",
+  description: "Accede a tu cuenta de Dietista",
 };
 
 interface LoginFormFallbackProps {

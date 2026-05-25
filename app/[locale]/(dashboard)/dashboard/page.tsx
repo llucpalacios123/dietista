@@ -96,7 +96,7 @@ export default async function DashboardPage() {
           {t("greeting")}, {session!.email?.split("@")[0] ?? "Usuario"}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          {today.toLocaleDateString("es-AR", {
+          {today.toLocaleDateString("es-ES", {
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
                   {t("activePlan")}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[var(--dietista-text)]">
-                  {t("weekOf")} {new Date(activePlan.startDate).toLocaleDateString("es-AR")}
+                  {t("weekOf")} {new Date(activePlan.startDate).toLocaleDateString("es-ES")}
                 </p>
                 <p className="text-xs text-[var(--dietista-text-2)]">
                   {activePlan.meals.length} {t("mealsPlanned")}

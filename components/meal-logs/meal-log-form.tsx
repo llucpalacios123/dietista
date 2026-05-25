@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,16 +14,10 @@ import {
 } from "@/components/ui/select";
 import { createMealLog, type MealLogActionResult } from "@/actions/meal-log";
 
-const MEAL_TYPES = [
-  { value: "breakfast", label: "Breakfast" },
-  { value: "lunch", label: "Lunch" },
-  { value: "dinner", label: "Dinner" },
-  { value: "snack", label: "Snack" },
-] as const;
-
 const initialState: MealLogActionResult = { success: false };
 
 export function MealLogForm() {
+  const t = useTranslations("MealLog");
   const [state, formAction, isPending] = useActionState(
     createMealLog,
     initialState
@@ -44,7 +39,7 @@ export function MealLogForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Log a Meal</CardTitle>
+        <CardTitle>{t("logMeal")}</CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -55,7 +50,7 @@ export function MealLogForm() {
         >
           {/* Date */}
           <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
+            <Label htmlFor="date">{t("date")}</Label>
             <input
               type="date"
               id="date"
@@ -67,29 +62,28 @@ export function MealLogForm() {
 
           {/* Meal Type */}
           <div className="space-y-2">
-            <Label htmlFor="mealType">Meal Type</Label>
+            <Label htmlFor="mealType">{t("mealType")}</Label>
             <Select name="mealType" defaultValue="lunch">
               <SelectTrigger>
-                <SelectValue placeholder="Select meal type" />
+                <SelectValue placeholder={t("selectMealType")} />
               </SelectTrigger>
               <SelectContent>
-                {MEAL_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="breakfast">{t("breakfast")}</SelectItem>
+                <SelectItem value="lunch">{t("lunch")}</SelectItem>
+                <SelectItem value="dinner">{t("dinner")}</SelectItem>
+                <SelectItem value="snack">{t("snack")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Free-text input */}
           <div className="space-y-2">
-            <Label htmlFor="rawInput">What did you eat?</Label>
+            <Label htmlFor="rawInput">{t("whatDidYouEat")}</Label>
             <textarea
               id="rawInput"
               name="rawInput"
               rows={3}
-              placeholder="e.g. grilled chicken breast 200g, rice 150g, salad"
+              placeholder={t("whatDidYouEatPlaceholder")}
               className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             />
           </div>
@@ -99,12 +93,12 @@ export function MealLogForm() {
             <p className="text-sm text-destructive">{state.error}</p>
           )}
           {state?.success && (
-            <p className="text-sm text-green-600">Meal logged successfully!</p>
+            <p className="text-sm text-green-600">{t("logMealSuccess")}</p>
           )}
 
           {/* Submit */}
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Interpreting..." : "Log Meal"}
+            {isPending ? t("interpreting") : t("logMeal")}
           </Button>
         </form>
       </CardContent>

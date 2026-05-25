@@ -50,7 +50,7 @@ export default async function PlanesPage() {
               {t("activePlan")}
             </p>
             <p className="mt-1 text-lg font-bold text-[var(--brand-800)]">
-              {t("weekOf")} {new Date(activePlan.startDate).toLocaleDateString("es-AR")}
+              {t("weekOf")} {new Date(activePlan.startDate).toLocaleDateString("es-ES")}
             </p>
             <p className="mt-1 text-sm text-[var(--brand-600)]">
               {activePlan.meals.length} {t("meals")} · {Math.round(activePlan.totalCalories ?? 0)} {t("kcalPerDay")}
@@ -95,7 +95,7 @@ export default async function PlanesPage() {
               >
                 <div>
                   <p className="text-sm font-medium text-[var(--dietista-text)]">
-                    {new Date(plan.startDate).toLocaleDateString("es-AR")}
+                    {new Date(plan.startDate).toLocaleDateString("es-ES")}
                   </p>
                   <p className="text-xs text-[var(--dietista-text-2)]">
                     {plan.status === "completed" ? t("completed") : t("draft")}
