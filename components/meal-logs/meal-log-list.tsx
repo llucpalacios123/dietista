@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -30,15 +31,8 @@ interface MealLog {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
-const MEAL_TYPE_LABELS: Record<string, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snack: "Snack",
-};
-
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString("es-ES", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -46,7 +40,7 @@ function formatDate(dateStr: string): string {
 }
 
 function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString("en-US", {
+  return new Date(dateStr).toLocaleTimeString("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -65,6 +59,7 @@ function getWeekAgoISO(): string {
 // ─── Component ────────────────────────────────────────────────────────────
 
 export function MealLogList() {
+  const t = useTranslations("MealLog");
   const [logs, setLogs] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,14 +82,14 @@ export function MealLogList() {
         setLogs([]);
       } else {
         const json = await res.json();
-        setError(json.message ?? "Failed to load meal logs");
+        setError(json.message ?? t("failedToLoad"));
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("networkError") ?? "Error de conexión. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, t]);
 
   useEffect(() => {
     fetchLogs();
@@ -109,7 +104,7 @@ export function MealLogList() {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          Loading meal logs...
+          {t("loadingMealLogs")}
         </CardContent>
       </Card>
     );
@@ -120,12 +115,12 @@ export function MealLogList() {
       {/* Date Range Filter */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filter by Date Range</CardTitle>
+          <CardTitle className="text-lg">{t("filterByDateRange")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleFilter} className="flex items-end gap-4">
             <div className="space-y-2">
-              <Label htmlFor="filter-start">From</Label>
+              <Label htmlFor="filter-start">{t("from")}</Label>
               <input
                 type="date"
                 id="filter-start"
@@ -135,7 +130,7 @@ export function MealLogList() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="filter-end">To</Label>
+              <Label htmlFor="filter-end">{t("to")}</Label>
               <input
                 type="date"
                 id="filter-end"
@@ -145,7 +140,7 @@ export function MealLogList() {
               />
             </div>
             <Button type="submit" variant="outline">
-              Apply
+              {t("apply")}
             </Button>
           </form>
         </CardContent>
@@ -162,7 +157,7 @@ export function MealLogList() {
       {logs.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No meal logs found for this date range.
+            {t("noMealLogsInRange")}
           </CardContent>
         </Card>
       ) : (
@@ -177,7 +172,7 @@ export function MealLogList() {
                       {formatDate(log.date)}
                     </span>
                     <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                      {MEAL_TYPE_LABELS[log.mealType] ?? log.mealType}
+                      {t(`mealTypes.${log.mealType}` as const) ?? log.mealType}
                     </span>
                   </div>
                   {log.totalCalories != null && (
@@ -212,7 +207,7 @@ export function MealLogList() {
                           </span>
                           {food.confidence === "low" && (
                             <span className="text-amber-600 text-[10px]">
-                              low confidence
+                              {t("lowConfidenceNote")}
                             </span>
                           )}
                         </div>
@@ -221,7 +216,7 @@ export function MealLogList() {
                     {/* Macro totals */}
                     <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                       <span>
-                        P:{" "}
+                        {t("abbrProtein") ?? "P:"}{" "}
                         {Math.round(
                           log.interpretedFoods.reduce(
                             (s, f) => s + f.protein,
@@ -231,7 +226,7 @@ export function MealLogList() {
                         g
                       </span>
                       <span>
-                        C:{" "}
+                        {t("abbrCarbs") ?? "C:"}{" "}
                         {Math.round(
                           log.interpretedFoods.reduce(
                             (s, f) => s + f.carbs,
@@ -241,7 +236,7 @@ export function MealLogList() {
                         g
                       </span>
                       <span>
-                        F:{" "}
+                        {t("abbrFat") ?? "G:"}{" "}
                         {Math.round(
                           log.interpretedFoods.reduce((s, f) => s + f.fat, 0)
                         )}

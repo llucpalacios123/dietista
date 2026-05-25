@@ -3,35 +3,35 @@ import { z } from "zod";
 // ─── Auth Schemas ────────────────────────────────────────────────────────
 
 export const registerSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().email("Email no válido"),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .regex(/[A-Z]/, "La contraseña debe contener al menos una mayúscula")
+    .regex(/[0-9]/, "La contraseña debe contener al menos un número"),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Email no válido"),
+  password: z.string().min(1, "La contraseña es obligatoria"),
 });
 
 // ─── Profile Schema ──────────────────────────────────────────────────────
 
 export const profileSchema = z.object({
-  weight: z.coerce.number().positive("Weight must be positive"),
-  height: z.coerce.number().positive("Height must be positive"),
-  age: z.coerce.number().int().positive("Age must be a positive integer"),
+  weight: z.coerce.number().positive("El peso debe ser positivo"),
+  height: z.coerce.number().positive("La altura debe ser positiva"),
+  age: z.coerce.number().int().positive("La edad debe ser un número entero positivo"),
   sex: z.enum(["male", "female", "other"], {
-    required_error: "Sex is required",
+    required_error: "El sexo es obligatorio",
   }),
   goal: z.enum(["lose", "maintain", "gain"], {
-    required_error: "Goal is required",
+    required_error: "El objetivo es obligatorio",
   }),
   activityLevel: z.enum(
     ["sedentary", "light", "moderate", "active", "veryActive"],
     {
-      required_error: "Activity level is required",
+      required_error: "El nivel de actividad es obligatorio",
     }
   ),
   targetCalories: z.coerce.number().positive().optional(),
@@ -62,11 +62,11 @@ export const profileSchema = z.object({
 // ─── Meal Log Schema ─────────────────────────────────────────────────────
 
 export const mealLogSchema = z.object({
-  date: z.string().datetime("Invalid date format"),
+  date: z.string().datetime("Formato de fecha no válido"),
   mealType: z.enum(["breakfast", "mid_morning", "lunch", "dinner", "snack"], {
-    required_error: "Meal type is required",
+    required_error: "El tipo de comida es obligatorio",
   }),
-  rawInput: z.string().min(1, "Food description is required"),
+  rawInput: z.string().min(1, "La descripción de la comida es obligatoria"),
 });
 
 // ─── Meal Plan Generation Schema (AI response validation) ────────────────
@@ -75,11 +75,11 @@ export const mealItemSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   mealType: z.enum(["breakfast", "mid_morning", "lunch", "dinner", "snack"]),
   name: z.string().min(1),
-  description: z.string().min(1),
+  description: z.string().nullish().transform((val) => val ?? ""),
   calories: z.number().positive(),
-  protein: z.number().nonnegative(),
-  carbs: z.number().nonnegative(),
-  fat: z.number().nonnegative(),
+  protein: z.number().nullish().transform((val) => val ?? 0),
+  carbs: z.number().nullish().transform((val) => val ?? 0),
+  fat: z.number().nullish().transform((val) => val ?? 0),
 });
 
 export const mealPlanResponseSchema = z.array(mealItemSchema);

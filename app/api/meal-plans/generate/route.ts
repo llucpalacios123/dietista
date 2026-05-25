@@ -16,7 +16,7 @@ const RATE_LIMIT_MAX = 5;
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const session = await auth();
   if (!session?.userId) {
-    return apiError("Unauthorized", 401);
+    return apiError("No autenticado", 401);
   }
 
   const userId = session.userId;
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
   if (!profile) {
     return apiError(
-      "Complete your profile before generating a meal plan",
+      "Completa tu perfil antes de generar un plan de comidas",
       400
     );
   }
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       (rateLimit.resetAt - Date.now()) / 60000
     );
     return apiError(
-      `Please wait ${waitMinutes} minutes before generating another plan`,
+      `Espera ${waitMinutes} minutos antes de generar otro plan`,
       429
     );
   }
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
   if (existingActive) {
     return apiError(
-      "You already have an active meal plan for this week",
+      "Ya tienes un plan de comidas activo para esta semana",
       409
     );
   }
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     } catch (error) {
       job.status = "failed";
       job.error =
-        error instanceof Error ? error.message : "Unknown error";
+        error instanceof Error ? error.message : "Error desconocido";
     }
   });
 

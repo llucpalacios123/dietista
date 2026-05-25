@@ -40,7 +40,7 @@ export default async function ProgresoPage() {
   });
 
   const macroChartData = snapshots.map((s) => ({
-    day: new Date(s.date).toLocaleDateString("es-AR", { weekday: "short" }),
+    day: new Date(s.date).toLocaleDateString("es-ES", { weekday: "short" }),
     protein: s.totalProtein ?? 0,
     carbs: s.totalCarbs ?? 0,
     fat: s.totalFat ?? 0,
