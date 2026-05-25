@@ -15,6 +15,8 @@ export const DIET_GENERATION_SYSTEM = `You are a nutritionist AI. Generate a wee
 Requirements:
 - 7 days (dayOfWeek: 0=Monday to 6=Sunday) × 5 meal types (breakfast, mid_morning, lunch, dinner, snack)
 - Each meal: {dayOfWeek, mealType, name, description, calories, protein, carbs, fat}
+- ALL meal names and descriptions MUST be in Spanish (Spain - Castellano de España)
+- Use typical Spanish dishes and ingredients (tortilla de patatas, gazpacho, paella, etc.)
 - Total daily calories should match target: {targetCalories} kcal
 - Daily macros: Protein {targetProtein}g, Carbs {targetCarbs}g, Fat {targetFat}g
 - Avoid allergies: {allergies}
@@ -89,7 +91,7 @@ export async function generateDiet(
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("OpenAI returned empty response");
+      throw new Error("La IA ha devuelto una respuesta vacía");
     }
 
     return content;
@@ -100,25 +102,58 @@ export async function generateDiet(
   try {
     parsed = JSON.parse(response);
   } catch {
-    throw new Error("Failed to parse OpenAI response as JSON");
+    throw new Error("No se ha podido parsear la respuesta de la IA como JSON");
   }
 
-  // The response might be wrapped in an object with a key, or be a direct array
-  const meals: unknown[] = Array.isArray(parsed)
-    ? parsed
-    : typeof parsed === "object" && parsed !== null
-      ? Object.values(parsed).find(Array.isArray) ?? []
-      : [];
+  // The response might be:
+  // 1. A flat array of meals: [{dayOfWeek, mealType, name, ...}, ...]
+  // 2. Wrapped in an object: { meals: [...] } or { diet: [...] }
+  // 3. Array of day objects with nested meals: [{dayOfWeek, meals: [...]}, ...]
+  let rawItems: unknown[] = [];
+
+  if (Array.isArray(parsed)) {
+    rawItems = parsed;
+  } else if (typeof parsed === "object" && parsed !== null) {
+    // Find the first array value in the object
+    const found = Object.values(parsed).find(Array.isArray);
+    rawItems = found ?? [];
+  }
+
+  // Flatten day-organized structure: [{dayOfWeek, meals: [...]}, ...] → flat meals
+  const meals: unknown[] = [];
+  for (const item of rawItems) {
+    if (
+      typeof item === "object" &&
+      item !== null &&
+      "meals" in item &&
+      Array.isArray((item as Record<string, unknown>).meals)
+    ) {
+      const dayOfWeek = (item as Record<string, unknown>).dayOfWeek;
+      for (const meal of (item as Record<string, unknown>).meals as unknown[]) {
+        if (typeof meal === "object" && meal !== null) {
+          const mealObj = meal as Record<string, unknown>;
+          // Ensure dayOfWeek is propagated to nested meals
+          if (dayOfWeek !== undefined && mealObj.dayOfWeek === undefined) {
+            mealObj.dayOfWeek = dayOfWeek;
+          }
+          meals.push(mealObj);
+        }
+      }
+    } else {
+      meals.push(item);
+    }
+  }
 
   if (meals.length === 0) {
-    throw new Error("No meals found in OpenAI response");
+    throw new Error("No se han encontrado comidas en la respuesta de la IA");
   }
 
   const validated = mealPlanResponseSchema.safeParse(meals);
   if (!validated.success) {
-    throw new Error(
-      `Invalid meal plan structure: ${validated.error.errors.map((e) => e.message).join(", ")}`
-    );
+    const details = validated.error.errors
+      .map((e) => `${e.path.join(".")}: ${e.message}`)
+      .join("; ");
+    throw new Error("Estructura del plan de comidas no válida: ${details}");
   }
 
   return validated.data;
@@ -140,7 +175,7 @@ export async function interpretMeal(rawInput: string): Promise<InterpretedFoodSc
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("OpenAI returned empty response");
+      throw new Error("La IA ha devuelto una respuesta vacía");
     }
 
     return content;
@@ -150,7 +185,7 @@ export async function interpretMeal(rawInput: string): Promise<InterpretedFoodSc
   try {
     parsed = JSON.parse(response);
   } catch {
-    throw new Error("Failed to parse OpenAI response as JSON");
+    throw new Error("No se ha podido parsear la respuesta de la IA como JSON");
   }
 
   const foods: unknown[] = Array.isArray(parsed)
@@ -160,7 +195,7 @@ export async function interpretMeal(rawInput: string): Promise<InterpretedFoodSc
       : [];
 
   if (foods.length === 0) {
-    throw new Error("No foods found in OpenAI response");
+    throw new Error("No se han encontrado alimentos en la respuesta de la IA");
   }
 
   // Validate each item individually to allow partial results
@@ -173,7 +208,7 @@ export async function interpretMeal(rawInput: string): Promise<InterpretedFoodSc
   }
 
   if (validated.length === 0) {
-    throw new Error("No valid foods in OpenAI response");
+    throw new Error("No hay alimentos válidos en la respuesta de la IA");
   }
 
   return validated;

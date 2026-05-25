@@ -47,7 +47,7 @@ export async function generateWizardPlan(): Promise<GenerateWizardPlanResult> {
   });
 
   if (!mealPlan) {
-    throw new Error("Failed to fetch generated meal plan");
+    throw new Error("No se ha podido obtener el plan de comidas generado");
   }
 
   // Fetch profile for Spring Boot output
@@ -72,7 +72,7 @@ export async function updateWizardProfile(
 ): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
   if (!session?.userId) {
-    return { success: false, error: "Not authenticated" };
+    return { success: false, error: "No autenticado" };
   }
 
   try {
@@ -115,7 +115,7 @@ export async function updateWizardProfile(
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : "Failed to update profile",
+        error instanceof Error ? error.message : "No se ha podido actualizar el perfil",
     };
   }
 }

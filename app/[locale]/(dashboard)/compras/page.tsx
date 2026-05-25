@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useVisionUpload } from "@/hooks/use-vision-upload";
 import { useShoppingList } from "@/hooks/use-shopping-list";
@@ -9,6 +9,9 @@ export default function ComprasPage(): React.ReactElement {
   const t = useTranslations("Shopping");
   const { state, uploadImage, reset } = useVisionUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generatedListId, setGeneratedListId] = useState<string | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
@@ -17,6 +20,52 @@ export default function ComprasPage(): React.ReactElement {
     }
   };
 
+  const handleGenerateFromPlan = async (): Promise<void> => {
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      // Fetch active meal plan
+      const planRes = await fetch("/api/meal-plans");
+      if (!planRes.ok) {
+        setGenerateError("No tienes un plan de comidas activo");
+        return;
+      }
+      const planData = await planRes.json();
+      const mealPlanId = planData.data?.id;
+
+      if (!mealPlanId) {
+        setGenerateError("No se ha encontrado el plan de comidas");
+        return;
+      }
+
+      // Generate shopping list
+      const res = await fetch("/api/shopping-lists/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mealPlanId }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        setGenerateError(error.error ?? "Error al generar la lista");
+        return;
+      }
+
+      const data = await res.json();
+      setGeneratedListId(data.id);
+    } catch {
+      setGenerateError("Error de conexión al generar la lista");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Show generated list view
+  if (generatedListId) {
+    return <ShoppingListView id={generatedListId} onBack={() => setGeneratedListId(null)} />;
+  }
+
+  // Show vision upload list view
   if (state.status === "done" && state.listId) {
     return <ShoppingListView id={state.listId} onBack={reset} />;
   }
@@ -31,6 +80,38 @@ export default function ComprasPage(): React.ReactElement {
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
           {t("subtitle")}
         </p>
+      </div>
+
+      {/* Generate from Meal Plan */}
+      <div className="mx-[var(--dietista-pad-card)]">
+        <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">🛒</div>
+            <div className="flex-1">
+              <h2 className="text-sm font-semibold text-[var(--dietista-text)]">
+                Generar desde el plan de comidas
+              </h2>
+              <p className="mt-1 text-xs text-[var(--dietista-text-2)]">
+                La IA extraerá todos los ingredientes de tu plan semanal
+              </p>
+            </div>
+          </div>
+
+          {generateError && (
+            <div className="mt-3 rounded-lg bg-[var(--dietista-surface-2)] p-3">
+              <p className="text-xs text-[var(--dietista-danger)]">{generateError}</p>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleGenerateFromPlan}
+            disabled={generating}
+            className="mt-4 w-full rounded-lg bg-[var(--brand-500)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-600)] disabled:opacity-50"
+          >
+            {generating ? "Generando..." : "Generar lista de la compra"}
+          </button>
+        </div>
       </div>
 
       {/* Upload Area */}
@@ -99,18 +180,6 @@ export default function ComprasPage(): React.ReactElement {
           >
             {t("choosePhoto")}
           </button>
-        </div>
-      </div>
-
-      {/* Empty State */}
-      <div className="mx-[var(--dietista-pad-card)]">
-        <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
-          <h2 className="mb-3 text-sm font-semibold text-[var(--dietista-text)]">
-            {t("noActiveLists")}
-          </h2>
-          <p className="text-xs text-[var(--dietista-text-2)]">
-            {t("noActiveListsDescription")}
-          </p>
         </div>
       </div>
     </div>
