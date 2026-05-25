@@ -55,6 +55,17 @@ export interface ShoppingList {
   items: ShoppingListItem[];
 }
 
+export interface ShoppingListSummary {
+  id: string;
+  mealPlanId?: string;
+  status: "draft" | "reviewed" | "purchased";
+  budget?: number;
+  totalEstimate?: number;
+  imageUrl?: string;
+  itemCount: number;
+  createdAt: string;
+}
+
 export interface NutritionistMessage {
   id: string;
   role: "user" | "assistant" | "system";
