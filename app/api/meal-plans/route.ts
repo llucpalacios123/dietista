@@ -10,7 +10,7 @@ import { apiError, apiSuccess } from "@/lib/api-error";
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const session = await auth();
   if (!session?.userId) {
-    return apiError("Unauthorized", 401);
+    return apiError("No autenticado", 401);
   }
 
   const userId = session.userId;
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   if (!plan) {
-    return apiError("No meal plans found", 404);
+    return apiError("No se han encontrado planes de comidas", 404);
   }
 
   return apiSuccess(plan);

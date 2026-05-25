@@ -15,7 +15,7 @@ export async function generateMealPlan(userId: string): Promise<{
   });
 
   if (!profile) {
-    throw new Error("User has no profile. Complete profile first.");
+    throw new Error("No tienes perfil. Completa tu perfil primero.");
   }
 
   // Calculate targets (use profile values or defaults based on goal)

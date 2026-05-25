@@ -37,7 +37,7 @@ export async function createProfile(
 ): Promise<ProfileActionResult> {
   const session = await auth();
   if (!session?.userId) {
-    return { success: false, error: "You must be logged in to create a profile" };
+    return { success: false, error: "Debes iniciar sesión para crear un perfil" };
   }
 
   // Check if profile already exists
@@ -45,7 +45,7 @@ export async function createProfile(
     where: { userId: session.userId },
   });
   if (existing) {
-    return { success: false, error: "Profile already exists. Use update instead." };
+    return { success: false, error: "El perfil ya existe. Usa actualizar en su lugar." };
   }
 
   const raw = Object.fromEntries(formData.entries());
@@ -130,20 +130,20 @@ export async function createProfile(
     ) {
       return {
         success: false,
-        error: "Profile already exists. Use update instead.",
+        error: "El perfil ya existe. Usa actualizar en su lugar.",
       };
     }
     console.error("[createProfile] Database error for user", session.userId, error);
     return {
       success: false,
-      error: "Failed to create profile. Please try again.",
+      error: "No se ha podido crear el perfil. Inténtalo de nuevo.",
     };
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/profile");
 
-  return { success: true, data: { message: "Profile created successfully" } };
+  return { success: true, data: { message: "Perfil creado correctamente" } };
 }
 
 export async function updateProfile(
@@ -152,7 +152,7 @@ export async function updateProfile(
 ): Promise<ProfileActionResult> {
   const session = await auth();
   if (!session?.userId) {
-    return { success: false, error: "You must be logged in to update a profile" };
+    return { success: false, error: "Debes iniciar sesión para actualizar un perfil" };
   }
 
   const raw = Object.fromEntries(formData.entries());
@@ -231,20 +231,20 @@ export async function updateProfile(
     console.error("[updateProfile] Database error for user", session.userId, error);
     return {
       success: false,
-      error: "Failed to update profile. Please try again.",
+      error: "No se ha podido actualizar el perfil. Inténtalo de nuevo.",
     };
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/profile");
 
-  return { success: true, data: { message: "Profile updated successfully" } };
+  return { success: true, data: { message: "Perfil actualizado correctamente" } };
 }
 
 export async function deleteProfile(): Promise<ProfileActionResult> {
   const session = await auth();
   if (!session?.userId) {
-    return { success: false, error: "You must be logged in to delete a profile" };
+    return { success: false, error: "Debes iniciar sesión para eliminar un perfil" };
   }
 
   try {
@@ -261,18 +261,18 @@ export async function deleteProfile(): Promise<ProfileActionResult> {
     ) {
       return {
         success: false,
-        error: "No profile found to delete.",
+        error: "No se ha encontrado ningún perfil para eliminar.",
       };
     }
     console.error("[deleteProfile] Database error for user", session.userId, error);
     return {
       success: false,
-      error: "Failed to delete profile. Please try again.",
+      error: "No se ha podido eliminar el perfil. Inténtalo de nuevo.",
     };
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/profile");
 
-  return { success: true, data: { message: "Profile deleted successfully" } };
+  return { success: true, data: { message: "Perfil eliminado correctamente" } };
 }

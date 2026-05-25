@@ -6,8 +6,8 @@
  */
 
 const LOCALE_MAP: Record<string, string> = {
-  es: "es-AR",
-  en: "en-US",
+  es: "es-ES",
+  en: "en-GB",
 };
 
 /**

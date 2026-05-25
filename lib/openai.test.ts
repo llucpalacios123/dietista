@@ -7,11 +7,38 @@ describe("meal plan JSON parser", () => {
   // Replicate the parsing logic from openai.ts for isolated testing
   function parseMealPlanResponse(content: string): unknown[] {
     const parsed = JSON.parse(content);
-    const meals: unknown[] = Array.isArray(parsed)
-      ? parsed
-      : typeof parsed === "object" && parsed !== null
-        ? Object.values(parsed).find(Array.isArray) ?? []
-        : [];
+    let rawItems: unknown[] = [];
+
+    if (Array.isArray(parsed)) {
+      rawItems = parsed;
+    } else if (typeof parsed === "object" && parsed !== null) {
+      const found = Object.values(parsed).find(Array.isArray);
+      rawItems = found ?? [];
+    }
+
+    // Flatten day-organized structure
+    const meals: unknown[] = [];
+    for (const item of rawItems) {
+      if (
+        typeof item === "object" &&
+        item !== null &&
+        "meals" in item &&
+        Array.isArray((item as Record<string, unknown>).meals)
+      ) {
+        const dayOfWeek = (item as Record<string, unknown>).dayOfWeek;
+        for (const meal of (item as Record<string, unknown>).meals as unknown[]) {
+          if (typeof meal === "object" && meal !== null) {
+            const mealObj = meal as Record<string, unknown>;
+            if (dayOfWeek !== undefined && mealObj.dayOfWeek === undefined) {
+              mealObj.dayOfWeek = dayOfWeek;
+            }
+            meals.push(mealObj);
+          }
+        }
+      } else {
+        meals.push(item);
+      }
+    }
     return meals;
   }
 
@@ -82,6 +109,97 @@ describe("meal plan JSON parser", () => {
     ];
     const result = mealPlanResponseSchema.safeParse(meals);
     expect(result.success).toBe(false);
+  });
+
+  it("accepts meals with null description (defaults to empty string)", () => {
+    const meals = [
+      { dayOfWeek: 0, mealType: "breakfast", name: "Oatmeal", description: null, calories: 350, protein: 12, carbs: 60, fat: 8 },
+    ];
+    const result = mealPlanResponseSchema.safeParse(meals);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].description).toBe("");
+    }
+  });
+
+  it("accepts meals with null macros (defaults to 0)", () => {
+    const meals = [
+      { dayOfWeek: 0, mealType: "breakfast", name: "Oatmeal", description: "With milk", calories: 350, protein: null, carbs: null, fat: null },
+    ];
+    const result = mealPlanResponseSchema.safeParse(meals);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].protein).toBe(0);
+      expect(result.data[0].carbs).toBe(0);
+      expect(result.data[0].fat).toBe(0);
+    }
+  });
+
+  it("accepts meals with missing optional fields (uses defaults)", () => {
+    const meals = [
+      { dayOfWeek: 0, mealType: "breakfast", name: "Oatmeal", calories: 350 },
+    ];
+    const result = mealPlanResponseSchema.safeParse(meals);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].description).toBe("");
+      expect(result.data[0].protein).toBe(0);
+      expect(result.data[0].carbs).toBe(0);
+      expect(result.data[0].fat).toBe(0);
+    }
+  });
+
+  it("flattens day-organized structure: [{dayOfWeek, meals: [...]}]", () => {
+    const content = JSON.stringify([
+      {
+        dayOfWeek: 0,
+        meals: [
+          { mealType: "breakfast", name: "Oatmeal", description: "With milk", calories: 350, protein: 12, carbs: 60, fat: 8 },
+          { mealType: "lunch", name: "Salad", description: "Caesar", calories: 400, protein: 20, carbs: 30, fat: 15 },
+        ],
+      },
+      {
+        dayOfWeek: 1,
+        meals: [
+          { mealType: "breakfast", name: "Yogurt", description: "Greek", calories: 200, protein: 15, carbs: 20, fat: 6 },
+        ],
+      },
+    ]);
+    const meals = parseMealPlanResponse(content);
+    expect(meals).toHaveLength(3);
+    expect(meals[0]).toMatchObject({ dayOfWeek: 0, mealType: "breakfast", name: "Oatmeal" });
+    expect(meals[1]).toMatchObject({ dayOfWeek: 0, mealType: "lunch", name: "Salad" });
+    expect(meals[2]).toMatchObject({ dayOfWeek: 1, mealType: "breakfast", name: "Yogurt" });
+  });
+
+  it("propagates dayOfWeek to nested meals when missing", () => {
+    const content = JSON.stringify([
+      {
+        dayOfWeek: 3,
+        meals: [
+          { mealType: "dinner", name: "Pasta", description: "Bolognese", calories: 500, protein: 25, carbs: 60, fat: 15 },
+        ],
+      },
+    ]);
+    const meals = parseMealPlanResponse(content);
+    expect(meals).toHaveLength(1);
+    expect(meals[0]).toMatchObject({ dayOfWeek: 3, mealType: "dinner" });
+  });
+
+  it("handles wrapped day-organized structure: { weeklyPlan: [{dayOfWeek, meals: [...]}] }", () => {
+    const content = JSON.stringify({
+      weeklyPlan: [
+        {
+          dayOfWeek: 0,
+          meals: [
+            { mealType: "breakfast", name: "Toast", description: "Avocado", calories: 300, protein: 8, carbs: 35, fat: 12 },
+          ],
+        },
+      ],
+    });
+    const meals = parseMealPlanResponse(content);
+    expect(meals).toHaveLength(1);
+    expect(meals[0]).toMatchObject({ dayOfWeek: 0, mealType: "breakfast", name: "Toast" });
   });
 });
 

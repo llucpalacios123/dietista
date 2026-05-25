@@ -11,8 +11,8 @@ export default async function AuthErrorPage(): Promise<React.ReactElement> {
       <div className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Authentication Error</CardTitle>
-            <CardDescription>An unexpected error occurred. Please try again.</CardDescription>
+            <CardTitle>Error de Autenticación</CardTitle>
+            <CardDescription>Ha ocurrido un error inesperado. Inténtalo de nuevo.</CardDescription>
           </CardHeader>
         </Card>
       </div>

@@ -12,7 +12,7 @@ import type { Prisma } from "@prisma/client";
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const session = await auth();
   if (!session?.userId) {
-    return apiError("Unauthorized", 401);
+    return apiError("No autenticado", 401);
   }
 
   const userId = session.userId;
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   });
 
   if (logs.length === 0) {
-    return apiError("No meal logs found", 404);
+    return apiError("No se han encontrado registros de comidas", 404);
   }
 
   return apiSuccess(logs);

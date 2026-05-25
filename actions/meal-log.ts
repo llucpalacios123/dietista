@@ -22,7 +22,7 @@ export async function createMealLog(
 ): Promise<MealLogActionResult> {
   const session = await auth();
   if (!session?.userId) {
-    return { success: false, error: "You must be logged in to log a meal" };
+    return { success: false, error: "Debes iniciar sesión para registrar una comida" };
   }
 
   const raw = Object.fromEntries(formData.entries());
@@ -44,7 +44,7 @@ export async function createMealLog(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to interpret meal",
+      error: error instanceof Error ? error.message : "No se ha podido interpretar la comida",
     };
   }
 
