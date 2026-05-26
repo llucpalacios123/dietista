@@ -1,3 +1,12 @@
+// ─── Shared Types ─────────────────────────────────────────────────────────
+
+/** Structured ingredient with optional quantity and unit. */
+export interface Ingredient {
+  name: string;
+  quantity?: number;
+  unit?: string;
+}
+
 // ─── Spring Boot Output Types ────────────────────────────────────────────
 
 /** User profile section of the Spring Boot JSON output. */
@@ -37,7 +46,7 @@ export interface SpringBootMeal {
   protein: number;
   carbs: number;
   fat: number;
-  ingredients: string[];
+  ingredients: Ingredient[];
   instructions: string;
 }
 
@@ -83,7 +92,7 @@ export interface InternalMeal {
   protein: number;
   carbs: number;
   fat: number;
-  ingredients: string[];
+  ingredients: Ingredient[];
   instructions: string;
 }
 

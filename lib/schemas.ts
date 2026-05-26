@@ -80,6 +80,12 @@ export const mealItemSchema = z.object({
   protein: z.number().nullish().transform((val) => val ?? 0),
   carbs: z.number().nullish().transform((val) => val ?? 0),
   fat: z.number().nullish().transform((val) => val ?? 0),
+  ingredients: z.array(z.object({
+    name: z.string().min(1),
+    quantity: z.number().positive().optional(),
+    unit: z.string().optional(),
+  })).default([]),
+  instructions: z.string().nullish().transform((val) => val ?? ""),
 });
 
 export const mealPlanResponseSchema = z.array(mealItemSchema);
@@ -188,7 +194,11 @@ export const springBootMealSchema = z.object({
   protein: z.number(),
   carbs: z.number(),
   fat: z.number(),
-  ingredients: z.array(z.string()).default([]),
+  ingredients: z.array(z.object({
+    name: z.string(),
+    quantity: z.number().optional(),
+    unit: z.string().optional(),
+  })).default([]),
   instructions: z.string().default(""),
 });
 

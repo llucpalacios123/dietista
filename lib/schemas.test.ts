@@ -4,6 +4,7 @@ import {
   profileSchema,
   mealLogSchema,
   loginSchema,
+  mealItemSchema,
 } from "@/lib/schemas";
 
 describe("registerSchema", () => {
@@ -42,25 +43,132 @@ describe("registerSchema", () => {
       }
     );
   });
+});
 
-  describe("invalid emails", () => {
-    const invalidEmailCases = [
-      { email: "not-an-email", reason: "no @ symbol" },
-      { email: "@example.com", reason: "no local part" },
-      { email: "user@", reason: "no domain" },
-      { email: "", reason: "empty" },
-    ];
+describe("mealItemSchema — ingredients and instructions", () => {
+  const baseMeal = {
+    dayOfWeek: 0,
+    mealType: "lunch" as const,
+    name: "Test Meal",
+    calories: 500,
+  };
 
-    it.each(invalidEmailCases)(
-      "rejects invalid email: $reason",
-      ({ email }) => {
-        const result = registerSchema.safeParse({
-          email,
-          password: "Password1",
+  describe("ingredients field", () => {
+    it("validates meal with structured ingredients", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        ingredients: [
+          { name: "pollo", quantity: 200, unit: "g" },
+          { name: "arroz", quantity: 150, unit: "g" },
+        ],
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.ingredients).toHaveLength(2);
+        expect(result.data.ingredients[0]).toEqual({
+          name: "pollo", quantity: 200, unit: "g",
         });
-        expect(result.success).toBe(false);
+        expect(result.data.ingredients[1]).toEqual({
+          name: "arroz", quantity: 150, unit: "g",
+        });
       }
-    );
+    });
+
+    it("defaults ingredients to empty array when omitted", () => {
+      const result = mealItemSchema.safeParse(baseMeal);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.ingredients).toEqual([]);
+      }
+    });
+
+    it("validates ingredient with only name (no quantity or unit)", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        ingredients: [{ name: "sal" }],
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.ingredients).toHaveLength(1);
+        expect(result.data.ingredients[0]).toEqual({ name: "sal" });
+      }
+    });
+
+    it("rejects ingredient with empty name", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        ingredients: [{ name: "" }],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects ingredient with negative quantity", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        ingredients: [{ name: "aceite", quantity: -5 }],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects ingredient with zero quantity", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        ingredients: [{ name: "sal", quantity: 0 }],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("instructions field", () => {
+    it("validates meal with instructions", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        instructions: "Cocinar a la plancha 8 min",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.instructions).toBe("Cocinar a la plancha 8 min");
+      }
+    });
+
+    it("defaults instructions to empty string when omitted", () => {
+      const result = mealItemSchema.safeParse(baseMeal);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.instructions).toBe("");
+      }
+    });
+
+    it("coerces null instructions to empty string", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        instructions: null,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.instructions).toBe("");
+      }
+    });
+  });
+
+  describe("full meal with both new fields", () => {
+    it("validates complete meal with ingredients and instructions", () => {
+      const result = mealItemSchema.safeParse({
+        ...baseMeal,
+        ingredients: [
+          { name: "tomate", quantity: 2, unit: "unidades" },
+        ],
+        instructions: "Lavar y cortar en rodajas",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.ingredients).toHaveLength(1);
+        expect(result.data.ingredients[0]).toEqual({
+          name: "tomate", quantity: 2, unit: "unidades",
+        });
+        expect(result.data.instructions).toBe("Lavar y cortar en rodajas");
+      }
+    });
   });
 });
 

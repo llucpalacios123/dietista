@@ -19,6 +19,8 @@ interface Meal {
   protein: number;
   carbs: number;
   fat: number;
+  ingredients: Array<{ name: string; quantity?: number; unit?: string }>;
+  instructions: string;
 }
 
 interface MealPlan {

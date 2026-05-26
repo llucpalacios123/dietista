@@ -65,7 +65,7 @@ function makeMockMeal(overrides?: Partial<InternalMeal>): InternalMeal {
     protein: 40,
     carbs: 50,
     fat: 15,
-    ingredients: ["rice", "chicken"],
+    ingredients: [{ name: "rice" }, { name: "chicken" }],
     instructions: "Cook everything.",
     ...overrides,
   };
@@ -344,6 +344,141 @@ describe("parseAIGeneratedPlan", () => {
   });
 });
 
+describe("parseAIGeneratedPlan — ingredient extraction", () => {
+  it("parses structured ingredient objects from Spring Boot format", () => {
+    const raw = {
+      days: [{
+        dayOfWeek: 0,
+        meals: [{
+          mealType: "lunch",
+          name: "Pollo con arroz",
+          description: "Pechuga a la plancha",
+          calories: 500,
+          protein: 45,
+          carbs: 50,
+          fat: 12,
+          ingredients: [
+            { name: "pollo", quantity: 200, unit: "g" },
+            { name: "arroz", quantity: 150, unit: "g" },
+          ],
+          instructions: "Cocinar pollo 8 min por lado, hervir arroz",
+        }],
+        dailyTotals: { calories: 500, protein: 45, carbs: 50, fat: 12 },
+      }],
+      weeklyTotals: { calories: 500, protein: 45, carbs: 50, fat: 12 },
+    };
+
+    const plan = parseAIGeneratedPlan(raw);
+    expect(plan).not.toBeNull();
+    const meal = plan!.days[0].meals[0];
+    expect(meal.ingredients).toHaveLength(2);
+    expect(meal.ingredients[0]).toEqual({ name: "pollo", quantity: 200, unit: "g" });
+    expect(meal.ingredients[1]).toEqual({ name: "arroz", quantity: 150, unit: "g" });
+    expect(meal.instructions).toBe("Cocinar pollo 8 min por lado, hervir arroz");
+  });
+
+  it("defaults ingredients to empty array when missing", () => {
+    const raw = {
+      days: [{
+        dayOfWeek: 0,
+        meals: [{
+          mealType: "dinner",
+          name: "Sopa",
+          description: "Caldo ligero",
+          calories: 200,
+          protein: 10,
+          carbs: 25,
+          fat: 5,
+        }],
+        dailyTotals: { calories: 200, protein: 10, carbs: 25, fat: 5 },
+      }],
+      weeklyTotals: { calories: 200, protein: 10, carbs: 25, fat: 5 },
+    };
+
+    const plan = parseAIGeneratedPlan(raw);
+    expect(plan).not.toBeNull();
+    expect(plan!.days[0].meals[0].ingredients).toEqual([]);
+  });
+
+  it("handles null ingredients gracefully", () => {
+    const raw = {
+      days: [{
+        dayOfWeek: 0,
+        meals: [{
+          mealType: "breakfast",
+          name: "Tostada",
+          description: "Pan integral",
+          calories: 250,
+          protein: 8,
+          carbs: 40,
+          fat: 6,
+          ingredients: null,
+        }],
+        dailyTotals: { calories: 250, protein: 8, carbs: 40, fat: 6 },
+      }],
+      weeklyTotals: { calories: 250, protein: 8, carbs: 40, fat: 6 },
+    };
+
+    const plan = parseAIGeneratedPlan(raw);
+    expect(plan).not.toBeNull();
+    expect(plan!.days[0].meals[0].ingredients).toEqual([]);
+  });
+
+  it("parses ingredient with only name (no quantity or unit)", () => {
+    const raw = {
+      days: [{
+        dayOfWeek: 0,
+        meals: [{
+          mealType: "lunch",
+          name: "Ensalada",
+          description: "Verde",
+          calories: 150,
+          protein: 5,
+          carbs: 10,
+          fat: 8,
+          ingredients: [{ name: "sal" }, { name: "pimienta" }],
+        }],
+        dailyTotals: { calories: 150, protein: 5, carbs: 10, fat: 8 },
+      }],
+      weeklyTotals: { calories: 150, protein: 5, carbs: 10, fat: 8 },
+    };
+
+    const plan = parseAIGeneratedPlan(raw);
+    expect(plan).not.toBeNull();
+    expect(plan!.days[0].meals[0].ingredients).toEqual([
+      { name: "sal" },
+      { name: "pimienta" },
+    ]);
+  });
+
+  it("parses structured ingredients from flat array format", () => {
+    const raw = [
+      {
+        dayOfWeek: 0,
+        mealType: "lunch",
+        name: "Pescado",
+        description: "Al horno",
+        calories: 400,
+        protein: 35,
+        carbs: 20,
+        fat: 18,
+        ingredients: [
+          { name: "merluza", quantity: 200, unit: "g" },
+          { name: "limón", quantity: 1, unit: "unidades" },
+        ],
+        instructions: "Hornear a 180°C por 20 min",
+      },
+    ];
+
+    const plan = parseAIGeneratedPlan(raw);
+    expect(plan).not.toBeNull();
+    expect(plan!.days[0].meals[0].ingredients).toHaveLength(2);
+    expect(plan!.days[0].meals[0].ingredients[0]).toEqual({
+      name: "merluza", quantity: 200, unit: "g",
+    });
+  });
+});
+
 describe("toSpringBootMeal", () => {
   it("transforms internal meal to Spring Boot format", () => {
     const meal: InternalMeal = {
@@ -356,7 +491,11 @@ describe("toSpringBootMeal", () => {
       protein: 42,
       carbs: 18,
       fat: 22,
-      ingredients: ["chicken breast", "olive oil", "herbs"],
+      ingredients: [
+        { name: "chicken breast" },
+        { name: "olive oil" },
+        { name: "herbs" },
+      ],
       instructions: "Season and grill for 8 minutes per side.",
     };
 

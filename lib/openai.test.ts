@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mealPlanResponseSchema, interpretedFoodSchema } from "@/lib/schemas";
+import { mealPlanResponseSchema, interpretedFoodSchema, mealItemSchema } from "@/lib/schemas";
 
 // ─── Meal plan JSON parser (extracted from openai.ts logic) ────────────────
 
@@ -200,6 +200,172 @@ describe("meal plan JSON parser", () => {
     const meals = parseMealPlanResponse(content);
     expect(meals).toHaveLength(1);
     expect(meals[0]).toMatchObject({ dayOfWeek: 0, mealType: "breakfast", name: "Toast" });
+  });
+});
+
+// ─── Ingredient & instructions validation (tasks 2.2–2.3) ──────────────────
+
+describe("meal item schema — ingredients and instructions", () => {
+  it("validates a meal with full ingredients array and instructions", () => {
+    const meal = {
+      dayOfWeek: 0,
+      mealType: "breakfast",
+      name: "Tortilla de patatas",
+      description: "Tortilla española con cebolla",
+      calories: 350,
+      protein: 12,
+      carbs: 30,
+      fat: 18,
+      ingredients: [
+        { name: "huevos", quantity: 3, unit: "unidades" },
+        { name: "patatas", quantity: 200, unit: "g" },
+        { name: "aceite de oliva", quantity: 30, unit: "ml" },
+      ],
+      instructions: "Batir los huevos, añadir las patatas cortadas y cocinar a fuego medio.",
+    };
+    const result = mealItemSchema.safeParse(meal);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.ingredients).toHaveLength(3);
+      expect(result.data.ingredients[0]).toEqual({ name: "huevos", quantity: 3, unit: "unidades" });
+      expect(result.data.instructions).toBe("Batir los huevos, añadir las patatas cortadas y cocinar a fuego medio.");
+    }
+  });
+
+  it("defaults ingredients to empty array when missing", () => {
+    const meal = {
+      dayOfWeek: 0,
+      mealType: "breakfast",
+      name: "Tostadas",
+      description: "Pan con tomate",
+      calories: 250,
+      protein: 8,
+      carbs: 35,
+      fat: 8,
+    };
+    const result = mealItemSchema.safeParse(meal);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.ingredients).toEqual([]);
+    }
+  });
+
+  it("defaults instructions to empty string when missing", () => {
+    const meal = {
+      dayOfWeek: 0,
+      mealType: "breakfast",
+      name: "Tostadas",
+      description: "Pan con tomate",
+      calories: 250,
+      protein: 8,
+      carbs: 35,
+      fat: 8,
+    };
+    const result = mealItemSchema.safeParse(meal);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.instructions).toBe("");
+    }
+  });
+
+  it("transforms null instructions to empty string", () => {
+    const meal = {
+      dayOfWeek: 0,
+      mealType: "dinner",
+      name: "Ensalada",
+      description: "Lechuga y tomate",
+      calories: 200,
+      protein: 6,
+      carbs: 15,
+      fat: 10,
+      instructions: null,
+    };
+    const result = mealItemSchema.safeParse(meal);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.instructions).toBe("");
+    }
+  });
+
+  it("accepts ingredients with partial fields (no quantity/unit)", () => {
+    const meal = {
+      dayOfWeek: 0,
+      mealType: "lunch",
+      name: "Ensalada variada",
+      description: "Mix de verduras",
+      calories: 300,
+      protein: 10,
+      carbs: 25,
+      fat: 12,
+      ingredients: [
+        { name: "lechuga" },
+        { name: "tomate", quantity: 2 },
+        { name: "aceite de oliva", unit: "ml" },
+      ],
+    };
+    const result = mealItemSchema.safeParse(meal);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.ingredients).toHaveLength(3);
+      expect(result.data.ingredients[0]).toEqual({ name: "lechuga" });
+      expect(result.data.ingredients[1]).toEqual({ name: "tomate", quantity: 2 });
+      expect(result.data.ingredients[2]).toEqual({ name: "aceite de oliva", unit: "ml" });
+    }
+  });
+
+  it("rejects ingredients with empty name", () => {
+    const meal = {
+      dayOfWeek: 0,
+      mealType: "breakfast",
+      name: "Mal ingrediente",
+      description: "Test",
+      calories: 100,
+      protein: 1,
+      carbs: 1,
+      fat: 1,
+      ingredients: [{ name: "", quantity: 1 }],
+    };
+    const result = mealItemSchema.safeParse(meal);
+    expect(result.success).toBe(false);
+  });
+
+  it("validates full array of meals all including ingredients", () => {
+    const meals = [
+      {
+        dayOfWeek: 0,
+        mealType: "breakfast",
+        name: "Oatmeal",
+        description: "With milk",
+        calories: 350,
+        protein: 12,
+        carbs: 60,
+        fat: 8,
+        ingredients: [{ name: "avena", quantity: 80, unit: "g" }],
+        instructions: "Hervir con leche.",
+      },
+      {
+        dayOfWeek: 0,
+        mealType: "lunch",
+        name: "Pollo con arroz",
+        description: "Pechuga a la plancha",
+        calories: 500,
+        protein: 40,
+        carbs: 50,
+        fat: 12,
+        ingredients: [
+          { name: "pollo", quantity: 200, unit: "g" },
+          { name: "arroz", quantity: 100, unit: "g" },
+        ],
+        instructions: "Cocinar el arroz y hacer el pollo a la plancha.",
+      },
+    ];
+    const result = mealPlanResponseSchema.safeParse(meals);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].ingredients).toHaveLength(1);
+      expect(result.data[1].ingredients).toHaveLength(2);
+    }
   });
 });
 

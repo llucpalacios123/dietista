@@ -24,3 +24,6 @@ export type { ScreenHeaderProps } from "./screen-header";
 
 export { DayStrip } from "./day-strip";
 export type { DayStripProps } from "./day-strip";
+
+export { CurrentMealCard } from "./current-meal-card";
+export type { CurrentMealCardProps } from "./current-meal-card";

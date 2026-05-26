@@ -241,6 +241,26 @@ export function buildAndValidateSpringBootOutput(params: {
 // ─── AI-Generated Plan Parsing ────────────────────────────────────────────
 
 /**
+ * Safely cast raw ingredients data to `Ingredient[]`.
+ * Handles both string arrays (backward compat) and object arrays.
+ */
+function castIngredients(raw: unknown): Array<{ name: string; quantity?: number; unit?: string }> {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item: unknown) => {
+    if (typeof item === "string") return { name: item };
+    if (typeof item === "object" && item !== null && "name" in item) {
+      const obj = item as Record<string, unknown>;
+      return {
+        name: String(obj.name ?? ""),
+        ...(typeof obj.quantity === "number" ? { quantity: obj.quantity } : {}),
+        ...(typeof obj.unit === "string" && obj.unit ? { unit: obj.unit } : {}),
+      };
+    }
+    return { name: String(item) };
+  });
+}
+
+/**
  * Parse AI-generated plan into the internal meal plan format.
  * Handles both Spring Boot format and flat array formats.
  */
@@ -263,9 +283,7 @@ export function parseAIGeneratedPlan(raw: unknown): InternalMealPlan | null {
             protein: Number(m.protein) || 0,
             carbs: Number(m.carbs) || 0,
             fat: Number(m.fat) || 0,
-            ingredients: Array.isArray(m.ingredients)
-              ? m.ingredients.map(String)
-              : [],
+            ingredients: castIngredients(m.ingredients),
             instructions: String(m.instructions ?? ""),
           }))
         : [];
@@ -318,9 +336,7 @@ export function parseAIGeneratedPlan(raw: unknown): InternalMealPlan | null {
         protein: Number(m.protein) || 0,
         carbs: Number(m.carbs) || 0,
         fat: Number(m.fat) || 0,
-        ingredients: Array.isArray(m.ingredients)
-          ? m.ingredients.map(String)
-          : [],
+        ingredients: castIngredients(m.ingredients),
         instructions: String(m.instructions ?? ""),
       };
 

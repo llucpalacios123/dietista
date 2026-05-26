@@ -47,7 +47,19 @@
     "weeklyStreak": "Weekly Streak",
     "weightTrend": "Weight Trend",
     "progress": "Progress",
-    "goals": "Goals"
+    "goals": "Goals",
+    "currentMeal": "Your {mealType} today",
+    "upcomingMeal": "Upcoming meal",
+    "noCurrentMeal": "No meal planned right now",
+    "noCurrentMealHint": "There's no meal assigned for this time of day.",
+    "goToPlans": "Go to plans",
+    "mealTypes": {
+      "breakfast": "breakfast",
+      "mid_morning": "mid-morning",
+      "lunch": "lunch",
+      "snack": "snack",
+      "dinner": "dinner"
+    }
   },
   "Auth": {
     "signIn": "Sign In",
@@ -187,7 +199,11 @@
       "lunch": "Lunch",
       "dinner": "Dinner",
       "snack": "Snack"
-    }
+    },
+    "noIngredients": "No detailed ingredients",
+    "ingredientName": "Ingredient",
+    "quantity": "Quantity",
+    "unit": "Unit"
   },
   "MealLog": {
     "title": "Meal Log",

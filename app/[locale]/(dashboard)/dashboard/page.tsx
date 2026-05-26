@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
-import { HeroMacroRing, StatCard, StreakWeek, Sparkline } from "@/components/dietista/atoms";
+import { HeroMacroRing, StatCard, StreakWeek, Sparkline, CurrentMealCard } from "@/components/dietista/atoms";
+import { getCurrentMealInfo } from "@/lib/meal-schedule";
 
 import type { Locale } from "@/i18n/routing";
 
@@ -88,6 +89,11 @@ export default async function DashboardPage() {
   // Calculate streak (consecutive days with meal logs)
   const streakDays = await calculateStreak(session!.userId);
 
+  // Current meal based on time of day
+  const currentMeal = activePlan
+    ? getCurrentMealInfo(activePlan.meals)
+    : null;
+
   return (
     <div className="space-y-6 px-1 pb-4">
       {/* Greeting */}
@@ -103,6 +109,13 @@ export default async function DashboardPage() {
           })}
         </p>
       </div>
+
+      {/* Current Meal Card — only when there is an active plan */}
+      {activePlan && (
+        <div className="px-[var(--dietista-pad-card)]">
+          <CurrentMealCard meal={currentMeal} />
+        </div>
+      )}
 
       {/* Hero Macro Ring */}
       <div className="flex justify-center py-4">
