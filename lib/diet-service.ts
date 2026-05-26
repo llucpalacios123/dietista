@@ -102,6 +102,8 @@ export async function generateMealPlan(userId: string): Promise<{
         protein: m.protein,
         carbs: m.carbs,
         fat: m.fat,
+        ingredients: m.ingredients ?? [],
+        instructions: m.instructions || null,
       })),
     });
 

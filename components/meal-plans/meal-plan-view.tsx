@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCalories } from "@/lib/utils";
+
+import type { Ingredient } from "@/types/meal-plan";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -16,6 +20,8 @@ export interface MealData {
   protein: number;
   carbs: number;
   fat: number;
+  ingredients: Ingredient[];
+  instructions: string;
 }
 
 export interface MealPlanData {
@@ -29,7 +35,7 @@ export interface MealPlanData {
 
 // ─── Constants ────────────────────────────────────────────────────────────
 
-const MEAL_TYPE_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
+const MEAL_TYPE_ORDER = ["breakfast", "mid_morning", "lunch", "dinner", "snack"] as const;
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-yellow-100 text-yellow-800",
@@ -56,6 +62,7 @@ export function MealPlanView({ plan }: { plan: MealPlanData }): React.ReactEleme
 
   const mealTypeLabels: Record<string, string> = {
     breakfast: t("mealTypes.breakfast"),
+    mid_morning: t("mealTypes.mid_morning"),
     lunch: t("mealTypes.lunch"),
     dinner: t("mealTypes.dinner"),
     snack: t("mealTypes.snack"),
@@ -71,6 +78,18 @@ export function MealPlanView({ plan }: { plan: MealPlanData }): React.ReactEleme
   for (const meal of plan.meals) {
     mealsByDayAndType.set(`${meal.dayOfWeek}-${meal.mealType}`, meal);
   }
+
+  // Collapse state per meal id (default: collapsed)
+  const [expandedMeals, setExpandedMeals] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  const toggleMeal = (mealId: string) => {
+    setExpandedMeals((prev) => ({
+      ...prev,
+      [mealId]: !prev[mealId],
+    }));
+  };
 
   // Calculate daily totals
   const dailyTotals = days.map((_, dayIndex) => {
@@ -159,28 +178,109 @@ export function MealPlanView({ plan }: { plan: MealPlanData }): React.ReactEleme
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                 {MEAL_TYPE_ORDER.map((type) => {
                   const meal = mealsByDayAndType.get(`${dayIndex}-${type}`);
+                  const isExpanded = meal ? !!expandedMeals[meal.id] : false;
+
                   return (
                     <div
                       key={type}
-                      className="rounded-lg border p-3"
+                      className="rounded-lg border"
                     >
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        {mealTypeLabels[type]}
-                      </p>
                       {meal ? (
-                        <div className="mt-1">
-                          <p className="font-medium">{meal.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {meal.description}
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => toggleMeal(meal.id)}
+                            aria-expanded={isExpanded}
+                            className="flex w-full items-start justify-between p-3 text-left hover:bg-muted/50 transition-colors rounded-lg"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                {mealTypeLabels[type]}
+                              </p>
+                              <p className="font-medium">{meal.name}</p>
+                            </div>
+                            {isExpanded ? (
+                              <ChevronUp className="mt-1 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="mt-1 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                            )}
+                          </button>
+
+                          {isExpanded && (
+                            <div className="px-3 pb-3 space-y-3">
+                              {meal.description && (
+                                <p className="text-sm text-muted-foreground">
+                                  {meal.description}
+                                </p>
+                              )}
+
+                              <p className="text-xs text-muted-foreground">
+                                {Math.round(meal.calories)} kcal ·{" "}
+                                {tp("abbrProtein")}
+                                {Math.round(meal.protein)}g{" "}
+                                {tp("abbrCarbs")}
+                                {Math.round(meal.carbs)}g{" "}
+                                {tp("abbrFat")}
+                                {Math.round(meal.fat)}g
+                              </p>
+
+                              {meal.ingredients.length > 0 ? (
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="border-b text-left text-muted-foreground">
+                                      <th className="py-1 pr-2">
+                                        {t("ingredientName")}
+                                      </th>
+                                      <th className="py-1 px-2">
+                                        {t("quantity")}
+                                      </th>
+                                      <th className="py-1 pl-2">
+                                        {t("unit")}
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {meal.ingredients.map((ing, i) => (
+                                      <tr
+                                        key={i}
+                                        className="border-b border-muted/50"
+                                      >
+                                        <td className="py-1 pr-2">
+                                          {ing.name}
+                                        </td>
+                                        <td className="py-1 px-2">
+                                          {ing.quantity ?? ""}
+                                        </td>
+                                        <td className="py-1 pl-2">
+                                          {ing.unit ?? ""}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <p className="text-xs italic text-muted-foreground">
+                                  {t("noIngredients")}
+                                </p>
+                              )}
+
+                              {meal.instructions && (
+                                <p className="text-xs text-muted-foreground italic">
+                                  {meal.instructions}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="p-3">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            {mealTypeLabels[type]}
                           </p>
-                          <p className="text-xs mt-2 text-muted-foreground">
-                            {Math.round(meal.calories)} kcal · {tp("abbrProtein")}{Math.round(meal.protein)}g {tp("abbrCarbs")}{Math.round(meal.carbs)}g {tp("abbrFat")}{Math.round(meal.fat)}g
+                          <p className="text-sm text-muted-foreground mt-1 italic">
+                            {t("noMealPlanned")}
                           </p>
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground mt-1 italic">
-                          {t("noMealPlanned")}
-                        </p>
                       )}
                     </div>
                   );

@@ -85,10 +85,10 @@ export const MAX_TOTAL_USES = 5;
 
 /**
  * Build an ingredient usage map from a list of meals.
- * Extracts ingredient names (lowercased) and tracks frequency.
+ * Extracts ingredient names (lowercased) from structured ingredient objects and tracks frequency.
  */
 export function buildIngredientUsage(
-  meals: { dayOfWeek: number; ingredients?: string[] }[],
+  meals: { dayOfWeek: number; ingredients?: Array<{ name: string; quantity?: number; unit?: string }> }[],
 ): Map<string, IngredientUsage> {
   const usage = new Map<string, IngredientUsage>();
 
@@ -96,7 +96,7 @@ export function buildIngredientUsage(
     if (!meal.ingredients) continue;
 
     for (const ingredient of meal.ingredients) {
-      const key = ingredient.toLowerCase().trim();
+      const key = ingredient.name.toLowerCase().trim();
 
       const existing = usage.get(key);
       if (existing) {

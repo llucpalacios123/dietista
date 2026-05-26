@@ -180,6 +180,8 @@ model Meal {
   fat             Float
   selectedOptions Json?    // [{foodOptionId, quantity, notes}]
   translations    Json?
+  ingredients     Json    @default("[]") // [{name, quantity?, unit?}]
+  instructions    String?
 }
 
 model MealLog {

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { openai } from "@/lib/openai";
+import { mergeIngredients } from "@/lib/shopping-list-extract";
 import type { ShoppingList, ShoppingListSummary } from "@/types/dietista";
 
 const createShoppingListSchema = z.object({
@@ -155,6 +156,13 @@ const CATEGORIES = [
   "otros",
 ] as const;
 
+/**
+ * Generate a shopping list from a meal plan using AI-based ingredient extraction.
+ *
+ * @deprecated Use {@link generateFromMealPlan} instead, which reads ingredients
+ * directly from the stored `Meal.ingredients` JSON field without an extra AI call.
+ * This function remains for backward compatibility only.
+ */
 export async function generateShoppingListFromMealPlan(
   mealPlanId: string
 ): Promise<{ success: boolean; id?: string; error?: string }> {
@@ -579,118 +587,23 @@ export async function generateFromMealPlan(): Promise<{
     return { success: true, listId: existingList.id, isExisting: true };
   }
 
-  // Extract ingredients from meals
-  const ingredientMap = new Map<
-    string,
-    { quantity: string | null; count: number }
-  >();
-
-  for (const meal of activePlan.meals) {
-    // Extract from meal name — split by common delimiters
-    const nameWords = meal.name
-      .split(/[,;]| y | con /)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    for (const word of nameWords) {
-      if (word.length > 2) {
-        const existing = ingredientMap.get(word.toLowerCase());
-        if (existing) {
-          existing.count++;
-        } else {
-          ingredientMap.set(word.toLowerCase(), { quantity: null, count: 1 });
-        }
-      }
-    }
-
-    // Try to parse selectedOptions JSON for additional ingredients
-    if (meal.selectedOptions) {
-      try {
-        const options =
-          typeof meal.selectedOptions === "string"
-            ? (JSON.parse(meal.selectedOptions) as unknown)
-            : meal.selectedOptions;
-
-        if (Array.isArray(options)) {
-          for (const opt of options) {
-            if (typeof opt === "object" && opt !== null) {
-              const optRecord = opt as Record<string, unknown>;
-              const name =
-                typeof optRecord.name === "string"
-                  ? optRecord.name.trim()
-                  : "";
-              if (name.length > 2) {
-                const qty =
-                  typeof optRecord.quantity === "number" ||
-                  typeof optRecord.quantity === "string"
-                    ? String(optRecord.quantity)
-                    : null;
-                const existing = ingredientMap.get(name.toLowerCase());
-                if (existing) {
-                  existing.count++;
-                  if (qty && !existing.quantity) existing.quantity = qty;
-                } else {
-                  ingredientMap.set(name.toLowerCase(), {
-                    quantity: qty,
-                    count: 1,
-                  });
-                }
-              }
-            }
-          }
-        }
-      } catch {
-        // Skip malformed JSON — best-effort extraction
-      }
-    }
-
-    // Try translations JSON for localized ingredient names
-    if (meal.translations) {
-      try {
-        const translations =
-          typeof meal.translations === "string"
-            ? (JSON.parse(meal.translations) as unknown)
-            : meal.translations;
-
-        if (typeof translations === "object" && translations !== null) {
-          const t = translations as Record<string, unknown>;
-          // Look for ingredient lists in translation values
-          for (const val of Object.values(t)) {
-            if (typeof val === "string" && val.includes(",")) {
-              for (const item of val.split(",")) {
-                const trimmed = item.trim();
-                if (trimmed.length > 2) {
-                  const existing = ingredientMap.get(trimmed.toLowerCase());
-                  if (existing) {
-                    existing.count++;
-                  } else {
-                    ingredientMap.set(trimmed.toLowerCase(), {
-                      quantity: null,
-                      count: 1,
-                    });
-                  }
-                }
-              }
-            }
-          }
-        }
-      } catch {
-        // Skip malformed translations JSON
-      }
-    }
-  }
-
-  // Create the shopping list items from extracted ingredients
-  const items = Array.from(ingredientMap.entries()).map(
-    ([name, data], index) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      quantity: data.quantity,
-      category: categorizeIngredient(name),
-      confidence: "medium" as const,
-      matchedToPlan: true,
-      order: index,
-    }),
+  // Extract ingredients from meals — direct read from stored Meal.ingredients JSON
+  const mergedIngredients = mergeIngredients(
+    activePlan.meals.map((m) => ({
+      dayOfWeek: m.dayOfWeek,
+      ingredients: (m.ingredients ?? []) as Array<{ name: string; quantity?: number; unit?: string }>,
+    })),
   );
+
+  // Create the shopping list items from merged ingredients
+  const items = mergedIngredients.map((ing, index) => ({
+    name: ing.name.charAt(0).toUpperCase() + ing.name.slice(1),
+    quantity: ing.quantity && ing.unit ? `${ing.quantity} ${ing.unit}` : null,
+    category: categorizeIngredient(ing.name),
+    confidence: "high" as const,
+    matchedToPlan: true,
+    order: index,
+  }));
 
   if (items.length === 0) {
     return {

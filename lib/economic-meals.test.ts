@@ -19,9 +19,9 @@ describe("buildIngredientUsage", () => {
     expect(usage.size).toBe(0);
   });
 
-  it("tracks single ingredient usage", () => {
+  it("tracks single ingredient usage from structured ingredients", () => {
     const usage = buildIngredientUsage([
-      { dayOfWeek: 0, ingredients: ["rice", "beans"] },
+      { dayOfWeek: 0, ingredients: [{ name: "rice" }, { name: "beans" }] },
     ]);
     expect(usage.get("rice")).toEqual({
       consecutiveDays: 1,
@@ -37,9 +37,9 @@ describe("buildIngredientUsage", () => {
 
   it("tracks ingredient across multiple days", () => {
     const usage = buildIngredientUsage([
-      { dayOfWeek: 0, ingredients: ["rice", "chicken"] },
-      { dayOfWeek: 1, ingredients: ["rice", "eggs"] },
-      { dayOfWeek: 2, ingredients: ["rice", "chicken"] },
+      { dayOfWeek: 0, ingredients: [{ name: "rice" }, { name: "chicken" }] },
+      { dayOfWeek: 1, ingredients: [{ name: "rice" }, { name: "eggs" }] },
+      { dayOfWeek: 2, ingredients: [{ name: "rice" }, { name: "chicken" }] },
     ]);
     expect(usage.get("rice")?.totalUses).toBe(3);
     expect(usage.get("rice")?.consecutiveDays).toBe(3);
@@ -49,8 +49,8 @@ describe("buildIngredientUsage", () => {
 
   it("handles ingredients case-insensitively", () => {
     const usage = buildIngredientUsage([
-      { dayOfWeek: 0, ingredients: ["Rice", "CHICKEN"] },
-      { dayOfWeek: 1, ingredients: ["rice", "Chicken"] },
+      { dayOfWeek: 0, ingredients: [{ name: "Rice" }, { name: "CHICKEN" }] },
+      { dayOfWeek: 1, ingredients: [{ name: "rice" }, { name: "Chicken" }] },
     ]);
     expect(usage.get("rice")?.totalUses).toBe(2);
     expect(usage.get("chicken")?.totalUses).toBe(2);
@@ -59,32 +59,42 @@ describe("buildIngredientUsage", () => {
   it("skips meals without ingredients", () => {
     const usage = buildIngredientUsage([
       { dayOfWeek: 0 },
-      { dayOfWeek: 1, ingredients: ["rice"] },
+      { dayOfWeek: 1, ingredients: [{ name: "rice" }] },
     ]);
     expect(usage.get("rice")?.totalUses).toBe(1);
+  });
+
+  it("ignores quantity and unit fields, only tracks by name", () => {
+    const usage = buildIngredientUsage([
+      { dayOfWeek: 0, ingredients: [{ name: "rice", quantity: 100, unit: "g" }] },
+      { dayOfWeek: 1, ingredients: [{ name: "rice", quantity: 200, unit: "g" }] },
+      { dayOfWeek: 2, ingredients: [{ name: "rice", quantity: 50, unit: "tazas" }] },
+    ]);
+    expect(usage.get("rice")?.totalUses).toBe(3);
+    expect(usage.get("rice")?.consecutiveDays).toBe(3);
   });
 });
 
 describe("canUseIngredient", () => {
   it("allows unused ingredient", () => {
     const usage = buildIngredientUsage([
-      { dayOfWeek: 0, ingredients: ["rice"] },
+      { dayOfWeek: 0, ingredients: [{ name: "rice" }] },
     ]);
     expect(canUseIngredient("chicken", 1, usage)).toBe(true);
   });
 
   it("allows ingredient on non-consecutive day", () => {
     const usage = buildIngredientUsage([
-      { dayOfWeek: 0, ingredients: ["chicken"] },
+      { dayOfWeek: 0, ingredients: [{ name: "chicken" }] },
     ]);
     expect(canUseIngredient("chicken", 2, usage)).toBe(true);
   });
 
   it("blocks ingredient after max consecutive days", () => {
     const usage = buildIngredientUsage([
-      { dayOfWeek: 0, ingredients: ["chicken"] },
-      { dayOfWeek: 1, ingredients: ["chicken"] },
-      { dayOfWeek: 2, ingredients: ["chicken"] },
+      { dayOfWeek: 0, ingredients: [{ name: "chicken" }] },
+      { dayOfWeek: 1, ingredients: [{ name: "chicken" }] },
+      { dayOfWeek: 2, ingredients: [{ name: "chicken" }] },
     ]);
     // Day 2 makes it 3 consecutive, day 3 would be 4
     expect(canUseIngredient("chicken", 3, usage)).toBe(false);
@@ -94,7 +104,7 @@ describe("canUseIngredient", () => {
     // Simulate 5 uses
     const meals = Array.from({ length: 5 }, (_, i) => ({
       dayOfWeek: i,
-      ingredients: ["chicken"],
+      ingredients: [{ name: "chicken" }],
     }));
     const usage = buildIngredientUsage(meals);
     expect(canUseIngredient("chicken", 6, usage)).toBe(false);

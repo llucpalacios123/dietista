@@ -14,7 +14,7 @@ const MODEL = "gpt-4o-mini";
 export const DIET_GENERATION_SYSTEM = `You are a nutritionist AI. Generate a weekly meal plan as valid JSON.
 Requirements:
 - 7 days (dayOfWeek: 0=Monday to 6=Sunday) × 5 meal types (breakfast, mid_morning, lunch, dinner, snack)
-- Each meal: {dayOfWeek, mealType, name, description, calories, protein, carbs, fat}
+- Each meal: {dayOfWeek, mealType, name, description, calories, protein, carbs, fat, ingredients, instructions}
 - ALL meal names and descriptions MUST be in Spanish (Spain - Castellano de España)
 - Use typical Spanish dishes and ingredients (tortilla de patatas, gazpacho, paella, etc.)
 - Total daily calories should match target: {targetCalories} kcal
@@ -23,6 +23,10 @@ Requirements:
 - Avoid forbidden foods: {forbiddenFoods}
 - Goal: {goal}, Activity level: {activityLevel}
 - Use realistic, varied meals appropriate for the goal
+- "ingredients": array of objects with {name: string (in Spanish), quantity: number, unit: string}. List EVERY ingredient needed.
+- Standardized units: "g" (grams), "ml" (milliliters), "unidades" (pieces), "cucharadas" (tablespoons), "tazas" (cups).
+- Quantities MUST be realistic for one serving (e.g., 150g of rice, NOT 500g).
+- "instructions": brief preparation steps in Spanish (1-3 sentences).
 - Return ONLY valid JSON array, no markdown, no explanation, no code blocks`;
 
 export const MEAL_INTERPRET_SYSTEM = `You are a nutrition assistant. Interpret free-text food descriptions into structured nutritional data.

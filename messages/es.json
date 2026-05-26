@@ -47,7 +47,19 @@
     "weeklyStreak": "Racha semanal",
     "weightTrend": "Tendencia de peso",
     "progress": "Progreso",
-    "goals": "Objetivos"
+    "goals": "Objetivos",
+    "currentMeal": "Tu {mealType} de hoy",
+    "upcomingMeal": "Próxima comida",
+    "noCurrentMeal": "Sin comida planificada ahora",
+    "noCurrentMealHint": "No hay ninguna comida asignada para este momento del día.",
+    "goToPlans": "Ir a planes",
+    "mealTypes": {
+      "breakfast": "desayuno",
+      "mid_morning": "media mañana",
+      "lunch": "almuerzo",
+      "snack": "merienda",
+      "dinner": "cena"
+    }
   },
   "Auth": {
     "signIn": "Iniciar sesión",
@@ -187,7 +199,11 @@
       "lunch": "Almuerzo",
       "dinner": "Cena",
       "snack": "Snack"
-    }
+    },
+    "noIngredients": "Sin ingredientes detallados",
+    "ingredientName": "Ingrediente",
+    "quantity": "Cantidad",
+    "unit": "Unidad"
   },
   "MealLog": {
     "title": "Registro de Comidas",
