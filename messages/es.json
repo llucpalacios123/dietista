@@ -378,7 +378,20 @@
       "dinner": "Cena",
       "snack": "Merienda"
     },
-    "dayLabels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+    "dayLabels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+    "plannedTitle": "Lo que toca comer hoy",
+    "noPlannedMeals": "No hay comidas planificadas para hoy",
+    "noActivePlan": "No tenés un plan activo",
+    "noActivePlanHint": "Activá uno en Planes para ver tu dieta de hoy",
+    "goToPlans": "Ir a Planes",
+    "abbrProtein": "P",
+    "abbrCarbs": "C",
+    "abbrFat": "G",
+    "ingredients": "Ingredientes",
+    "ingredientName": "Ingrediente",
+    "quantity": "Cantidad",
+    "unit": "Unidad",
+    "noIngredients": "Sin ingredientes detallados"
   },
   "Goals": {
     "title": "Objetivos",
