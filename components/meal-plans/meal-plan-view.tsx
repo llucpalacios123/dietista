@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCalories } from "@/lib/utils";
 
@@ -127,11 +128,24 @@ export function MealPlanView({ plan }: { plan: MealPlanData }): React.ReactEleme
             {endDate.toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-medium capitalize ${STATUS_COLORS[plan.status]}`}
-        >
-          {statusLabels[plan.status]}
-        </span>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/compras"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--dietista-border)] bg-[var(--dietista-surface)] px-3 py-1.5 text-sm font-medium text-[var(--dietista-text-2)] transition-colors hover:bg-[var(--dietista-surface-2)] hover:text-[var(--dietista-text-1)]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            {t("viewShoppingList")}
+          </Link>
+          <span
+            className={`rounded-full px-3 py-1 text-sm font-medium capitalize ${STATUS_COLORS[plan.status]}`}
+          >
+            {statusLabels[plan.status]}
+          </span>
+        </div>
       </div>
 
       {/* Weekly Summary */}

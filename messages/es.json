@@ -6,6 +6,7 @@
     "shopping": "Compras",
     "profile": "Perfil",
     "progress": "Progreso",
+    "gym": "Gimnasio",
     "signOut": "Salir",
     "brand": "Dietista"
   },
@@ -226,7 +227,8 @@
     "noIngredients": "Sin ingredientes detallados",
     "ingredientName": "Ingrediente",
     "quantity": "Cantidad",
-    "unit": "Unidad"
+    "unit": "Unidad",
+    "viewShoppingList": "Ver lista de compras"
   },
   "MealLog": {
     "title": "Registro de Comidas",
@@ -631,5 +633,36 @@
     "abbrProtein": "P:",
     "abbrCarbs": "C:",
     "abbrFat": "G:"
+  },
+  "Gym": {
+    "title": "Gimnasio",
+    "subtitle": "Registra tu entrenamiento",
+    "todayWorkout": "Entrenamiento de hoy",
+    "noWorkoutToday": "No has registrado nada hoy",
+    "addExercise": "Añadir ejercicio",
+    "selectMuscleGroup": "Selecciona grupo muscular",
+    "selectExercise": "Selecciona ejercicio",
+    "sets": "Series",
+    "reps": "Reps",
+    "weight": "Peso (kg)",
+    "optional": "opcional",
+    "addSet": "Añadir serie",
+    "saveSet": "Guardar",
+    "cancel": "Cancelar",
+    "recentSessions": "Sesiones recientes",
+    "noRecentSessions": "Sin sesiones recientes",
+    "deleteSet": "Eliminar serie",
+    "kg": "kg",
+    "bodyweight": "Peso corporal",
+    "back": "Volver",
+    "addAnotherSet": "Añadir otro set",
+    "notes": "Notas (opcional)",
+    "notesPlaceholder": "ej. fatiga alta",
+    "saving": "Guardando...",
+    "setsCount": "{count} series",
+    "lastWeight": "Último: {weight}kg",
+    "noWeight": "peso corporal",
+    "doneBack": "Listo — volver al resumen",
+    "noSetsLogged": "Sin series registradas"
   }
 }

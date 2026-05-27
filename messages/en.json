@@ -6,6 +6,7 @@
     "shopping": "Shopping",
     "profile": "Profile",
     "progress": "Progress",
+    "gym": "Gym",
     "signOut": "Sign Out",
     "brand": "Dietista"
   },
@@ -226,7 +227,8 @@
     "noIngredients": "No detailed ingredients",
     "ingredientName": "Ingredient",
     "quantity": "Quantity",
-    "unit": "Unit"
+    "unit": "Unit",
+    "viewShoppingList": "View shopping list"
   },
   "MealLog": {
     "title": "Meal Log",
@@ -628,5 +630,36 @@
     "abbrProtein": "P:",
     "abbrCarbs": "C:",
     "abbrFat": "F:"
+  },
+  "Gym": {
+    "title": "Gym",
+    "subtitle": "Log your workout",
+    "todayWorkout": "Today's workout",
+    "noWorkoutToday": "Nothing logged today",
+    "addExercise": "Add exercise",
+    "selectMuscleGroup": "Select muscle group",
+    "selectExercise": "Select exercise",
+    "sets": "Sets",
+    "reps": "Reps",
+    "weight": "Weight (kg)",
+    "optional": "optional",
+    "addSet": "Add set",
+    "saveSet": "Save",
+    "cancel": "Cancel",
+    "recentSessions": "Recent sessions",
+    "noRecentSessions": "No recent sessions",
+    "deleteSet": "Delete set",
+    "kg": "kg",
+    "bodyweight": "Bodyweight",
+    "back": "Back",
+    "addAnotherSet": "Add another set",
+    "notes": "Notes (optional)",
+    "notesPlaceholder": "e.g. high fatigue",
+    "saving": "Saving...",
+    "setsCount": "{count} sets",
+    "lastWeight": "Last: {weight}kg",
+    "noWeight": "bodyweight",
+    "doneBack": "Done — back to summary",
+    "noSetsLogged": "No sets logged"
   }
 }
