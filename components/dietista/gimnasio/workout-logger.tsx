@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ExerciseSelector } from "./exercise-selector";
@@ -55,12 +55,64 @@ export function WorkoutLogger({
   const [executingSet, setExecutingSet] = useState(false);
   const [executeError, setExecuteError] = useState<string | null>(null);
 
+  // Inline edit panel state (idle branch only)
+  const [editingExercise, setEditingExercise] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<Record<string, { reps: string; weightKg: string }>>({});
+
   // Group today's sets by exercise name
   const setsByExercise = new Map<string, SerializedWorkoutSet[]>();
   for (const set of todaySets) {
     const existing = setsByExercise.get(set.exerciseName) ?? [];
     existing.push(set);
     setsByExercise.set(set.exerciseName, existing);
+  }
+
+  // Pre-populate editValues when editingExercise changes or todaySets refreshes
+  useEffect(() => {
+    if (!editingExercise) {
+      setEditValues({});
+      return;
+    }
+    const sets = setsByExercise.get(editingExercise) ?? [];
+    const vals: Record<string, { reps: string; weightKg: string }> = {};
+    sets
+      .filter((s) => s.reps !== null)
+      .forEach((s) => {
+        vals[s.id] = {
+          reps: String(s.reps ?? ""),
+          weightKg: s.weightKg != null ? String(s.weightKg) : "",
+        };
+      });
+    setEditValues(vals);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingExercise, todaySets]);
+
+  // Stale guard: if the editing exercise disappears from todaySets, collapse panel
+  useEffect(() => {
+    if (!editingExercise) return;
+    if (!setsByExercise.has(editingExercise)) {
+      setEditingExercise(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todaySets]);
+
+  async function handleEditSave(setId: string) {
+    const vals = editValues[setId];
+    if (!vals) return;
+    const reps = parseInt(vals.reps, 10);
+    if (isNaN(reps) || reps < 1) return;
+    const weightKg = vals.weightKg ? parseFloat(vals.weightKg) : null;
+    await fetch(`/api/gym/sets/${setId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reps, weightKg }),
+    });
+    router.refresh();
+  }
+
+  async function handleEditDelete(setId: string) {
+    await fetch(`/api/gym/sets/${setId}`, { method: "DELETE" });
+    router.refresh();
   }
 
   async function ensureSession(): Promise<string | null> {
@@ -407,36 +459,113 @@ export function WorkoutLogger({
               MuscleGroupLabels[sets[0].muscleGroup as MuscleGroup] ??
               sets[0].muscleGroup;
             const lastSet = sets[sets.length - 1];
+            const isOpen = editingExercise === exerciseName;
+            const executedSets = sets.filter((s) => s.reps !== null);
 
             return (
               <li
                 key={exerciseName}
-                className="flex items-center justify-between rounded-[var(--dietista-r-md)] border border-[var(--dietista-border)] px-3 py-2"
+                className="rounded-[var(--dietista-r-md)] border border-[var(--dietista-border)]"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-[var(--dietista-text)]">
-                    {exerciseName}
-                  </p>
-                  <p className="text-xs text-[var(--dietista-text-3)]">
-                    {muscleLabel}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-xs font-semibold text-[var(--dietista-text)]">
-                    {sets.length} {sets.length === 1 ? "serie" : "series"}
-                  </p>
-                  <p className="text-xs text-[var(--dietista-text-3)]">
-                    {lastSet.reps == null ? (
-                      <span className="rounded bg-yellow-100 px-1 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
-                        {t("pending")}
-                      </span>
-                    ) : lastSet.weightKg != null ? (
-                      `${lastSet.weightKg}kg × ${lastSet.reps}`
-                    ) : (
-                      `${t("bodyweight")} × ${lastSet.reps}`
-                    )}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  aria-label={exerciseName}
+                  onClick={() =>
+                    setEditingExercise(isOpen ? null : exerciseName)
+                  }
+                  className="flex w-full items-center justify-between px-3 py-2 text-left"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium text-[var(--dietista-text)]">
+                      {exerciseName}
+                    </p>
+                    <p className="text-xs text-[var(--dietista-text-3)]">
+                      {muscleLabel}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-xs font-semibold text-[var(--dietista-text)]">
+                      {sets.length} {sets.length === 1 ? "serie" : "series"}
+                    </p>
+                    <p className="text-xs text-[var(--dietista-text-3)]">
+                      {lastSet.reps == null ? (
+                        <span className="rounded bg-yellow-100 px-1 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          {t("pending")}
+                        </span>
+                      ) : lastSet.weightKg != null ? (
+                        `${lastSet.weightKg}kg × ${lastSet.reps}`
+                      ) : (
+                        `${t("bodyweight")} × ${lastSet.reps}`
+                      )}
+                    </p>
+                  </div>
+                </button>
+
+                {isOpen && (
+                  <div
+                    data-testid={`edit-panel-${exerciseName}`}
+                    className="border-t border-[var(--dietista-border)] px-3 py-2 space-y-2"
+                  >
+                    {executedSets.map((set) => (
+                      <div
+                        key={set.id}
+                        data-testid={`edit-set-row-${set.id}`}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="w-6 shrink-0 text-center text-xs text-[var(--dietista-text-3)]">
+                          {set.setNumber}
+                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          aria-label={t("reps")}
+                          value={editValues[set.id]?.reps ?? ""}
+                          onChange={(e) =>
+                            setEditValues((prev) => ({
+                              ...prev,
+                              [set.id]: {
+                                ...prev[set.id],
+                                reps: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-20 rounded border border-[var(--dietista-border)] bg-[var(--dietista-surface)] px-2 py-1 text-sm text-[var(--dietista-text)]"
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          aria-label={t("weight")}
+                          value={editValues[set.id]?.weightKg ?? ""}
+                          onChange={(e) =>
+                            setEditValues((prev) => ({
+                              ...prev,
+                              [set.id]: {
+                                ...prev[set.id],
+                                weightKg: e.target.value,
+                              },
+                            }))
+                          }
+                          className="w-24 rounded border border-[var(--dietista-border)] bg-[var(--dietista-surface)] px-2 py-1 text-sm text-[var(--dietista-text)]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleEditSave(set.id)}
+                          className="rounded-[var(--dietista-r-sm)] bg-[var(--brand-600)] px-2 py-1 text-xs font-semibold text-white"
+                        >
+                          {t("saveSet")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEditDelete(set.id)}
+                          className="rounded-[var(--dietista-r-sm)] border border-red-300 px-2 py-1 text-xs text-red-600 dark:border-red-700 dark:text-red-400"
+                        >
+                          {t("deleteSet")}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </li>
             );
           })}
