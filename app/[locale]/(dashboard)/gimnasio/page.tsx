@@ -50,7 +50,9 @@ export default async function GimnasioPage() {
         exerciseName: s.exerciseName,
         muscleGroup: s.muscleGroup,
         setNumber: s.setNumber,
-        reps: s.reps,
+        reps: s.reps ?? null,
+        plannedReps: s.plannedReps ?? null,
+        plannedWeightKg: s.plannedWeightKg ? Number(s.plannedWeightKg) : null,
         weightKg: s.weightKg ?? null,
         createdAt: s.createdAt.toISOString(),
       }))
@@ -65,7 +67,9 @@ export default async function GimnasioPage() {
       exerciseName: s.exerciseName,
       muscleGroup: s.muscleGroup,
       setNumber: s.setNumber,
-      reps: s.reps,
+      reps: s.reps ?? null,
+      plannedReps: s.plannedReps ?? null,
+      plannedWeightKg: s.plannedWeightKg ? Number(s.plannedWeightKg) : null,
       weightKg: s.weightKg ?? null,
     })),
   }));

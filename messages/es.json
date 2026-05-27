@@ -663,6 +663,15 @@
     "lastWeight": "Último: {weight}kg",
     "noWeight": "peso corporal",
     "doneBack": "Listo — volver al resumen",
-    "noSetsLogged": "Sin series registradas"
+    "noSetsLogged": "Sin series registradas",
+    "planSets": "Planificar series",
+    "setCount": "Número de series",
+    "varied": "Series variadas",
+    "variedSets": "Configura cada serie",
+    "confirmPlan": "Confirmar plan",
+    "executingSet": "Ejecutar serie {n}",
+    "setsCompleted": "{done} / {total} series completadas",
+    "pending": "pendiente",
+    "executeSet": "Ejecutar"
   }
 }

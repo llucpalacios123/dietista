@@ -370,16 +370,18 @@ model WorkoutSession {
 }
 
 model WorkoutSet {
-  id           String         @id @default(cuid())
-  sessionId    String
-  session      WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  exerciseName String
-  muscleGroup  MuscleGroup
-  setNumber    Int
-  reps         Int
-  weightKg     Float?
-  notes        String?
-  createdAt    DateTime       @default(now())
+  id              String         @id @default(cuid())
+  sessionId       String
+  session         WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseName    String
+  muscleGroup     MuscleGroup
+  setNumber       Int
+  reps            Int?
+  plannedReps     Int?
+  plannedWeightKg Float?
+  weightKg        Float?
+  notes           String?
+  createdAt       DateTime       @default(now())
 
   @@index([sessionId])
 }

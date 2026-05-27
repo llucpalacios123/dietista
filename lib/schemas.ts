@@ -71,12 +71,35 @@ export const workoutSetSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const bulkWorkoutSetSchema = z.object({
+  sessionId: z.string().min(1),
+  exerciseName: z.string().min(1),
+  muscleGroup: z.nativeEnum(MuscleGroup),
+  sets: z
+    .array(
+      z.object({
+        setNumber: z.number().int().min(1),
+        plannedReps: z.number().int().min(1),
+        plannedWeightKg: z.number().positive().optional(),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+
+export const executeSetSchema = z.object({
+  reps: z.number().int().min(1),
+  weightKg: z.number().positive().optional(),
+});
+
 export const workoutSessionSchema = z.object({
   date: z.string().datetime().optional(),
   notes: z.string().max(500).optional(),
 });
 
 export type WorkoutSetInput = z.infer<typeof workoutSetSchema>;
+export type BulkWorkoutSetInput = z.infer<typeof bulkWorkoutSetSchema>;
+export type ExecuteSetInput = z.infer<typeof executeSetSchema>;
 export type WorkoutSessionInput = z.infer<typeof workoutSessionSchema>;
 
 // ─── Weight Entry Schema ─────────────────────────────────────────────────
