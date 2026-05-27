@@ -8,7 +8,9 @@ export interface SerializedSet {
   exerciseName: string;
   muscleGroup: string;
   setNumber: number;
-  reps: number;
+  reps: number | null;
+  plannedReps: number | null;
+  plannedWeightKg: number | null;
   weightKg: number | null;
 }
 
@@ -108,7 +110,13 @@ export function SessionHistory({
                           </p>
                         </div>
                         <p className="shrink-0 text-xs text-[var(--dietista-text-2)]">
-                          {setCount}×{lastSet.reps} {weightStr}
+                          {lastSet.reps == null ? (
+                            <span className="rounded bg-yellow-100 px-1 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                              {t("pending")}
+                            </span>
+                          ) : (
+                            `${setCount}×${lastSet.reps ?? "?"} ${weightStr}`
+                          )}
                         </p>
                       </li>
                     );

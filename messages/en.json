@@ -660,6 +660,15 @@
     "lastWeight": "Last: {weight}kg",
     "noWeight": "bodyweight",
     "doneBack": "Done — back to summary",
-    "noSetsLogged": "No sets logged"
+    "noSetsLogged": "No sets logged",
+    "planSets": "Plan sets",
+    "setCount": "Number of sets",
+    "varied": "Varied sets",
+    "variedSets": "Configure each set",
+    "confirmPlan": "Confirm plan",
+    "executingSet": "Execute set {n}",
+    "setsCompleted": "{done} / {total} sets completed",
+    "pending": "pending",
+    "executeSet": "Execute"
   }
 }
