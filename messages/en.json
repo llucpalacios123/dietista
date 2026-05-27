@@ -167,7 +167,29 @@
     "yes": "Yes",
     "no": "No",
     "currentValue": "Current value:",
-    "memberSince": "Member since"
+    "memberSince": "Member since",
+    "tabs": {
+      "account": "Account",
+      "bodyGoals": "Body & Goals",
+      "preferences": "Preferences"
+    },
+    "Account": {
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "updateNameSuccess": "Name updated successfully",
+      "updateNameError": "Could not update the name",
+      "changePasswordSuccess": "Password updated successfully",
+      "changePasswordError": "Could not update the password",
+      "wrongCurrentPassword": "The current password is incorrect",
+      "saveChanges": "Save changes",
+      "saving": "Saving...",
+      "emailReadOnly": "Email cannot be changed in this version"
+    }
   },
   "MealPlan": {
     "title": "Meal Plan",

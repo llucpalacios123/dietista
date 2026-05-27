@@ -14,7 +14,7 @@ export async function verifyPassword(
   return compare(password, hash);
 }
 
-export async function getUserByEmail(email: string): Promise<User & { profile: {
+export async function getUserByEmail(email: string): Promise<(User & { profile: {
   id: string;
   userId: string;
   weight: number;
@@ -31,7 +31,7 @@ export async function getUserByEmail(email: string): Promise<User & { profile: {
   forbiddenFoods: string[];
   createdAt: Date;
   updatedAt: Date;
-} | null } | null> {
+} | null }) | null> {
   return prisma.user.findUnique({
     where: { email: email.toLowerCase() },
     include: { profile: true },

@@ -113,6 +113,30 @@ export const interpretedFoodSchema = z.object({
   confidence: z.enum(["high", "medium", "low"]).default("medium"),
 });
 
+// ─── Account Schemas ─────────────────────────────────────────────────────
+
+export const accountNameSchema = z.object({
+  name: z.string().max(100, "El nombre no puede tener más de 100 caracteres"),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "La contraseña actual es obligatoria"),
+    newPassword: z
+      .string()
+      .min(8, "La contraseña debe tener al menos 8 caracteres")
+      .regex(/[A-Z]/, "La contraseña debe contener al menos una mayúscula")
+      .regex(/[0-9]/, "La contraseña debe contener al menos un número"),
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"],
+  });
+
+export type AccountNameSchema = z.infer<typeof accountNameSchema>;
+export type ChangePasswordSchema = z.infer<typeof changePasswordSchema>;
+
 // ─── Type Exports ────────────────────────────────────────────────────────
 
 export type RegisterSchema = z.infer<typeof registerSchema>;

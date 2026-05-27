@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ProfileForm } from "@/components/profile/profile-form";
+import { ProfileTabs } from "@/components/profile/profile-tabs";
 import { formatMonthYear } from "@/lib/dates";
 
 export default async function PerfilPage() {
@@ -49,9 +49,12 @@ export default async function PerfilPage() {
         </div>
       </div>
 
-      {/* Profile Form */}
+      {/* Profile Tabs */}
       <div className="mx-[var(--dietista-pad-card)]">
-        <ProfileForm existingProfile={profile} />
+        <ProfileTabs
+          profile={profile}
+          account={{ name: session.name ?? null, email: session.email }}
+        />
       </div>
     </div>
   );
