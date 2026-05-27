@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { PlanCard } from "@/components/dietista/planes/plan-card";
 
 export default async function PlanesPage() {
   const session = await auth();
@@ -49,9 +50,10 @@ export default async function PlanesPage() {
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--brand-700)]">
               {t("activePlan")}
             </p>
-            <p className="mt-1 text-lg font-bold text-[var(--brand-800)]">
-              {t("weekOf")} {new Date(activePlan.startDate).toLocaleDateString("es-ES")}
-            </p>
+            {/* Inline rename for active hero plan */}
+            <div className="mt-1">
+              <PlanCard plan={activePlan} isActive={true} />
+            </div>
             <p className="mt-1 text-sm text-[var(--brand-600)]">
               {activePlan.meals.length} {t("meals")} · {Math.round(activePlan.totalCalories ?? 0)} {t("kcalPerDay")}
             </p>
@@ -88,31 +90,7 @@ export default async function PlanesPage() {
           </h2>
           <div className="space-y-2">
             {pastPlans.map((plan) => (
-              <Link
-                key={plan.id}
-                href={`/meal-plans/${plan.id}`}
-                className="flex items-center justify-between rounded-[var(--dietista-r-md)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)] transition-colors hover:border-[var(--brand-300)]"
-              >
-                <div>
-                  <p className="text-sm font-medium text-[var(--dietista-text)]">
-                    {new Date(plan.startDate).toLocaleDateString("es-ES")}
-                  </p>
-                  <p className="text-xs text-[var(--dietista-text-2)]">
-                    {plan.status === "completed" ? t("completed") : t("draft")}
-                  </p>
-                </div>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="text-[var(--dietista-text-3)]"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </Link>
+              <PlanCard key={plan.id} plan={plan} isActive={false} />
             ))}
           </div>
         </div>

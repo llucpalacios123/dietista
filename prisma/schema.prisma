@@ -158,6 +158,7 @@ model MealPlan {
   endDate       DateTime
   status        PlanStatus @default(draft)
   totalCalories Float?
+  name          String?
   meals         Meal[]
   shoppingLists ShoppingList[]
   createdAt     DateTime   @default(now())

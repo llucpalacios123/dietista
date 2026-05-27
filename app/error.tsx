@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTranslations } from "next-intl";
 
 export default function GlobalError({
   error,
@@ -10,28 +9,28 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const t = useTranslations("Errors");
-
   useEffect(() => {
     console.error("Global error:", error);
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-destructive">
-          {t("serverError")}
-        </h1>
-        <p className="mt-4 text-muted-foreground">
-          {t("defaultError")}
-        </p>
-        <button
-          onClick={reset}
-          className="mt-6 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
-        >
-          {t("tryAgain")}
-        </button>
-      </div>
-    </div>
+    <html>
+      <body>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold">Error del servidor</h1>
+            <p className="mt-4 text-gray-500">
+              Algo salió mal. Por favor intentá de nuevo.
+            </p>
+            <button
+              onClick={reset}
+              className="mt-6 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        </div>
+      </body>
+    </html>
   );
 }
