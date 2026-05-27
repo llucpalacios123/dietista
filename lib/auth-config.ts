@@ -24,6 +24,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return {
           id: user.id,
           email: user.email,
+          name: user.name ?? null,
         };
       },
     }),
@@ -33,17 +34,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: "/error",
   },
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.userId = user.id;
         token.email = user.email;
+        token.name = user.name ?? null;
+      }
+      // Handle session update trigger (e.g. after updateName action)
+      if (trigger === "update" && session?.name !== undefined) {
+        token.name = session.name;
       }
       return token;
     },
-    session({ session, token }) {
+    async session({ session, token }) {
       if (token.userId) {
         session.userId = token.userId as string;
         session.email = token.email as string;
+        session.name = token.name as string | null | undefined;
       }
       return session;
     },
@@ -53,3 +60,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 24 * 60 * 60, // 24 hours
   },
 });
+

@@ -167,7 +167,29 @@
     "yes": "Sí",
     "no": "No",
     "currentValue": "Valor actual:",
-    "memberSince": "Miembro desde"
+    "memberSince": "Miembro desde",
+    "tabs": {
+      "account": "Cuenta",
+      "bodyGoals": "Cuerpo y Objetivos",
+      "preferences": "Preferencias"
+    },
+    "Account": {
+      "displayName": "Nombre de Pantalla",
+      "displayNamePlaceholder": "Tu nombre",
+      "emailLabel": "Email",
+      "changePassword": "Cambiar Contraseña",
+      "currentPassword": "Contraseña Actual",
+      "newPassword": "Nueva Contraseña",
+      "confirmPassword": "Confirmar Nueva Contraseña",
+      "updateNameSuccess": "Nombre actualizado correctamente",
+      "updateNameError": "No se ha podido actualizar el nombre",
+      "changePasswordSuccess": "Contraseña actualizada correctamente",
+      "changePasswordError": "No se ha podido actualizar la contraseña",
+      "wrongCurrentPassword": "La contraseña actual no es correcta",
+      "saveChanges": "Guardar cambios",
+      "saving": "Guardando...",
+      "emailReadOnly": "El email no se puede cambiar en esta versión"
+    }
   },
   "MealPlan": {
     "title": "Plan de Comidas",
