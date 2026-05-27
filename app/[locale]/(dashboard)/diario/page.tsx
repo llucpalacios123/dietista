@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { DayStrip } from "@/components/dietista/atoms";
 import { formatDateLong } from "@/lib/dates";
+import { TodaysMeals } from "@/components/dietista/todays-meals";
+import { filterAndSortMeals, mapToPlannedMeal } from "@/lib/planned-meal-mapper";
 
 export default async function DiarioPage() {
   const session = await auth();
@@ -32,6 +34,12 @@ export default async function DiarioPage() {
 
   const profile = await prisma.profile.findUnique({
     where: { userId: session.userId },
+  });
+
+  const activePlan = await prisma.mealPlan.findFirst({
+    where: { userId: session.userId, status: "active" },
+    orderBy: { startDate: "desc" },
+    include: { meals: true },
   });
 
   const targets = {
@@ -65,6 +73,11 @@ export default async function DiarioPage() {
 
   const mealTypeLabels = t.raw("mealTypes") as unknown as Record<string, string>;
 
+  const hasActivePlan = activePlan !== null;
+  const todayMeals = filterAndSortMeals(activePlan?.meals ?? [], todayIndex).map(
+    mapToPlannedMeal
+  );
+
   return (
     <div className="space-y-4 px-1 pb-4">
       {/* Header */}
@@ -79,6 +92,9 @@ export default async function DiarioPage() {
 
       {/* Day Strip */}
       <DayStrip days={dayLabels} activeIndex={todayIndex} />
+
+      {/* Today's Planned Meals */}
+      <TodaysMeals meals={todayMeals} hasActivePlan={hasActivePlan} />
 
       {/* Macro Summary */}
       <div className="flex justify-center gap-6 py-4">

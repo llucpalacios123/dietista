@@ -375,7 +375,20 @@
       "dinner": "Dinner",
       "snack": "Snack"
     },
-    "dayLabels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    "dayLabels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "plannedTitle": "What to eat today",
+    "noPlannedMeals": "No meals planned for today",
+    "noActivePlan": "You have no active plan",
+    "noActivePlanHint": "Activate one in Plans to see today's diet",
+    "goToPlans": "Go to Plans",
+    "abbrProtein": "P",
+    "abbrCarbs": "C",
+    "abbrFat": "F",
+    "ingredients": "Ingredients",
+    "ingredientName": "Ingredient",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "noIngredients": "No detailed ingredients"
   },
   "Goals": {
     "title": "Goals",
