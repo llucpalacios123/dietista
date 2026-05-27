@@ -77,6 +77,16 @@ export function BottomNav({ items }: BottomNavProps): React.ReactElement {
         </svg>
       ),
     },
+    {
+      label: t("progress"),
+      href: "/progreso",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+          <polyline points="16 7 22 7 22 13" />
+        </svg>
+      ),
+    },
   ];
 
   const navItems = items ?? defaultItems;
@@ -87,7 +97,7 @@ export function BottomNav({ items }: BottomNavProps): React.ReactElement {
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="grid grid-cols-5 gap-0.5">
+      <div className="grid grid-cols-6 gap-0.5">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
