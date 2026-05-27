@@ -58,7 +58,7 @@ export function SetPlanner({
 }: SetPlannerProps): React.ReactElement {
   const t = useTranslations("Gym");
 
-  const [setCount, setSetCount] = useState(3);
+  const [setCount, setSetCount] = useState<string>("3");
   const [varied, setVaried] = useState(false);
   const [uniformReps, setUniformReps] = useState("");
   const [uniformWeight, setUniformWeight] = useState("");
@@ -69,9 +69,9 @@ export function SetPlanner({
   const [error, setError] = useState<string | null>(null);
 
   function handleSetCountChange(val: string) {
-    const n = Math.min(20, Math.max(1, parseInt(val, 10) || 1));
-    setSetCount(n);
-    if (varied) {
+    setSetCount(val);
+    const n = parseInt(val, 10);
+    if (!isNaN(n) && n >= 1 && n <= 20 && varied) {
       setVariedRows((prev) => buildVariedSets(n, prev));
     }
   }
@@ -80,7 +80,10 @@ export function SetPlanner({
     const next = !varied;
     setVaried(next);
     if (next) {
-      setVariedRows(buildUniformSets(setCount, uniformReps, uniformWeight));
+      const n = parseInt(setCount, 10);
+      if (!isNaN(n) && n >= 1 && n <= 20) {
+        setVariedRows(buildUniformSets(n, uniformReps, uniformWeight));
+      }
     }
   }
 
@@ -91,7 +94,8 @@ export function SetPlanner({
   }
 
   function isFormValid(): boolean {
-    if (setCount < 1 || setCount > 20) return false;
+    const n = parseInt(setCount, 10);
+    if (isNaN(n) || n < 1 || n > 20) return false;
     if (varied) {
       return variedRows.every((row) => isValidReps(row.plannedReps));
     }
@@ -111,7 +115,7 @@ export function SetPlanner({
             ? parseFloat(row.plannedWeightKg)
             : undefined,
         }))
-      : Array.from({ length: setCount }, (_, i) => ({
+      : Array.from({ length: parseInt(setCount, 10) }, (_, i) => ({
           setNumber: i + 1,
           plannedReps: parseInt(uniformReps, 10),
           plannedWeightKg: uniformWeight ? parseFloat(uniformWeight) : undefined,
