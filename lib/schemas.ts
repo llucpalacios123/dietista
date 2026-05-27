@@ -59,6 +59,16 @@ export const profileSchema = z.object({
   favoriteFoods: z.array(z.string()).default([]),
 });
 
+// ─── Weight Entry Schema ─────────────────────────────────────────────────
+
+export const weightEntrySchema = z.object({
+  weight: z.number().positive().min(30).max(300),
+  date: z.string().datetime().optional(),
+  notes: z.string().max(280).optional(),
+});
+
+export type WeightEntrySchema = z.infer<typeof weightEntrySchema>;
+
 // ─── Meal Log Schema ─────────────────────────────────────────────────────
 
 export const mealLogSchema = z.object({
