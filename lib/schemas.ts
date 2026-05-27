@@ -113,6 +113,14 @@ export const interpretedFoodSchema = z.object({
   confidence: z.enum(["high", "medium", "low"]).default("medium"),
 });
 
+// ─── Meal Plan Schemas ────────────────────────────────────────────────────
+
+export const renamePlanSchema = z.object({
+  name: z.string().max(60, "Name too long"),
+});
+
+export type RenamePlanInput = z.infer<typeof renamePlanSchema>;
+
 // ─── Account Schemas ─────────────────────────────────────────────────────
 
 export const accountNameSchema = z.object({

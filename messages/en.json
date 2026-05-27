@@ -452,7 +452,14 @@
     "createNewPlan": "Create new plan",
     "pastPlans": "Past plans",
     "completed": "Completed",
-    "draft": "Draft"
+    "draft": "Draft",
+    "activate": "Activate",
+    "activating": "Activating...",
+    "activated": "Plan activated",
+    "activateError": "Could not activate plan",
+    "renamePlaceholder": "Plan name",
+    "nameSaved": "Name saved",
+    "nameSaveError": "Could not save name"
   },
   "Progress": {
     "title": "Progress",
