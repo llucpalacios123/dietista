@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { WeightChart, MacroStackChart, AdherenceHeatMap } from "@/components/dietista/charts";
+import { WeightEntryForm } from "@/components/dietista/weight-entry-form";
+import { WeightHistoryList, type WeightEntry } from "@/components/dietista/weight-history-list";
+import { computePlanBands } from "@/lib/weight-correlation";
 
 export default async function ProgresoPage() {
   const session = await auth();
@@ -12,32 +15,68 @@ export default async function ProgresoPage() {
 
   const t = await getTranslations("Progress");
 
-  // Fetch weight data for chart
+  // Fetch weight data and meal plans for the last 30 days
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const weightLogs = await prisma.weightLog.findMany({
-    where: {
-      userId: session.userId,
-      date: { gte: thirtyDaysAgo },
-    },
-    orderBy: { date: "asc" },
-  });
+  const [weightLogs, mealPlans, snapshots, profile] = await Promise.all([
+    prisma.weightLog.findMany({
+      where: {
+        userId: session.userId,
+        date: { gte: thirtyDaysAgo },
+      },
+      orderBy: { date: "asc" },
+    }),
+    // Fetch meal plans overlapping the 30-day window, ordered by createdAt desc
+    // (newest first so tie-break is deterministic in computePlanBands)
+    prisma.mealPlan.findMany({
+      where: {
+        userId: session.userId,
+        startDate: { lte: new Date() },
+        endDate: { gte: thirtyDaysAgo },
+      },
+      orderBy: { createdAt: "desc" },
+      include: { template: true },
+    }),
+    prisma.progressSnapshot.findMany({
+      where: {
+        userId: session.userId,
+        date: { gte: thirtyDaysAgo },
+      },
+      orderBy: { date: "asc" },
+      take: 7,
+    }),
+    prisma.profile.findUnique({
+      where: { userId: session.userId },
+    }),
+  ]);
+
+  // Compute plan correlation bands (pure, server-side)
+  const planBands = computePlanBands(
+    weightLogs.map((w) => ({ date: w.date, weight: w.weight })),
+    mealPlans.map((p) => ({
+      id: p.id,
+      startDate: p.startDate,
+      endDate: p.endDate,
+      createdAt: p.createdAt,
+      template: p.template ? { name: p.template.name } : null,
+    })),
+  );
 
   const weightChartData = weightLogs.map((w) => ({
     date: w.date.toISOString().split("T")[0],
     weight: w.weight,
   }));
 
-  // Fetch progress snapshots for macros chart
-  const snapshots = await prisma.progressSnapshot.findMany({
-    where: {
-      userId: session.userId,
-      date: { gte: thirtyDaysAgo },
-    },
-    orderBy: { date: "asc" },
-    take: 7,
-  });
+  // Serialize weight logs for the history list (plain objects, no Date)
+  const historyEntries: WeightEntry[] = [...weightLogs]
+    .reverse()
+    .map((w) => ({
+      id: w.id,
+      date: w.date.toISOString(),
+      weight: w.weight,
+      notes: w.notes,
+    }));
 
   const macroChartData = snapshots.map((s) => ({
     day: new Date(s.date).toLocaleDateString("es-ES", { weekday: "short" }),
@@ -46,17 +85,12 @@ export default async function ProgresoPage() {
     fat: s.totalFat ?? 0,
   }));
 
-  // Fetch adherence data
   const adherenceData = snapshots
     .filter((s) => s.adherenceScore !== null)
     .map((s) => ({
       date: s.date.toISOString().split("T")[0],
       score: s.adherenceScore ?? 0,
     }));
-
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.userId },
-  });
 
   return (
     <div className="space-y-6 px-1 pb-4">
@@ -70,6 +104,11 @@ export default async function ProgresoPage() {
         </p>
       </div>
 
+      {/* Weight Entry Form */}
+      <div className="px-[var(--dietista-pad-card)]">
+        <WeightEntryForm />
+      </div>
+
       {/* Weight Chart */}
       <div className="px-[var(--dietista-pad-card)]">
         <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
@@ -80,8 +119,14 @@ export default async function ProgresoPage() {
             data={weightChartData}
             goalWeight={profile?.weight ? profile.weight - 5 : undefined}
             height={200}
+            planBands={planBands}
           />
         </div>
+      </div>
+
+      {/* Weight History List */}
+      <div className="px-[var(--dietista-pad-card)]">
+        <WeightHistoryList entries={historyEntries} />
       </div>
 
       {/* Macros Chart */}

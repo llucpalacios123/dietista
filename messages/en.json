@@ -5,6 +5,7 @@
     "plans": "Plans",
     "shopping": "Shopping",
     "profile": "Profile",
+    "progress": "Progress",
     "signOut": "Sign Out",
     "brand": "Dietista"
   },
@@ -423,7 +424,20 @@
     "subtitle": "Track your evolution",
     "weight": "Weight",
     "weeklyMacros": "Weekly Macros",
-    "adherence": "Adherence"
+    "adherence": "Adherence",
+    "logWeight": "Log weight",
+    "save": "Save",
+    "saving": "Saving...",
+    "delete": "Delete",
+    "deltaLabel": "Δ weight",
+    "noData": "no data",
+    "notesLabel": "Notes (optional)",
+    "notesPlaceholder": "e.g. after breakfast",
+    "weightLabel": "Weight (kg)",
+    "weightPlaceholder": "72.5",
+    "dateLabel": "Date",
+    "historyTitle": "Weight history",
+    "noEntries": "No weight entries yet"
   },
   "Wizard": {
     "newPlanTitle": "New Nutritional Plan",

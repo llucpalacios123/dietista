@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { weightEntrySchema } from "@/lib/schemas";
 
 export async function GET(request: Request): Promise<NextResponse> {
   const session = await auth();
@@ -51,12 +51,6 @@ export async function GET(request: Request): Promise<NextResponse> {
   });
 }
 
-const createWeightSchema = z.object({
-  weight: z.number().positive().min(30).max(300),
-  date: z.string().datetime().optional(),
-  notes: z.string().optional(),
-});
-
 export async function POST(request: Request): Promise<NextResponse> {
   const session = await auth();
   if (!session?.userId) {
@@ -64,12 +58,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const body = await request.json();
-  const parsed = createWeightSchema.safeParse(body);
+  const parsed = weightEntrySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const weightDate = parsed.data.date ? new Date(parsed.data.date) : new Date();
+  // Normalize to UTC midnight to satisfy @@unique([userId, date]) constraint
+  const rawDate = parsed.data.date ? new Date(parsed.data.date) : new Date();
+  const weightDate = new Date(rawDate.setUTCHours(0, 0, 0, 0));
 
   try {
     const entry = await prisma.weightLog.upsert({

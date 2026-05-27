@@ -5,6 +5,7 @@ import {
   mealLogSchema,
   loginSchema,
   mealItemSchema,
+  weightEntrySchema,
 } from "@/lib/schemas";
 
 describe("registerSchema", () => {
@@ -195,6 +196,86 @@ describe("loginSchema", () => {
       password: "password",
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("weightEntrySchema", () => {
+  describe("weight bounds", () => {
+    it("accepts weight at lower bound (30)", () => {
+      const result = weightEntrySchema.safeParse({ weight: 30 });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts weight at upper bound (300)", () => {
+      const result = weightEntrySchema.safeParse({ weight: 300 });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts weight in range (72.5)", () => {
+      const result = weightEntrySchema.safeParse({ weight: 72.5 });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects weight below 30", () => {
+      const result = weightEntrySchema.safeParse({ weight: 29.9 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects weight above 300", () => {
+      const result = weightEntrySchema.safeParse({ weight: 300.1 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects weight of 0", () => {
+      const result = weightEntrySchema.safeParse({ weight: 0 });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects negative weight", () => {
+      const result = weightEntrySchema.safeParse({ weight: -5 });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("notes length", () => {
+    it("accepts notes within 280 chars", () => {
+      const result = weightEntrySchema.safeParse({
+        weight: 72.5,
+        notes: "a".repeat(280),
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects notes over 280 chars", () => {
+      const result = weightEntrySchema.safeParse({
+        weight: 72.5,
+        notes: "a".repeat(281),
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("date field", () => {
+    it("accepts valid ISO datetime string", () => {
+      const result = weightEntrySchema.safeParse({
+        weight: 72.5,
+        date: "2024-03-15T00:00:00.000Z",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts payload without date (optional)", () => {
+      const result = weightEntrySchema.safeParse({ weight: 72.5 });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects non-datetime date string", () => {
+      const result = weightEntrySchema.safeParse({
+        weight: 72.5,
+        date: "2024-03-15",
+      });
+      expect(result.success).toBe(false);
+    });
   });
 });
 

@@ -5,6 +5,7 @@
     "plans": "Planes",
     "shopping": "Compras",
     "profile": "Perfil",
+    "progress": "Progreso",
     "signOut": "Salir",
     "brand": "Dietista"
   },
@@ -426,7 +427,20 @@
     "subtitle": "Seguimiento de tu evolución",
     "weight": "Peso",
     "weeklyMacros": "Macros semanales",
-    "adherence": "Adherencia"
+    "adherence": "Adherencia",
+    "logWeight": "Registrar peso",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "delete": "Eliminar",
+    "deltaLabel": "Δ peso",
+    "noData": "sin datos",
+    "notesLabel": "Notas (opcional)",
+    "notesPlaceholder": "ej. después del desayuno",
+    "weightLabel": "Peso (kg)",
+    "weightPlaceholder": "72.5",
+    "dateLabel": "Fecha",
+    "historyTitle": "Historial de peso",
+    "noEntries": "Sin registros de peso aún"
   },
   "Wizard": {
     "newPlanTitle": "Nuevo Plan Nutricional",
