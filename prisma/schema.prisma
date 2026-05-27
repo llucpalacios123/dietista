@@ -97,6 +97,16 @@ enum FoodGroup {
   other
 }
 
+enum MuscleGroup {
+  legs
+  back
+  chest
+  shoulders
+  arms
+  core
+  cardio
+}
+
 // ─── Entities ────────────────────────────────────────────────────────────
 
 model User {
@@ -114,6 +124,7 @@ model User {
   weightLogs         WeightLog[]
   shoppingLists      ShoppingList[]
   progressSnapshots  ProgressSnapshot[]
+  workoutSessions    WorkoutSession[]
 }
 
 model Profile {
@@ -342,6 +353,35 @@ model ShoppingItem {
   createdAt      DateTime @default(now())
 
   @@index([shoppingListId])
+}
+
+// ─── Workout Tracking ────────────────────────────────────────────────────
+
+model WorkoutSession {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime     @default(now())
+  notes     String?
+  sets      WorkoutSet[]
+  createdAt DateTime     @default(now())
+
+  @@index([userId, date])
+}
+
+model WorkoutSet {
+  id           String         @id @default(cuid())
+  sessionId    String
+  session      WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseName String
+  muscleGroup  MuscleGroup
+  setNumber    Int
+  reps         Int
+  weightKg     Float?
+  notes        String?
+  createdAt    DateTime       @default(now())
+
+  @@index([sessionId])
 }
 
 // ─── Progress Snapshots ──────────────────────────────────────────────────

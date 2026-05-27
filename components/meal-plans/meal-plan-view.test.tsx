@@ -1,3 +1,4 @@
+import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -6,6 +7,14 @@ import {
   type MealData,
   type MealPlanData,
 } from "@/components/meal-plans/meal-plan-view";
+
+// ─── Mock i18n navigation ─────────────────────────────────────────────────
+
+vi.mock("@/i18n/navigation", () => ({
+  Link: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) =>
+    React.createElement("a", { href, className }, children),
+  usePathname: () => "/",
+}));
 
 // ─── Mock next-intl ───────────────────────────────────────────────────────
 

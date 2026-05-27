@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MuscleGroup } from "@prisma/client";
 
 // ─── Auth Schemas ────────────────────────────────────────────────────────
 
@@ -58,6 +59,25 @@ export const profileSchema = z.object({
   trainingRoutine: z.string().optional(),
   favoriteFoods: z.array(z.string()).default([]),
 });
+
+// ─── Workout Schemas ─────────────────────────────────────────────────────
+
+export const workoutSetSchema = z.object({
+  sessionId: z.string().min(1),
+  exerciseName: z.string().min(1),
+  muscleGroup: z.nativeEnum(MuscleGroup),
+  reps: z.number().int().min(1),
+  weightKg: z.number().positive().optional(),
+  notes: z.string().optional(),
+});
+
+export const workoutSessionSchema = z.object({
+  date: z.string().datetime().optional(),
+  notes: z.string().max(500).optional(),
+});
+
+export type WorkoutSetInput = z.infer<typeof workoutSetSchema>;
+export type WorkoutSessionInput = z.infer<typeof workoutSessionSchema>;
 
 // ─── Weight Entry Schema ─────────────────────────────────────────────────
 
