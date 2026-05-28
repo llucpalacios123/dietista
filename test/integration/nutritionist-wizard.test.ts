@@ -332,7 +332,7 @@ describe("JSON Validation Pipeline", () => {
             protein: 15,
             carbs: 55,
             fat: 8,
-            ingredients: ["oats", "milk", "berries"],
+            ingredients: [{ name: "oats" }, { name: "milk" }, { name: "berries" }],
             instructions: "Cook oats, top with berries.",
           },
           {
@@ -345,7 +345,7 @@ describe("JSON Validation Pipeline", () => {
             protein: 42,
             carbs: 20,
             fat: 22,
-            ingredients: ["chicken breast", "lettuce", "tomato", "olive oil"],
+            ingredients: [{ name: "chicken breast" }, { name: "lettuce" }, { name: "tomato" }, { name: "olive oil" }],
             instructions: "Grill chicken, toss with greens.",
           },
           {
@@ -358,7 +358,7 @@ describe("JSON Validation Pipeline", () => {
             protein: 38,
             carbs: 30,
             fat: 25,
-            ingredients: ["salmon", "broccoli", "sweet potato", "olive oil"],
+            ingredients: [{ name: "salmon" }, { name: "broccoli" }, { name: "sweet potato" }, { name: "olive oil" }],
             instructions: "Bake salmon. Roast vegetables.",
           },
         ],
@@ -487,7 +487,7 @@ describe("AI Plan Parsing", () => {
     const plan = parseAIGeneratedPlan(raw);
     expect(plan).not.toBeNull();
     expect(plan!.days).toHaveLength(1);
-    expect(plan!.days[0].meals[0].ingredients).toEqual(["oats", "milk"]);
+    expect(plan!.days[0].meals[0].ingredients).toEqual([{ name: "oats" }, { name: "milk" }]);
   });
 
   it("rejects invalid data gracefully", () => {

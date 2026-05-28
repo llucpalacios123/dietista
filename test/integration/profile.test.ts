@@ -45,7 +45,7 @@ describe("Profile schema validation", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.some((e) => e.message.includes("positive"))).toBe(true);
+      expect(result.error.errors.some((e) => e.message.includes("positivo"))).toBe(true);
     }
   });
 

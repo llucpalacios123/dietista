@@ -38,7 +38,7 @@ describe("POST /api/auth/register", () => {
     });
 
     expect(status).toBe(201);
-    expect(data).toHaveProperty("message", "User created successfully");
+    expect(data).toHaveProperty("message", "Usuario creado correctamente");
 
     const user = await prisma.user.findUnique({
       where: { email: "newuser@example.com" },
@@ -63,7 +63,7 @@ describe("POST /api/auth/register", () => {
     });
 
     expect(status).toBe(409);
-    expect(data).toHaveProperty("error", "Email already registered");
+    expect(data).toHaveProperty("error", "Email ya registrado");
   });
 
   it("rejects weak password", async () => {
@@ -73,7 +73,7 @@ describe("POST /api/auth/register", () => {
     });
 
     expect(status).toBe(400);
-    expect(data).toHaveProperty("error", "Invalid input");
+    expect(data).toHaveProperty("error", "Entrada no válida");
     expect(data).toHaveProperty("details");
   });
 
@@ -84,7 +84,7 @@ describe("POST /api/auth/register", () => {
     });
 
     expect(status).toBe(400);
-    expect(data).toHaveProperty("error", "Invalid input");
+    expect(data).toHaveProperty("error", "Entrada no válida");
   });
 
   it("normalizes email to lowercase", async () => {

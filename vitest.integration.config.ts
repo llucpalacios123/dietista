@@ -8,6 +8,7 @@ export default defineConfig({
     setupFiles: ["./test/setup-integration.ts"],
     include: ["test/integration/**/*.test.ts"],
     exclude: ["**/node_modules/**", "**/.next/**"],
+    fileParallelism: false,
     testTimeout: 120000, // 2 minutes for container startup
     hookTimeout: 120000,
   },
