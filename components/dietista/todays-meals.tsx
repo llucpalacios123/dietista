@@ -18,7 +18,7 @@ type DiaryEntryData = {
   actualProtein: number | null;
   actualCarbs: number | null;
   actualFat: number | null;
-  aiSuggestion: string | null;
+  aiSuggestion: unknown;
 };
 
 interface TodaysMealsProps {
@@ -34,9 +34,7 @@ interface TodaysMealsProps {
   };
 }
 
-type SlotState = {
-  completed: boolean;
-  aiOpen: boolean;
+type SlotChatState = {
   aiLoading: boolean;
   aiError: string | null;
   messages: ChatMessage[];
@@ -57,32 +55,28 @@ export function TodaysMeals({
   const [, startToggleTransition] = useTransition();
   const [, startAiTransition] = useTransition();
 
-  // Per-slot state
-  const [slotStates, setSlotStates] = useState<Record<string, SlotState>>(() => {
-    const init: Record<string, SlotState> = {};
+  // Singleton modal state: null = closed, string = active mealType
+  const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
+
+  // Per-slot completion state
+  const [completedSlots, setCompletedSlots] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
     for (const meal of meals) {
       const entry = diaryByType[meal.mealType];
-      init[meal.mealType] = {
-        completed: entry?.completed ?? false,
-        aiOpen: false,
-        aiLoading: false,
-        aiError: null,
-        messages: [],
-        pendingSuggestion: null,
-        turnCount: 0,
-      };
+      init[meal.mealType] = entry?.completed ?? false;
     }
     return init;
   });
 
-  const toggleMeal = (id: string) => {
+  // Per-slot AI conversation state
+  const [slotChatStates, setSlotChatStates] = useState<Record<string, SlotChatState>>({});
+
+  const toggleMealExpand = (id: string) => {
     setExpandedMeals((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const getSlot = (mealType: string): SlotState => {
-    return slotStates[mealType] ?? {
-      completed: false,
-      aiOpen: false,
+  const getSlotChat = (mealType: string): SlotChatState => {
+    return slotChatStates[mealType] ?? {
       aiLoading: false,
       aiError: null,
       messages: [],
@@ -91,17 +85,17 @@ export function TodaysMeals({
     };
   };
 
-  const updateSlot = (mealType: string, patch: Partial<SlotState>) => {
-    setSlotStates((prev) => ({
+  const updateSlotChat = (mealType: string, patch: Partial<SlotChatState>) => {
+    setSlotChatStates((prev) => ({
       ...prev,
-      [mealType]: { ...(prev[mealType] ?? getSlot(mealType)), ...patch },
+      [mealType]: { ...(prev[mealType] ?? getSlotChat(mealType)), ...patch },
     }));
   };
 
   const handleToggleDone = (meal: PlannedMeal) => {
-    const slot = getSlot(meal.mealType);
+    const wasCompleted = completedSlots[meal.mealType] ?? false;
     // Optimistic update
-    updateSlot(meal.mealType, { completed: !slot.completed });
+    setCompletedSlots((prev) => ({ ...prev, [meal.mealType]: !wasCompleted }));
 
     startToggleTransition(async () => {
       const result = await toggleMealCompleted({
@@ -117,42 +111,38 @@ export function TodaysMeals({
       });
       if (!result.success) {
         // Revert on error
-        updateSlot(meal.mealType, { completed: slot.completed });
+        setCompletedSlots((prev) => ({ ...prev, [meal.mealType]: wasCompleted }));
       } else {
-        updateSlot(meal.mealType, { completed: result.completed ?? !slot.completed });
+        setCompletedSlots((prev) => ({
+          ...prev,
+          [meal.mealType]: result.completed ?? !wasCompleted,
+        }));
       }
     });
   };
 
   const handleAskAI = (mealType: string) => {
-    updateSlot(mealType, {
-      aiOpen: true,
+    // Reset chat state for the slot being opened
+    updateSlotChat(mealType, {
       messages: [],
       pendingSuggestion: null,
       aiError: null,
       turnCount: 0,
     });
+    setActiveSlotId(mealType);
   };
 
-  const handleAiClose = (mealType: string) => {
-    updateSlot(mealType, {
-      aiOpen: false,
-      messages: [],
-      pendingSuggestion: null,
-      aiError: null,
-      turnCount: 0,
-    });
+  const handleAiClose = () => {
+    setActiveSlotId(null);
   };
 
   const handleAiSubmit = (mealType: string, query: string) => {
-    const slot = getSlot(mealType);
-
-    // Capture history before appending the new user message
+    const slot = getSlotChat(mealType);
     const historyBeforeTurn = slot.messages;
     const userMessage: ChatMessage = { role: "user", text: query };
     const updatedMessages = [...historyBeforeTurn, userMessage];
 
-    updateSlot(mealType, {
+    updateSlotChat(mealType, {
       aiLoading: true,
       aiError: null,
       messages: updatedMessages,
@@ -172,7 +162,7 @@ export function TodaysMeals({
           role: "assistant",
           text: result.result.message,
         };
-        updateSlot(mealType, {
+        updateSlotChat(mealType, {
           aiLoading: false,
           messages: [...updatedMessages, assistantMessage],
           pendingSuggestion: result.result.suggestion,
@@ -184,7 +174,7 @@ export function TodaysMeals({
             : result.error === "rate_limit_exceeded"
               ? "rateLimitError"
               : "aiParseError";
-        updateSlot(mealType, {
+        updateSlotChat(mealType, {
           aiLoading: false,
           aiError: t(errorKey as any),
         });
@@ -193,34 +183,40 @@ export function TodaysMeals({
   };
 
   const handleAiSave = (mealType: string) => {
-    const slot = getSlot(mealType);
+    const slot = getSlotChat(mealType);
     if (!slot.pendingSuggestion) return;
     const suggestion = slot.pendingSuggestion;
+
+    // Find the mealId for the active slot
+    const activeMeal = meals.find((m) => m.mealType === mealType);
 
     startAiTransition(async () => {
       const result = await saveSuggestedMeal({
         date: new Date(dateISO),
         mealType,
+        mealId: activeMeal?.id,
         suggestion,
       });
       if (result.success) {
-        updateSlot(mealType, {
-          aiOpen: false,
+        setActiveSlotId(null);
+        updateSlotChat(mealType, {
           messages: [],
           pendingSuggestion: null,
           turnCount: 0,
-          completed: true,
         });
+        setCompletedSlots((prev) => ({ ...prev, [mealType]: true }));
       } else {
-        // Rate-limit or server error — keep modal open, show error
         const errorKey =
           result.error === "rate_limit_exceeded" ? "rateLimitError" : "aiParseError";
-        updateSlot(mealType, { aiError: t(errorKey as any) });
+        updateSlotChat(mealType, { aiError: t(errorKey as any) });
       }
     });
   };
 
   const mealTypeLabels = t.raw("mealTypes") as Record<string, string>;
+
+  // Active slot chat state for the singleton modal
+  const activeChat = activeSlotId ? getSlotChat(activeSlotId) : null;
 
   return (
     <div className="space-y-3 px-[var(--dietista-pad-card)]">
@@ -241,15 +237,14 @@ export function TodaysMeals({
           <div className="mt-3 text-xs text-[var(--dietista-text-3)]">
             {t("noPlan")}
           </div>
-          <AskAIButton
-            mealType="breakfast"
-            slot={getSlot("breakfast")}
-            onAskAI={handleAskAI}
-            onClose={handleAiClose}
-            onSubmit={handleAiSubmit}
-            onSave={handleAiSave}
-            t={t}
-          />
+          <button
+            type="button"
+            onClick={() => handleAskAI("breakfast")}
+            className="mt-3 flex items-center gap-1 rounded-lg border border-[var(--brand-500)] px-3 py-1.5 text-xs font-semibold text-[var(--brand-500)] transition-colors hover:bg-[var(--brand-500)] hover:text-white"
+          >
+            <Sparkles className="h-3 w-3" />
+            {t("askAI")}
+          </button>
           <Link
             href="/planes"
             className="mt-4 inline-block rounded-lg bg-[var(--brand-500)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
@@ -272,14 +267,22 @@ export function TodaysMeals({
       {hasActivePlan &&
         meals.map((meal) => {
           const isExpanded = !!expandedMeals[meal.id];
-          const slot = getSlot(meal.mealType);
+          const isCompleted = completedSlots[meal.mealType] ?? false;
           const hasPlannedMacros = meal.calories > 0;
           const diaryEntry = diaryByType[meal.mealType];
 
-          // T-08: display AI suggestion as title when slot has accepted an AI meal
-          const cardTitle = diaryEntry?.aiSuggestion ?? meal.name;
+          // Display AI suggestion name when the slot has an accepted AI meal
+          const aiSuggestionObj = diaryEntry?.aiSuggestion;
+          const aiSuggestionName =
+            aiSuggestionObj && typeof aiSuggestionObj === "object" && !Array.isArray(aiSuggestionObj)
+              ? (aiSuggestionObj as Record<string, unknown>).foodName as string | undefined
+              : typeof aiSuggestionObj === "string"
+                ? aiSuggestionObj
+                : undefined;
+
+          const cardTitle = aiSuggestionName ?? meal.name;
           const cardKcal = Math.round(diaryEntry?.actualCalories ?? meal.calories);
-          const hasAiSuggestion = !!diaryEntry?.aiSuggestion;
+          const hasAiSuggestion = !!aiSuggestionName;
 
           return (
             <div
@@ -290,7 +293,7 @@ export function TodaysMeals({
               <div className="flex items-start gap-2 p-[var(--dietista-pad-card)]">
                 <button
                   type="button"
-                  onClick={() => toggleMeal(meal.id)}
+                  onClick={() => toggleMealExpand(meal.id)}
                   aria-expanded={isExpanded}
                   className="flex flex-1 items-start justify-between text-left transition-colors hover:bg-[var(--dietista-surface-2,var(--dietista-surface))] rounded-[var(--dietista-r-lg)]"
                 >
@@ -326,9 +329,9 @@ export function TodaysMeals({
                     <button
                       type="button"
                       onClick={() => handleToggleDone(meal)}
-                      aria-label={slot.completed ? t("markUndone") : t("markDone")}
+                      aria-label={isCompleted ? t("markUndone") : t("markDone")}
                       className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
-                        slot.completed
+                        isCompleted
                           ? "border-green-500 bg-green-500 text-white"
                           : "border-[var(--dietista-border)] bg-transparent text-[var(--dietista-text-3)] hover:border-green-400 hover:text-green-500"
                       }`}
@@ -350,7 +353,7 @@ export function TodaysMeals({
               </div>
 
               {/* Completed indicator */}
-              {slot.completed && (
+              {isCompleted && (
                 <div className="mx-[var(--dietista-pad-card)] mb-2 flex items-center gap-1 text-xs text-green-600">
                   <Check className="h-3 w-3" />
                   <span>{t("completed")}</span>
@@ -422,60 +425,24 @@ export function TodaysMeals({
                   )}
                 </div>
               )}
-
-              {/* AI Chat Modal */}
-              <AiChatModal
-                open={slot.aiOpen}
-                messages={slot.messages}
-                pendingSuggestion={slot.pendingSuggestion}
-                loading={slot.aiLoading}
-                error={slot.aiError}
-                turnCount={slot.turnCount}
-                onSubmit={(query) => handleAiSubmit(meal.mealType, query)}
-                onAccept={() => handleAiSave(meal.mealType)}
-                onClose={() => handleAiClose(meal.mealType)}
-              />
             </div>
           );
         })}
+
+      {/* ─── Singleton AiChatModal (outside map) ─────────────────────────── */}
+      {activeSlotId !== null && activeChat !== null && (
+        <AiChatModal
+          open={true}
+          messages={activeChat.messages}
+          pendingSuggestion={activeChat.pendingSuggestion}
+          loading={activeChat.aiLoading}
+          error={activeChat.aiError}
+          turnCount={activeChat.turnCount}
+          onSubmit={(query) => handleAiSubmit(activeSlotId, query)}
+          onAccept={() => handleAiSave(activeSlotId)}
+          onClose={handleAiClose}
+        />
+      )}
     </div>
-  );
-}
-
-// ─── AskAI Button (standalone for no-plan state) ───────────────────────────────
-
-interface AskAIButtonProps {
-  mealType: string;
-  slot: SlotState;
-  onAskAI: (mealType: string) => void;
-  onClose: (mealType: string) => void;
-  onSubmit: (mealType: string, query: string) => void;
-  onSave: (mealType: string) => void;
-  t: ReturnType<typeof useTranslations<"Journal">>;
-}
-
-function AskAIButton({ mealType, slot, onAskAI, onClose, onSubmit, onSave, t }: AskAIButtonProps) {
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => onAskAI(mealType)}
-        className="mt-3 flex items-center gap-1 rounded-lg border border-[var(--brand-500)] px-3 py-1.5 text-xs font-semibold text-[var(--brand-500)] transition-colors hover:bg-[var(--brand-500)] hover:text-white"
-      >
-        <Sparkles className="h-3 w-3" />
-        {t("askAI")}
-      </button>
-      <AiChatModal
-        open={slot.aiOpen}
-        messages={slot.messages}
-        pendingSuggestion={slot.pendingSuggestion}
-        loading={slot.aiLoading}
-        error={slot.aiError}
-        turnCount={slot.turnCount}
-        onSubmit={(query) => onSubmit(mealType, query)}
-        onAccept={() => onSave(mealType)}
-        onClose={() => onClose(mealType)}
-      />
-    </>
   );
 }

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, Send, Check, RefreshCw } from "lucide-react";
 import type { ChatMessage } from "@/lib/schemas";
 import type { SuggestResult } from "@/lib/openai";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ export function AiChatModal({
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const viewport = useVisualViewport();
 
   const isAtTurnCap = turnCount >= CLIENT_TURN_CAP;
   const canSubmit = inputValue.trim().length > 0 && !loading && !isAtTurnCap;
@@ -73,6 +75,13 @@ export function AiChatModal({
     }
   };
 
+  const handleTextareaFocus = () => {
+    // Delay scrollIntoView to let the keyboard animation complete
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({ block: "end" });
+    }, 100);
+  };
+
   // Find the index of the last assistant message that has a pending suggestion
   const lastAssistantIndex = messages.reduceRight(
     (found, msg, idx) => (found === -1 && msg.role === "assistant" ? idx : found),
@@ -81,7 +90,7 @@ export function AiChatModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex h-[100dvh] items-end justify-center sm:items-center bg-black/50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -89,9 +98,13 @@ export function AiChatModal({
       aria-modal="true"
       aria-label={t("aiModalTitle")}
     >
-      <div className="w-full max-w-sm rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-bg)] shadow-xl flex flex-col max-h-[80vh]">
+      <div
+        data-testid="modal-panel"
+        className="w-full max-w-sm rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-bg)] shadow-xl flex flex-col overflow-hidden"
+        style={{ maxHeight: `${viewport.height}px` }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--dietista-border)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--dietista-border)] flex-shrink-0">
           <h3 className="text-base font-semibold text-[var(--dietista-text)]">
             {t("aiModalTitle")}
           </h3>
@@ -105,7 +118,7 @@ export function AiChatModal({
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[120px]">
           {/* Intro greeting — only when no messages yet */}
           {messages.length === 0 && !loading && (
             <div className="flex justify-start">
@@ -198,8 +211,14 @@ export function AiChatModal({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
-        <div className="border-t border-[var(--dietista-border)] p-3">
+        {/* Input area — safe area padding for iOS home indicator */}
+        {/* eslint-disable-next-line react/forbid-dom-props */}
+        <div
+          data-testid="input-area"
+          data-safe-area-inset="bottom"
+          className="border-t border-[var(--dietista-border)] p-3 flex-shrink-0"
+          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+        >
           <div className="flex items-end gap-2">
             <textarea
               ref={inputRef}
@@ -209,6 +228,7 @@ export function AiChatModal({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={handleTextareaFocus}
               disabled={loading || isAtTurnCap}
             />
             <button

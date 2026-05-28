@@ -60,7 +60,7 @@ export default async function DiarioPage() {
     actualProtein: number | null;
     actualCarbs: number | null;
     actualFat: number | null;
-    aiSuggestion: string | null;
+    aiSuggestion: unknown;
   };
 
   const diaryByType: Record<string, DiaryEntryData> = {};

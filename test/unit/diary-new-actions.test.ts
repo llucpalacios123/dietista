@@ -267,7 +267,7 @@ describe("saveSuggestedMeal — T-04 (rate-limit at accept)", () => {
         create: expect.objectContaining({
           completed: true,
           actualCalories: 330,
-          aiSuggestion: expect.stringContaining("Grilled chicken"),
+          aiSuggestion: expect.objectContaining({ foodName: "Grilled chicken" }),
         }),
       })
     );
