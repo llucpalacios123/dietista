@@ -23,7 +23,7 @@ Requirements:
 - Avoid allergies: {allergies}
 - Avoid forbidden foods: {forbiddenFoods}
 - Goal: {goal}, Activity level: {activityLevel}
-- Use realistic, varied meals appropriate for the goal
+{optionalPreferences}- Use realistic, varied meals appropriate for the goal
 - "ingredients": array of objects with {name: string (in Spanish), quantity: number, unit: string}. List EVERY ingredient needed.
 - Standardized units: "g" (grams), "ml" (milliliters), "unidades" (pieces), "cucharadas" (tablespoons), "tazas" (cups).
 - Quantities MUST be realistic for one serving (e.g., 150g of rice, NOT 500g).
@@ -71,6 +71,40 @@ export interface DietGenerationParams {
   activityLevel: string;
   allergies: string[];
   forbiddenFoods: string[];
+  // Optional preference overrides — included in prompt when present
+  dietType?: string;
+  mealComplexity?: string;
+  mealsPerDay?: number;
+  includeSnacks?: boolean;
+  varietyPreference?: string;
+  favoriteFoods?: string[];
+  budgetFriendly?: boolean;
+  weeklyBudget?: number;
+  eatingOutFrequency?: string;
+  cookingTimeAvailable?: number;
+}
+
+function buildOptionalPreferencesBlock(params: DietGenerationParams): string {
+  const lines: string[] = [];
+  if (params.dietType) lines.push(`- Diet type: ${params.dietType}`);
+  if (params.mealComplexity) lines.push(`- Meal complexity: ${params.mealComplexity}`);
+  if (params.mealsPerDay !== undefined)
+    lines.push(`- Meals per day: ${params.mealsPerDay}`);
+  if (params.includeSnacks !== undefined)
+    lines.push(`- Include snacks: ${params.includeSnacks ? "yes" : "no"}`);
+  if (params.varietyPreference)
+    lines.push(`- Variety preference: ${params.varietyPreference}`);
+  if (params.favoriteFoods?.length)
+    lines.push(`- Favorite foods (include when possible): ${params.favoriteFoods.join(", ")}`);
+  if (params.budgetFriendly !== undefined)
+    lines.push(`- Budget friendly: ${params.budgetFriendly ? "yes" : "no"}`);
+  if (params.weeklyBudget !== undefined)
+    lines.push(`- Weekly budget: €${params.weeklyBudget}`);
+  if (params.eatingOutFrequency)
+    lines.push(`- Eating out frequency: ${params.eatingOutFrequency}`);
+  if (params.cookingTimeAvailable !== undefined)
+    lines.push(`- Max cooking time per meal: ${params.cookingTimeAvailable} minutes`);
+  return lines.length > 0 ? lines.join("\n") + "\n" : "";
 }
 
 export async function generateDiet(
@@ -84,7 +118,8 @@ export async function generateDiet(
     .replace("{goal}", params.goal)
     .replace("{activityLevel}", params.activityLevel)
     .replace("{allergies}", params.allergies.join(", ") || "none")
-    .replace("{forbiddenFoods}", params.forbiddenFoods.join(", ") || "none");
+    .replace("{forbiddenFoods}", params.forbiddenFoods.join(", ") || "none")
+    .replace("{optionalPreferences}", buildOptionalPreferencesBlock(params));
 
   const response = await withRetry(async () => {
     const completion = await openai.chat.completions.create({

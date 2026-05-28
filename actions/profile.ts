@@ -140,8 +140,7 @@ export async function createProfile(
     };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/profile");
+  revalidatePath("/", "layout");
 
   return { success: true, data: { message: "Perfil creado correctamente" } };
 }
@@ -198,34 +197,49 @@ export async function updateProfile(
 
   const data = parsed.data;
 
+  const profileData = {
+    weight: data.weight,
+    height: data.height,
+    age: data.age,
+    sex: data.sex,
+    goal: data.goal,
+    activityLevel: data.activityLevel,
+    targetCalories: data.targetCalories ?? null,
+    targetProtein: data.targetProtein ?? null,
+    targetCarbs: data.targetCarbs ?? null,
+    targetFat: data.targetFat ?? null,
+    allergies: data.allergies,
+    forbiddenFoods: data.forbiddenFoods,
+    dietType: data.dietType ?? null,
+    cookingTimeAvailable: data.cookingTimeAvailable ?? null,
+    eatingOutFrequency: data.eatingOutFrequency ?? null,
+    includeSnacks: data.includeSnacks,
+    mealComplexity: data.mealComplexity ?? null,
+    mealsPerDay: data.mealsPerDay,
+    varietyPreference: data.varietyPreference ?? null,
+    budgetFriendly: data.budgetFriendly,
+    weeklyBudget: data.weeklyBudget ?? null,
+    trainingRoutine: data.trainingRoutine ?? null,
+    favoriteFoods: data.favoriteFoods,
+  };
+
+  const userExists = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true },
+  });
+
+  if (!userExists) {
+    return {
+      success: false,
+      error: "Tu sesión ha caducado. Cierra sesión y vuelve a entrar.",
+    };
+  }
+
   try {
-    await prisma.profile.update({
+    await prisma.profile.upsert({
       where: { userId: session.userId },
-      data: {
-        weight: data.weight,
-        height: data.height,
-        age: data.age,
-        sex: data.sex,
-        goal: data.goal,
-        activityLevel: data.activityLevel,
-        targetCalories: data.targetCalories ?? null,
-        targetProtein: data.targetProtein ?? null,
-        targetCarbs: data.targetCarbs ?? null,
-        targetFat: data.targetFat ?? null,
-        allergies: data.allergies,
-        forbiddenFoods: data.forbiddenFoods,
-        dietType: data.dietType ?? null,
-        cookingTimeAvailable: data.cookingTimeAvailable ?? null,
-        eatingOutFrequency: data.eatingOutFrequency ?? null,
-        includeSnacks: data.includeSnacks,
-        mealComplexity: data.mealComplexity ?? null,
-        mealsPerDay: data.mealsPerDay,
-        varietyPreference: data.varietyPreference ?? null,
-        budgetFriendly: data.budgetFriendly,
-        weeklyBudget: data.weeklyBudget ?? null,
-        trainingRoutine: data.trainingRoutine ?? null,
-        favoriteFoods: data.favoriteFoods,
-      },
+      create: { userId: session.userId, ...profileData },
+      update: profileData,
     });
   } catch (error) {
     console.error("[updateProfile] Database error for user", session.userId, error);
@@ -235,8 +249,7 @@ export async function updateProfile(
     };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/profile");
+  revalidatePath("/", "layout");
 
   return { success: true, data: { message: "Perfil actualizado correctamente" } };
 }
@@ -271,8 +284,7 @@ export async function deleteProfile(): Promise<ProfileActionResult> {
     };
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath("/profile");
+  revalidatePath("/", "layout");
 
   return { success: true, data: { message: "Perfil eliminado correctamente" } };
 }

@@ -9,6 +9,7 @@ import { accountNameSchema, changePasswordSchema } from "@/lib/schemas";
 import type { AccountNameSchema, ChangePasswordSchema } from "@/lib/schemas";
 import { updateName, changePassword } from "@/actions/account";
 import type { AccountActionResult } from "@/actions/account";
+import { LogoutButton } from "./logout-button";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -220,6 +221,11 @@ export function AccountSection({ name, email }: AccountSectionProps): JSX.Elemen
               : t("Account.changePassword")}
           </button>
         </form>
+      </div>
+
+      {/* ── Sign Out ──────────────────────────────────────────────────── */}
+      <div className="rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] p-[var(--dietista-pad-card)]">
+        <LogoutButton />
       </div>
     </div>
   );

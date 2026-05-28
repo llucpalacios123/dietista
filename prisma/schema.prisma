@@ -176,6 +176,20 @@ model MealPlan {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
+  // ── Plan-level preference overrides (nullable = "use profile value") ──
+  dietType             DietType?
+  allergies            String[]          @default([])
+  forbiddenFoods       String[]          @default([])
+  mealComplexity       MealComplexity?
+  cookingTimeAvailable Int?
+  mealsPerDay          Int?
+  includeSnacks        Boolean?
+  varietyPreference    VarietyLevel?
+  favoriteFoods        String[]          @default([])
+  budgetFriendly       Boolean?
+  weeklyBudget         Float?
+  eatingOutFrequency   EatingOutFrequency?
+
   @@unique([userId, startDate])
   @@index([userId, status])
 }

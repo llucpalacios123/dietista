@@ -6,11 +6,10 @@ import { useTranslations } from "next-intl";
 import type { Profile } from "@prisma/client";
 import { AccountSection } from "./account-section";
 import { BodyGoalsSection } from "./body-goals-section";
-import { PreferencesSection } from "./preferences-section";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-type TabKey = "account" | "body" | "preferences";
+type TabKey = "account" | "body";
 
 export interface ProfileTabsProps {
   profile: Profile | null;
@@ -26,7 +25,6 @@ export function ProfileTabs({ profile, account }: ProfileTabsProps): JSX.Element
   const tabs: { key: TabKey; label: string }[] = [
     { key: "account", label: t("tabs.account") },
     { key: "body", label: t("tabs.bodyGoals") },
-    { key: "preferences", label: t("tabs.preferences") },
   ];
 
   return (
@@ -80,14 +78,6 @@ export function ProfileTabs({ profile, account }: ProfileTabsProps): JSX.Element
         <BodyGoalsSection profile={profile} />
       </div>
 
-      <div
-        id="tabpanel-preferences"
-        role="tabpanel"
-        aria-labelledby="tab-preferences"
-        hidden={activeTab !== "preferences"}
-      >
-        <PreferencesSection profile={profile} />
-      </div>
     </div>
   );
 }

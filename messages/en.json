@@ -189,7 +189,8 @@
       "wrongCurrentPassword": "The current password is incorrect",
       "saveChanges": "Save changes",
       "saving": "Saving...",
-      "emailReadOnly": "Email cannot be changed in this version"
+      "emailReadOnly": "Email cannot be changed in this version",
+      "signOut": "Sign out"
     }
   },
   "MealPlan": {
