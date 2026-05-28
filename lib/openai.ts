@@ -1,5 +1,6 @@
 import OpenAI from "openai";
-import { mealPlanResponseSchema, interpretedFoodSchema, type MealItemSchema, type InterpretedFoodSchema } from "./schemas";
+import { z } from "zod";
+import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage } from "./schemas";
 
 // ─── Client ───────────────────────────────────────────────────────────────
 
@@ -158,6 +159,95 @@ export async function generateDiet(
       .map((e) => `${e.path.join(".")}: ${e.message}`)
       .join("; ");
     throw new Error("Estructura del plan de comidas no válida: ${details}");
+  }
+
+  return validated.data;
+}
+
+// ─── Meal AI Suggestion ───────────────────────────────────────────────────────
+
+export const MEAL_CHAT_SYSTEM = `You are a nutrition assistant. The user wants to eat
+something now for the {mealType} slot. Respect remaining daily budget and allergies.
+Return ONE JSON object with two fields:
+- "message": a friendly conversational sentence in Spanish describing the suggestion
+- "suggestion": {foodName, quantity:number, unit, calories, protein, carbs, fat}
+Remaining today: {remaining} kcal/P/C/F. Slot target: {slotTarget}. Allergies: {allergies}.
+All text in Spanish. Return ONLY valid JSON, no markdown.`;
+
+export const suggestedMealSchema = z.object({
+  foodName: z.string().min(1),
+  quantity: z.number().positive(),
+  unit: z.string(),
+  calories: z.number().nonnegative(),
+  protein: z.number().nonnegative(),
+  carbs: z.number().nonnegative(),
+  fat: z.number().nonnegative(),
+});
+
+export type SuggestResult = z.infer<typeof suggestedMealSchema>;
+
+export const suggestMealResponseSchema = z.object({
+  message: z.string().min(1),
+  suggestion: suggestedMealSchema,
+});
+
+export type SuggestMealResponse = z.infer<typeof suggestMealResponseSchema>;
+
+export interface SuggestMealParams {
+  mealType: string;
+  query: string;
+  history?: ChatMessage[];
+  remaining: { cal: number; pro: number; carb: number; fat: number };
+  slotTarget?: { cal: number; pro: number; carb: number; fat: number };
+  allergies: string[];
+}
+
+export async function suggestMeal(p: SuggestMealParams): Promise<SuggestMealResponse> {
+  const remainingStr = `${Math.round(p.remaining.cal)} kcal / ${Math.round(p.remaining.pro)}g P / ${Math.round(p.remaining.carb)}g C / ${Math.round(p.remaining.fat)}g F`;
+  const slotStr = p.slotTarget
+    ? `${Math.round(p.slotTarget.cal)} kcal / ${Math.round(p.slotTarget.pro)}g P / ${Math.round(p.slotTarget.carb)}g C / ${Math.round(p.slotTarget.fat)}g F`
+    : "no especificado";
+  const allergiesStr = p.allergies.length > 0 ? p.allergies.join(", ") : "ninguna";
+
+  const systemPrompt = MEAL_CHAT_SYSTEM
+    .replace("{mealType}", p.mealType)
+    .replace("{remaining}", remainingStr)
+    .replace("{slotTarget}", slotStr)
+    .replace("{allergies}", allergiesStr);
+
+  // Build chat messages array: [system, ...history, currentUserQuery]
+  const historyMessages: { role: "user" | "assistant"; content: string }[] =
+    (p.history ?? []).map((m) => ({ role: m.role, content: m.text }));
+
+  const content = await withRetry(async () => {
+    const completion = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...historyMessages,
+        { role: "user", content: p.query },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.4,
+    });
+
+    const text = completion.choices[0]?.message?.content;
+    if (!text) {
+      throw new Error("La IA ha devuelto una respuesta vacía");
+    }
+    return text;
+  });
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error("No se pudo parsear la respuesta de la IA como JSON");
+  }
+
+  const validated = suggestMealResponseSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new Error("Estructura de sugerencia no válida");
   }
 
   return validated.data;
