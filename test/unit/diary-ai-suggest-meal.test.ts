@@ -173,3 +173,79 @@ describe("suggestMeal — history threading", () => {
     expect(messages[1]).toEqual({ role: "user", content: "give me a salad" });
   });
 });
+
+// ─── T-04: suggestMeal — full dish fields ─────────────────────────────────────
+
+describe("suggestMeal — full dish fields (T-04)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("validates full response including description/ingredients/instructions", async () => {
+    const mockResponse = {
+      message: "Te propongo esta opción completa.",
+      suggestion: {
+        foodName: "Pollo al ajillo",
+        quantity: 250,
+        unit: "g",
+        calories: 380,
+        protein: 45,
+        carbs: 5,
+        fat: 18,
+        description: "Plato tradicional español, rico en proteínas.",
+        ingredients: [
+          { name: "pechuga de pollo", quantity: 250, unit: "g" },
+          { name: "ajo", quantity: 3, unit: "dientes" },
+          { name: "aceite de oliva", quantity: 15, unit: "ml" },
+        ],
+        instructions: "Saltea el ajo en aceite, añade el pollo troceado y cocina 10 minutos.",
+      },
+    };
+
+    mockCreate.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify(mockResponse) } }],
+    });
+
+    const result = await suggestMeal({
+      mealType: "lunch",
+      query: "algo con pollo",
+      remaining: { cal: 1200, pro: 100, carb: 150, fat: 40 },
+      allergies: [],
+    });
+
+    expect(result.suggestion.description).toBe("Plato tradicional español, rico en proteínas.");
+    expect(result.suggestion.ingredients).toHaveLength(3);
+    expect(result.suggestion.instructions).toContain("Saltea");
+  });
+
+  it("validates partial response (no ingredients) without throwing", async () => {
+    const mockResponse = {
+      message: "Aquí tienes una opción sencilla.",
+      suggestion: {
+        foodName: "Tortilla francesa",
+        quantity: 150,
+        unit: "g",
+        calories: 200,
+        protein: 12,
+        carbs: 2,
+        fat: 14,
+        // no description, no ingredients, no instructions
+      },
+    };
+
+    mockCreate.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify(mockResponse) } }],
+    });
+
+    const result = await suggestMeal({
+      mealType: "breakfast",
+      query: "algo rápido",
+      remaining: { cal: 800, pro: 60, carb: 100, fat: 30 },
+      allergies: [],
+    });
+
+    expect(result.suggestion.foodName).toBe("Tortilla francesa");
+    expect(result.suggestion.ingredients).toBeUndefined();
+    expect(result.suggestion.description).toBeUndefined();
+  });
+});

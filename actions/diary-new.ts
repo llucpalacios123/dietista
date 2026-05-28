@@ -220,17 +220,18 @@ export async function saveSuggestedMeal(
     return { success: false, error: "past_date" };
   }
 
-  const { date, mealType, suggestion } = parsed.data;
+  const { date, mealType, mealId, suggestion } = parsed.data;
   const userId = session.userId;
   const normalizedDate = normalizeDateToMidnight(date);
   const tomorrow = new Date(normalizedDate);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   // Rate limit guard: 5 accepted AI meals per user per calendar day
+  // For a Json? field, use { not: Prisma.AnyNull } to filter out NULL rows
   const aiCount = await prisma.diaryEntry.count({
     where: {
       userId,
-      aiSuggestion: { not: Prisma.JsonNull },
+      aiSuggestion: { not: Prisma.AnyNull },
       updatedAt: { gte: normalizedDate, lt: tomorrow },
     },
   });
@@ -239,35 +240,74 @@ export async function saveSuggestedMeal(
     return { success: false, error: "rate_limit_exceeded" };
   }
 
-  try {
-    await prisma.diaryEntry.upsert({
-      where: {
-        userId_date_mealType: {
-          userId,
-          date: normalizedDate,
-          mealType: mealType as any,
-        },
-      },
-      create: {
+  // Store the full suggestion as a JSON object
+  const aiSuggestionJson = suggestion as unknown as Prisma.InputJsonValue;
+
+  // Shared DiaryEntry upsert args
+  const diaryUpsertArgs = {
+    where: {
+      userId_date_mealType: {
         userId,
         date: normalizedDate,
         mealType: mealType as any,
-        completed: true,
-        actualCalories: suggestion.calories,
-        actualProtein: suggestion.protein,
-        actualCarbs: suggestion.carbs,
-        actualFat: suggestion.fat,
-        aiSuggestion: `${suggestion.foodName} ${suggestion.quantity}${suggestion.unit}`,
       },
-      update: {
-        completed: true,
-        actualCalories: suggestion.calories,
-        actualProtein: suggestion.protein,
-        actualCarbs: suggestion.carbs,
-        actualFat: suggestion.fat,
-        aiSuggestion: `${suggestion.foodName} ${suggestion.quantity}${suggestion.unit}`,
-      },
-    });
+    },
+    create: {
+      userId,
+      date: normalizedDate,
+      mealType: mealType as any,
+      completed: true,
+      actualCalories: suggestion.calories,
+      actualProtein: suggestion.protein,
+      actualCarbs: suggestion.carbs,
+      actualFat: suggestion.fat,
+      aiSuggestion: aiSuggestionJson,
+    },
+    update: {
+      completed: true,
+      actualCalories: suggestion.calories,
+      actualProtein: suggestion.protein,
+      actualCarbs: suggestion.carbs,
+      actualFat: suggestion.fat,
+      aiSuggestion: aiSuggestionJson,
+    },
+  };
+
+  try {
+    if (mealId) {
+      // Ownership check: only update the meal if it belongs to this user
+      const ownedMeal = await prisma.meal.findFirst({
+        where: { id: mealId, mealPlan: { userId } },
+      });
+
+      if (ownedMeal) {
+        // Update both meal plan and diary entry in a single transaction
+        await prisma.$transaction([
+          prisma.meal.update({
+            where: { id: mealId },
+            data: {
+              name: suggestion.foodName,
+              calories: suggestion.calories,
+              protein: suggestion.protein,
+              carbs: suggestion.carbs,
+              fat: suggestion.fat,
+              ...(suggestion.description !== undefined && { description: suggestion.description }),
+              ...(suggestion.ingredients !== undefined && {
+                ingredients: suggestion.ingredients as unknown as Prisma.InputJsonValue,
+              }),
+              ...(suggestion.instructions !== undefined && { instructions: suggestion.instructions }),
+            },
+          }),
+          prisma.diaryEntry.upsert(diaryUpsertArgs),
+        ]);
+      } else {
+        // mealId provided but doesn't belong to this user — only upsert diary
+        await prisma.diaryEntry.upsert(diaryUpsertArgs);
+      }
+    } else {
+      // Legacy path: no mealId — only upsert diary entry
+      await prisma.diaryEntry.upsert(diaryUpsertArgs);
+    }
 
     revalidatePath("/diario");
     return { success: true };

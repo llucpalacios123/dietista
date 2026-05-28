@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage } from "./schemas";
+import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, suggestedMealSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage } from "./schemas";
 
 // ─── Client ───────────────────────────────────────────────────────────────
 
@@ -170,19 +170,22 @@ export const MEAL_CHAT_SYSTEM = `You are a nutrition assistant. The user wants t
 something now for the {mealType} slot. Respect remaining daily budget and allergies.
 Return ONE JSON object with two fields:
 - "message": a friendly conversational sentence in Spanish describing the suggestion
-- "suggestion": {foodName, quantity:number, unit, calories, protein, carbs, fat}
+- "suggestion": an object with the following fields:
+    - foodName: string (name of the dish in Spanish)
+    - quantity: number (amount for one serving)
+    - unit: string (e.g. "g", "ml", "unidades")
+    - calories: number (kcal)
+    - protein: number (grams)
+    - carbs: number (grams)
+    - fat: number (grams)
+    - description: string (1-2 sentences describing the dish, optional but recommended, in Spanish)
+    - ingredients: array of {name: string, quantity?: number, unit?: string} listing every ingredient in Spanish (optional but recommended). If you cannot estimate ingredients reliably, omit the field. Never invent.
+    - instructions: string with brief preparation steps (1-3 sentences, optional)
 Remaining today: {remaining} kcal/P/C/F. Slot target: {slotTarget}. Allergies: {allergies}.
 All text in Spanish. Return ONLY valid JSON, no markdown.`;
 
-export const suggestedMealSchema = z.object({
-  foodName: z.string().min(1),
-  quantity: z.number().positive(),
-  unit: z.string(),
-  calories: z.number().nonnegative(),
-  protein: z.number().nonnegative(),
-  carbs: z.number().nonnegative(),
-  fat: z.number().nonnegative(),
-});
+// Re-exported from schemas.ts to keep the client-side schema co-located
+export { suggestedMealSchema };
 
 export type SuggestResult = z.infer<typeof suggestedMealSchema>;
 
