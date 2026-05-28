@@ -203,6 +203,13 @@ describe("saveSuggestedMeal — T-04 (rate-limit at accept)", () => {
     mockAuth.mockResolvedValue({ userId: "user-1", email: "test@example.com" });
   });
 
+  // Use today's date so the past_date guard does not fire
+  function todayDate(): Date {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
   const validSuggestion = {
     foodName: "Grilled chicken",
     quantity: 200,
@@ -216,7 +223,7 @@ describe("saveSuggestedMeal — T-04 (rate-limit at accept)", () => {
   it("returns unauthenticated error when no session", async () => {
     mockAuth.mockResolvedValue(null);
     const result = await saveSuggestedMeal({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "dinner",
       suggestion: validSuggestion,
     });
@@ -228,7 +235,7 @@ describe("saveSuggestedMeal — T-04 (rate-limit at accept)", () => {
     mockPrisma.diaryEntry.count.mockResolvedValue(5);
 
     const result = await saveSuggestedMeal({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "dinner",
       suggestion: validSuggestion,
     });
@@ -242,7 +249,7 @@ describe("saveSuggestedMeal — T-04 (rate-limit at accept)", () => {
     mockPrisma.diaryEntry.upsert.mockResolvedValue({ id: "entry-1" } as any);
 
     const result = await saveSuggestedMeal({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "dinner",
       suggestion: validSuggestion,
     });
@@ -256,7 +263,7 @@ describe("saveSuggestedMeal — T-04 (rate-limit at accept)", () => {
     mockPrisma.diaryEntry.upsert.mockResolvedValue({ id: "entry-1" } as any);
 
     const result = await saveSuggestedMeal({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "dinner",
       suggestion: validSuggestion,
     });

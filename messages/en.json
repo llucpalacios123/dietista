@@ -435,7 +435,13 @@
     "aiKeepTrying": "Try another",
     "aiBadge": "AI",
     "aiTurnLimitError": "Turn limit reached. Close and reopen the chat to continue.",
-    "aiChatIntro": "Hi! Tell me what you feel like eating and I'll suggest something that fits your goals."
+    "aiChatIntro": "Hi! Tell me what you feel like eating and I'll suggest something that fits your goals.",
+    "readOnly": "Read only",
+    "readOnlyHint": "You cannot modify past days",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "goToToday": "Today",
+    "pastDateError": "Cannot modify a past day"
   },
   "Goals": {
     "title": "Goals",

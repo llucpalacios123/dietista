@@ -2,9 +2,11 @@
 
 import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { suggestMeal, type SuggestMealResponse } from "@/lib/openai";
 import { toggleMealCompletedSchema, suggestMealSchema, saveSuggestedMealSchema } from "@/lib/schemas";
+import { isPastDate } from "@/lib/dates";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -23,7 +25,7 @@ function normalizeDateToMidnight(date: Date): Date {
 export interface ToggleMealCompletedResult {
   success: boolean;
   completed?: boolean;
-  error?: string;
+  error?: "unauthenticated" | "invalid_input" | "past_date" | "server_error";
 }
 
 export async function toggleMealCompleted(
@@ -37,6 +39,10 @@ export async function toggleMealCompleted(
   const parsed = toggleMealCompletedSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: "invalid_input" };
+  }
+
+  if (isPastDate(parsed.data.date)) {
+    return { success: false, error: "past_date" };
   }
 
   const { date, mealType, mealId, macros } = parsed.data;
@@ -194,7 +200,7 @@ export async function getSuggestion(
 
 export interface SaveSuggestedMealResult {
   success: boolean;
-  error?: string;
+  error?: "unauthenticated" | "invalid_input" | "past_date" | "rate_limit_exceeded" | "server_error";
 }
 
 export async function saveSuggestedMeal(
@@ -210,6 +216,10 @@ export async function saveSuggestedMeal(
     return { success: false, error: "invalid_input" };
   }
 
+  if (isPastDate(parsed.data.date)) {
+    return { success: false, error: "past_date" };
+  }
+
   const { date, mealType, suggestion } = parsed.data;
   const userId = session.userId;
   const normalizedDate = normalizeDateToMidnight(date);
@@ -220,7 +230,7 @@ export async function saveSuggestedMeal(
   const aiCount = await prisma.diaryEntry.count({
     where: {
       userId,
-      aiSuggestion: { not: null },
+      aiSuggestion: { not: Prisma.JsonNull },
       updatedAt: { gte: normalizedDate, lt: tomorrow },
     },
   });

@@ -40,6 +40,13 @@ const mockAuth = vi.mocked(auth);
 const mockPrisma = vi.mocked(prisma);
 const mockSuggestMeal = vi.mocked(suggestMeal);
 
+// Use today so the past_date guard does not fire for tests that exercise the happy path
+function todayDate(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 describe("toggleMealCompleted", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,7 +83,7 @@ describe("toggleMealCompleted", () => {
     } as any);
 
     const result = await toggleMealCompleted({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "lunch",
       mealId: "meal-abc",
     });
@@ -112,7 +119,7 @@ describe("toggleMealCompleted", () => {
     } as any);
 
     const result = await toggleMealCompleted({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "lunch",
     });
 
@@ -146,7 +153,7 @@ describe("toggleMealCompleted", () => {
     } as any);
 
     const result = await toggleMealCompleted({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "breakfast",
       macros: { calories: 300, protein: 20, carbs: 40, fat: 10 },
     });
@@ -278,7 +285,7 @@ describe("saveSuggestedMeal", () => {
     mockPrisma.diaryEntry.upsert.mockResolvedValue({ id: "entry-2" } as any);
 
     const result = await saveSuggestedMeal({
-      date: new Date("2024-01-15"),
+      date: todayDate(),
       mealType: "dinner",
       suggestion: {
         foodName: "Grilled chicken",

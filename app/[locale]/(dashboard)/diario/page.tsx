@@ -2,12 +2,22 @@ import { auth } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { DayStrip } from "@/components/dietista/atoms";
-import { formatDateLong } from "@/lib/dates";
+import { DiaryDateNav } from "@/components/dietista/diary-date-nav";
+import {
+  formatDateLong,
+  parseDateParam,
+  isPastDate,
+  getWeekBounds,
+  dayOfWeekMondayFirst,
+} from "@/lib/dates";
 import { TodaysMeals } from "@/components/dietista/todays-meals";
 import { filterAndSortMeals, mapToPlannedMeal } from "@/lib/planned-meal-mapper";
 
-export default async function DiarioPage() {
+export default async function DiarioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const session = await auth();
   if (!session?.userId) {
     redirect("/login");
@@ -16,35 +26,51 @@ export default async function DiarioPage() {
   const locale = await getLocale();
   const t = await getTranslations("Journal");
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Parse date from searchParams — falls back to today if absent or invalid
+  const params = await searchParams;
+  const selectedDate = parseDateParam(params.date);
 
-  // Parallel fetches: logs, profile, active plan, diary entries
-  const [todayLogs, profile, activePlan, rawDiaryEntries] = await Promise.all([
-    prisma.mealLog.findMany({
-      where: {
-        userId: session.userId,
-        date: { gte: today, lt: tomorrow },
-      },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.profile.findUnique({
-      where: { userId: session.userId },
-    }),
-    prisma.mealPlan.findFirst({
-      where: { userId: session.userId, status: "active" },
-      orderBy: { startDate: "desc" },
-      include: { meals: true },
-    }),
-    prisma.diaryEntry.findMany({
-      where: {
-        userId: session.userId,
-        date: { gte: today, lt: tomorrow },
-      },
-    }),
-  ]);
+  const nextDay = new Date(selectedDate);
+  nextDay.setDate(nextDay.getDate() + 1);
+
+  // Read-only when selectedDate is in the past
+  const isReadOnly = isPastDate(selectedDate);
+
+  // Week bounds for DiaryDateNav and dataDays query
+  const { start: weekStart, end: weekEnd } = getWeekBounds(selectedDate);
+
+  // Parallel fetches: logs, profile, active plan, diary entries for selected day, diary groupBy for week
+  const [todayLogs, profile, activePlan, rawDiaryEntries, weekDiaryGroups] =
+    await Promise.all([
+      prisma.mealLog.findMany({
+        where: {
+          userId: session.userId,
+          date: { gte: selectedDate, lt: nextDay },
+        },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.profile.findUnique({
+        where: { userId: session.userId },
+      }),
+      prisma.mealPlan.findFirst({
+        where: { userId: session.userId, status: "active" },
+        orderBy: { startDate: "desc" },
+        include: { meals: true },
+      }),
+      prisma.diaryEntry.findMany({
+        where: {
+          userId: session.userId,
+          date: { gte: selectedDate, lt: nextDay },
+        },
+      }),
+      prisma.diaryEntry.groupBy({
+        by: ["date"],
+        where: {
+          userId: session.userId,
+          date: { gte: weekStart, lt: weekEnd },
+        },
+      }),
+    ]);
 
   const targets = {
     calories: profile?.targetCalories ?? 2000,
@@ -60,7 +86,7 @@ export default async function DiarioPage() {
     actualProtein: number | null;
     actualCarbs: number | null;
     actualFat: number | null;
-    aiSuggestion: string | null;
+    aiSuggestion: unknown;
   };
 
   const diaryByType: Record<string, DiaryEntryData> = {};
@@ -74,6 +100,20 @@ export default async function DiarioPage() {
       aiSuggestion: entry.aiSuggestion,
     };
   }
+
+  // Build dataDays boolean[7] from groupBy result (Monday=0)
+  const activeDates = new Set(
+    weekDiaryGroups.map((g) => {
+      const d = new Date(g.date);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })
+  );
+  const dataDays: boolean[] = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(weekStart);
+    day.setDate(day.getDate() + i);
+    return activeDates.has(day.getTime());
+  });
 
   // Consumed macros from MealLog (interpreted foods) — existing behavior
   const mealLogConsumed = todayLogs.reduce(
@@ -116,14 +156,15 @@ export default async function DiarioPage() {
   };
 
   const dayLabels = t.raw("dayLabels") as unknown as string[];
-  const todayIndex = (today.getDay() + 6) % 7; // Convert to Monday=0
+  const selectedDayIndex = dayOfWeekMondayFirst(selectedDate);
 
   const mealTypeLabels = t.raw("mealTypes") as unknown as Record<string, string>;
 
   const hasActivePlan = activePlan !== null;
-  const todayMeals = filterAndSortMeals(activePlan?.meals ?? [], todayIndex).map(
-    mapToPlannedMeal
-  );
+  const todayMeals = filterAndSortMeals(
+    activePlan?.meals ?? [],
+    selectedDayIndex
+  ).map(mapToPlannedMeal);
 
   return (
     <div className="space-y-4 px-1 pb-4">
@@ -133,20 +174,25 @@ export default async function DiarioPage() {
           {t("title")}
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--dietista-text-2)]">
-          {formatDateLong(today, locale)}
+          {formatDateLong(selectedDate, locale)}
         </p>
       </div>
 
-      {/* Day Strip */}
-      <DayStrip days={dayLabels} activeIndex={todayIndex} />
+      {/* Day Strip with week navigation */}
+      <DiaryDateNav
+        selectedDate={selectedDate}
+        dayLabels={dayLabels}
+        dataDays={dataDays}
+      />
 
       {/* Today's Planned Meals */}
       <TodaysMeals
         meals={todayMeals}
         hasActivePlan={hasActivePlan}
         diaryByType={diaryByType}
-        dateISO={today.toISOString()}
+        dateISO={selectedDate.toISOString()}
         targets={targets}
+        isReadOnly={isReadOnly}
       />
 
       {/* Macro Summary */}
