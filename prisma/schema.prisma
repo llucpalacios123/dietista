@@ -107,6 +107,20 @@ enum MuscleGroup {
   cardio
 }
 
+enum WorkoutGoal {
+  strength
+  endurance
+  weight_loss
+  toning
+  hypertrophy
+}
+
+enum FitnessLevel {
+  beginner
+  intermediate
+  advanced
+}
+
 // ─── Entities ────────────────────────────────────────────────────────────
 
 model User {
@@ -126,6 +140,7 @@ model User {
   progressSnapshots  ProgressSnapshot[]
   workoutSessions    WorkoutSession[]
   diaryEntries       DiaryEntry[]
+  workoutPlans       WorkoutPlan[]
 }
 
 model Profile {
@@ -422,6 +437,26 @@ model DiaryEntry {
 
   @@unique([userId, date, mealType])
   @@index([userId, date])
+}
+
+// ─── Workout Plans ────────────────────────────────────────────────────────
+
+model WorkoutPlan {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  goal        WorkoutGoal
+  level       FitnessLevel
+  daysPerWeek Int          // 1..7
+  status      PlanStatus   @default(draft)
+  content     Json         // WorkoutPlanContent (Zod-validated)
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId, status])
 }
 
 // ─── Progress Snapshots ──────────────────────────────────────────────────

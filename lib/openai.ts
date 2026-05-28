@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, suggestedMealSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage } from "./schemas";
+import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, suggestedMealSchema, workoutPlanContentSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage, type WorkoutPlanContent, type WorkoutPreferences } from "./schemas";
+import { GYM_EXERCISES } from "./gym-exercises";
 
 // ─── Client ───────────────────────────────────────────────────────────────
 
@@ -194,6 +195,119 @@ export async function generateDiet(
       .map((e) => `${e.path.join(".")}: ${e.message}`)
       .join("; ");
     throw new Error("Estructura del plan de comidas no válida: ${details}");
+  }
+
+  return validated.data;
+}
+
+// ─── Workout Generation ───────────────────────────────────────────────────────
+
+export const WORKOUT_GENERATION_SYSTEM = `You are an expert strength & conditioning coach. Generate a structured weekly workout plan as valid JSON.
+
+Profile:
+- Sex: {sex}, Age: {age}, Goal: {goal}, Activity level: {activityLevel}
+- Training routine: {trainingRoutine}
+- Notes / injuries: {notes}
+
+Plan parameters:
+- Objective: {workoutGoal}
+- Level: {level}
+- Days per week: {daysPerWeek}
+- Focus muscle groups: {focusGroups}
+- Available equipment: {equipment}
+- Target session duration: {sessionDurationMin} minutes
+
+Exercise catalog (prefer exercises from this list; you may add others if equipment requires):
+legs: {catalogLegs}
+back: {catalogBack}
+chest: {catalogChest}
+shoulders: {catalogShoulders}
+arms: {catalogArms}
+core: {catalogCore}
+cardio: {catalogCardio}
+
+Requirements:
+- Generate exactly 7 day entries (dayOfWeek 0=Monday..6=Sunday).
+- Training days: distribute {daysPerWeek} training days with exercises.
+- Rest days: remaining days MUST have isRestDay=true and exercises=[].
+- Each training day: 4-8 exercises, 2-5 sets each.
+- For strength/hypertrophy: reps 4-12, rir 1-3. For endurance: reps 12-25 or use durationSec. For weight_loss: include 1 cardio block per week.
+- Set isFromCatalog=true when exercise name exactly matches catalog (case-insensitive), false otherwise.
+- All exercise names, day titles and notes MUST be in Spanish (Spain).
+- restSec: 60-90s for hypertrophy, 120-180s for strength, 30-60s for endurance.
+- warmupMin: 5-10 for all training days. cooldownMin: 5 for all training days.
+- Return ONLY the JSON object matching: { "version": 1, "days": [...], "weeklyVolumeNotes": "..." }
+- No markdown, no code fences, no extra prose.`;
+
+export interface WorkoutGenerationProfile {
+  sex: string;
+  age: number;
+  goal: string;
+  activityLevel: string;
+  trainingRoutine: string | null;
+  notes: string | null;
+}
+
+export interface WorkoutGenerationParams {
+  profile: WorkoutGenerationProfile;
+  preferences: WorkoutPreferences;
+}
+
+export async function generateWorkoutContent(
+  params: WorkoutGenerationParams
+): Promise<WorkoutPlanContent> {
+  const { profile, preferences } = params;
+
+  const prompt = WORKOUT_GENERATION_SYSTEM
+    .replace("{sex}", profile.sex)
+    .replace("{age}", String(profile.age))
+    .replace("{goal}", profile.goal)
+    .replace("{activityLevel}", profile.activityLevel)
+    .replace("{trainingRoutine}", profile.trainingRoutine ?? "No especificada")
+    .replace("{notes}", profile.notes ?? "Ninguna")
+    .replace("{workoutGoal}", preferences.goal)
+    .replace("{level}", preferences.level)
+    .replace("{daysPerWeek}", String(preferences.daysPerWeek))
+    .replace("{focusGroups}", preferences.focusGroups.join(", "))
+    .replace("{equipment}", preferences.equipment.join(", "))
+    .replace("{sessionDurationMin}", String(preferences.sessionDurationMin))
+    .replace("{catalogLegs}", GYM_EXERCISES.legs.join(", "))
+    .replace("{catalogBack}", GYM_EXERCISES.back.join(", "))
+    .replace("{catalogChest}", GYM_EXERCISES.chest.join(", "))
+    .replace("{catalogShoulders}", GYM_EXERCISES.shoulders.join(", "))
+    .replace("{catalogArms}", GYM_EXERCISES.arms.join(", "))
+    .replace("{catalogCore}", GYM_EXERCISES.core.join(", "))
+    .replace("{catalogCardio}", GYM_EXERCISES.cardio.join(", "));
+
+  const response = await withRetry(async () => {
+    const completion = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.6,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("La IA ha devuelto una respuesta vacía para el plan de entrenamiento");
+    }
+
+    return content;
+  });
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(response);
+  } catch {
+    throw new Error("No se ha podido parsear la respuesta de la IA como JSON (plan de entrenamiento)");
+  }
+
+  const validated = workoutPlanContentSchema.safeParse(parsed);
+  if (!validated.success) {
+    const details = validated.error.errors
+      .map((e) => `${e.path.join(".")}: ${e.message}`)
+      .join("; ");
+    throw new Error(`Estructura del plan de entrenamiento no válida: ${details}`);
   }
 
   return validated.data;

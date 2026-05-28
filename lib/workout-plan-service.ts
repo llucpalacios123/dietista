@@ -1,0 +1,149 @@
+import { prisma } from "./prisma";
+import { generateWorkoutContent, type WorkoutGenerationParams } from "./openai";
+import type { WorkoutPlanContent, WorkoutPreferences } from "./schemas";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type WorkoutPlanRecord = {
+  id: string;
+  userId: string;
+  name: string;
+  goal: string;
+  level: string;
+  daysPerWeek: number;
+  status: string;
+  content: unknown;
+  startDate: Date;
+  endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// ─── Service Functions ────────────────────────────────────────────────────────
+
+/**
+ * Generate a workout plan for a user based on their profile and preferences.
+ * Fetches the user profile, calls OpenAI, and persists the plan.
+ * Enforces the single-active invariant: previous active plans are completed.
+ */
+export async function generateWorkoutPlan(
+  userId: string,
+  preferences: WorkoutPreferences
+): Promise<{ workoutPlanId: string; dayCount: number }> {
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+
+  if (!profile) {
+    throw new Error("No tienes perfil. Completa tu perfil primero.");
+  }
+
+  const generationParams: WorkoutGenerationParams = {
+    profile: {
+      sex: profile.sex,
+      age: profile.age,
+      goal: profile.goal,
+      activityLevel: profile.activityLevel,
+      trainingRoutine: profile.trainingRoutine,
+      notes: null,
+    },
+    preferences,
+  };
+
+  const content = await generateWorkoutContent(generationParams);
+  const plan = await createWorkoutPlan(userId, preferences, content);
+
+  const dayCount = content.days.filter((d) => !d.isRestDay).length;
+
+  return { workoutPlanId: plan.id, dayCount };
+}
+
+/**
+ * Persist a workout plan with status=active.
+ * Deactivates all previous active plans for the user atomically (single-active invariant).
+ */
+export async function createWorkoutPlan(
+  userId: string,
+  preferences: WorkoutPreferences,
+  content: WorkoutPlanContent
+): Promise<WorkoutPlanRecord> {
+  return prisma.$transaction(async (tx) => {
+    // Enforce single-active invariant: complete all currently active plans
+    await tx.workoutPlan.updateMany({
+      where: { userId, status: "active" },
+      data: { status: "completed" },
+    });
+
+    const plan = await tx.workoutPlan.create({
+      data: {
+        userId,
+        name: preferences.name,
+        goal: preferences.goal,
+        level: preferences.level,
+        daysPerWeek: preferences.daysPerWeek,
+        status: "active",
+        content: content as object,
+        startDate: new Date(),
+      },
+    });
+
+    return plan as WorkoutPlanRecord;
+  });
+}
+
+/**
+ * Returns the most recent active workout plan for a user, or null if none.
+ */
+export async function getActiveWorkoutPlan(
+  userId: string
+): Promise<WorkoutPlanRecord | null> {
+  const plan = await prisma.workoutPlan.findFirst({
+    where: { userId, status: "active" },
+    orderBy: { startDate: "desc" },
+  });
+  return plan as WorkoutPlanRecord | null;
+}
+
+/**
+ * Returns a workout plan by id and userId.
+ * Returns null if not found or if the plan belongs to a different user (IDOR protection).
+ */
+export async function getWorkoutPlanById(
+  userId: string,
+  planId: string
+): Promise<WorkoutPlanRecord | null> {
+  const plan = await prisma.workoutPlan.findFirst({
+    where: { id: planId, userId },
+  });
+  return plan as WorkoutPlanRecord | null;
+}
+
+/**
+ * Returns all workout plans for a user, ordered by creation date descending.
+ */
+export async function listWorkoutPlans(
+  userId: string
+): Promise<WorkoutPlanRecord[]> {
+  const plans = await prisma.workoutPlan.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+  return plans as WorkoutPlanRecord[];
+}
+
+/**
+ * Soft-deletes (hard-delete) a workout plan, enforcing ownership.
+ * Throws if the plan does not exist or belongs to a different user.
+ */
+export async function deleteWorkoutPlan(
+  userId: string,
+  planId: string
+): Promise<void> {
+  const plan = await prisma.workoutPlan.findFirst({
+    where: { id: planId, userId },
+  });
+
+  if (!plan) {
+    throw new Error("Plan de entrenamiento no encontrado o no tienes permisos para eliminarlo");
+  }
+
+  await prisma.workoutPlan.delete({ where: { id: planId } });
+}
