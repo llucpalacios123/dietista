@@ -298,13 +298,13 @@ describe("saveSuggestedMeal", () => {
           completed: true,
           actualCalories: 330,
           actualProtein: 62,
-          aiSuggestion: expect.stringContaining("Grilled chicken"),
+          aiSuggestion: expect.objectContaining({ foodName: "Grilled chicken" }),
         }),
         update: expect.objectContaining({
           completed: true,
           actualCalories: 330,
           actualProtein: 62,
-          aiSuggestion: expect.stringContaining("Grilled chicken"),
+          aiSuggestion: expect.objectContaining({ foodName: "Grilled chicken" }),
         }),
       })
     );

@@ -201,6 +201,27 @@ export type InterpretedFoodSchema = z.infer<typeof interpretedFoodSchema>;
 
 const mealTypeEnum = z.enum(["breakfast", "mid_morning", "lunch", "dinner", "snack"]);
 
+// ─── Suggested Meal Schema (used by AI suggestion flow) ───────────────────────
+
+export const suggestedMealSchema = z.object({
+  foodName: z.string().min(1),
+  quantity: z.number().positive(),
+  unit: z.string(),
+  calories: z.number().nonnegative(),
+  protein: z.number().nonnegative(),
+  carbs: z.number().nonnegative(),
+  fat: z.number().nonnegative(),
+  description: z.string().optional(),
+  ingredients: z.array(z.object({
+    name: z.string().min(1),
+    quantity: z.number().positive().optional(),
+    unit: z.string().optional(),
+  })).optional(),
+  instructions: z.string().optional(),
+});
+
+export type SuggestedMeal = z.infer<typeof suggestedMealSchema>;
+
 // ─── Chat Message Schema ──────────────────────────────────────────────────────
 
 export const chatMessageSchema = z.object({
@@ -234,15 +255,8 @@ export const suggestMealSchema = z.object({
 export const saveSuggestedMealSchema = z.object({
   date: z.coerce.date(),
   mealType: mealTypeEnum,
-  suggestion: z.object({
-    foodName: z.string().min(1),
-    quantity: z.number().positive(),
-    unit: z.string(),
-    calories: z.number().nonnegative(),
-    protein: z.number().nonnegative(),
-    carbs: z.number().nonnegative(),
-    fat: z.number().nonnegative(),
-  }),
+  mealId: z.string().optional(),
+  suggestion: suggestedMealSchema,
 });
 
 export type ToggleMealCompletedInput = z.infer<typeof toggleMealCompletedSchema>;
