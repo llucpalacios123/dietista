@@ -438,7 +438,13 @@
     "aiKeepTrying": "Pedir otra",
     "aiBadge": "IA",
     "aiTurnLimitError": "Límite de turnos alcanzado. Cerrá y abrí el chat para continuar.",
-    "aiChatIntro": "¡Hola! Decime qué te apetece y te sugiero algo que encaje con tus objetivos."
+    "aiChatIntro": "¡Hola! Decime qué te apetece y te sugiero algo que encaje con tus objetivos.",
+    "readOnly": "Solo lectura",
+    "readOnlyHint": "No puedes modificar días pasados",
+    "prevWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "goToToday": "Hoy",
+    "pastDateError": "No se puede modificar un día pasado"
   },
   "Goals": {
     "title": "Objetivos",

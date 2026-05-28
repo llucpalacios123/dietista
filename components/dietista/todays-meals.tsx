@@ -32,6 +32,7 @@ interface TodaysMealsProps {
     carbs: number;
     fat: number;
   };
+  isReadOnly: boolean;
 }
 
 type SlotChatState = {
@@ -49,6 +50,7 @@ export function TodaysMeals({
   hasActivePlan,
   diaryByType,
   dateISO,
+  isReadOnly,
 }: TodaysMealsProps) {
   const t = useTranslations("Journal");
   const [expandedMeals, setExpandedMeals] = useState<Record<string, boolean>>({});
@@ -93,6 +95,7 @@ export function TodaysMeals({
   };
 
   const handleToggleDone = (meal: PlannedMeal) => {
+    if (isReadOnly) return;
     const wasCompleted = completedSlots[meal.mealType] ?? false;
     // Optimistic update
     setCompletedSlots((prev) => ({ ...prev, [meal.mealType]: !wasCompleted }));
@@ -122,6 +125,7 @@ export function TodaysMeals({
   };
 
   const handleAskAI = (mealType: string) => {
+    if (isReadOnly) return;
     // Reset chat state for the slot being opened
     updateSlotChat(mealType, {
       messages: [],
@@ -183,6 +187,7 @@ export function TodaysMeals({
   };
 
   const handleAiSave = (mealType: string) => {
+    if (isReadOnly) return;
     const slot = getSlotChat(mealType);
     if (!slot.pendingSuggestion) return;
     const suggestion = slot.pendingSuggestion;
@@ -224,6 +229,16 @@ export function TodaysMeals({
       <h2 className="text-sm font-semibold text-[var(--dietista-text)]">
         {t("plannedTitle")}
       </h2>
+
+      {/* Read-only badge */}
+      {isReadOnly && (
+        <div
+          role="status"
+          className="inline-flex items-center gap-1 rounded-full bg-[var(--dietista-border)] px-2.5 py-1 text-xs font-medium text-[var(--dietista-text-2)]"
+        >
+          {t("readOnly")}
+        </div>
+      )}
 
       {/* Empty state (a): no active plan */}
       {!hasActivePlan && (
@@ -322,7 +337,8 @@ export function TodaysMeals({
                   )}
                 </button>
 
-                {/* Action buttons */}
+                {/* Action buttons — hidden in read-only mode */}
+                {!isReadOnly && (
                 <div className="flex items-center gap-1 mt-1">
                   {/* Done button */}
                   {hasPlannedMacros && (
@@ -350,6 +366,7 @@ export function TodaysMeals({
                     <Sparkles className="h-4 w-4" />
                   </button>
                 </div>
+                )}
               </div>
 
               {/* Completed indicator */}

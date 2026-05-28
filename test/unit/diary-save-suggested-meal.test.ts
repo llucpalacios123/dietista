@@ -58,7 +58,7 @@ const validSuggestion = {
 };
 
 const validInput = {
-  date: new Date("2024-01-15"),
+  date: new Date(),
   mealType: "lunch",
   suggestion: validSuggestion,
 };
