@@ -74,4 +74,45 @@ export const MuscleGroupLabels: Record<MuscleGroup, string> = {
   cardio: "Cardio",
 };
 
+// ─── Catalog Helpers ─────────────────────────────────────────────────────────
+
+export interface GymExercise {
+  name: string;
+  muscleGroup: MuscleGroup;
+  isFromCatalog: true;
+}
+
+/**
+ * Returns true if the given exercise name exists in the catalog for the
+ * given muscle group. Comparison is case-insensitive.
+ */
+export function isExerciseInCatalog(name: string, group: MuscleGroup): boolean {
+  if (!name) return false;
+  const lowerName = name.toLowerCase();
+  return GYM_EXERCISES[group].some(
+    (exercise) => exercise.toLowerCase() === lowerName
+  );
+}
+
+/**
+ * Returns all exercises from the catalog for the given muscle groups,
+ * each tagged with their group and isFromCatalog=true.
+ * Deduplicates if the same group appears multiple times in the input.
+ */
+export function getCatalogByMuscleGroups(groups: MuscleGroup[]): GymExercise[] {
+  const seen = new Set<MuscleGroup>();
+  const result: GymExercise[] = [];
+
+  for (const group of groups) {
+    if (seen.has(group)) continue;
+    seen.add(group);
+
+    for (const name of GYM_EXERCISES[group]) {
+      result.push({ name, muscleGroup: group, isFromCatalog: true });
+    }
+  }
+
+  return result;
+}
+
 export type { MuscleGroup };

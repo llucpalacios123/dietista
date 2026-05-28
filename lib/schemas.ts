@@ -263,6 +263,74 @@ export type ToggleMealCompletedInput = z.infer<typeof toggleMealCompletedSchema>
 export type SuggestMealInput = z.infer<typeof suggestMealSchema>;
 export type SaveSuggestedMealInput = z.infer<typeof saveSuggestedMealSchema>;
 
+// ─── Workout Plan Content Schema (AI-generated plan stored as JSON) ───────────
+
+export const workoutPlanSetSchema = z.object({
+  reps: z.number().int().positive().nullable(),    // null = "to failure"
+  weightKg: z.number().nonnegative().nullable(),   // null = bodyweight
+  rir: z.number().int().min(0).max(5).optional(),  // reps in reserve
+  durationSec: z.number().int().positive().optional(), // cardio/isometric
+});
+
+export const workoutPlanExerciseSchema = z.object({
+  name: z.string().min(1),
+  muscleGroup: z.nativeEnum(MuscleGroup),
+  isFromCatalog: z.boolean(),
+  sets: z.array(workoutPlanSetSchema).min(1).max(10),
+  restSec: z.number().int().nonnegative().default(60),
+  notes: z.string().optional(),
+  tempo: z.string().optional(),
+});
+
+export const workoutPlanDaySchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),       // 0=Mon..6=Sun
+  focus: z.array(z.nativeEnum(MuscleGroup)).min(1),
+  title: z.string().min(1),
+  warmupMin: z.number().int().min(0).default(5),
+  cooldownMin: z.number().int().min(0).default(5),
+  exercises: z.array(workoutPlanExerciseSchema).max(15),
+  isRestDay: z.boolean().default(false),
+}).superRefine((day, ctx) => {
+  if (!day.isRestDay && day.exercises.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.too_small,
+      minimum: 1,
+      type: "array",
+      inclusive: true,
+      message: "Non-rest days must have at least one exercise",
+      path: ["exercises"],
+    });
+  }
+});
+
+export const workoutPlanContentSchema = z.object({
+  version: z.literal(1),
+  days: z.array(workoutPlanDaySchema).min(1).max(7),
+  weeklyVolumeNotes: z.string().optional(),
+});
+
+export type WorkoutPlanSet = z.infer<typeof workoutPlanSetSchema>;
+export type WorkoutPlanExercise = z.infer<typeof workoutPlanExerciseSchema>;
+export type WorkoutPlanDay = z.infer<typeof workoutPlanDaySchema>;
+export type WorkoutPlanContent = z.infer<typeof workoutPlanContentSchema>;
+
+// ─── Workout Preferences Schema (wizard step 3) ───────────────────────────────
+
+export const workoutPreferencesSchema = z.object({
+  goal: z.enum(["strength", "endurance", "weight_loss", "toning", "hypertrophy"]),
+  level: z.enum(["beginner", "intermediate", "advanced"]),
+  daysPerWeek: z.number().int().min(1).max(7),
+  focusGroups: z.array(z.nativeEnum(MuscleGroup)).min(1),
+  equipment: z.array(
+    z.enum(["gym", "home_basic", "dumbbells", "bands", "bodyweight"])
+  ),
+  sessionDurationMin: z.number().int().positive(),
+  name: z.string().min(1).default("Mi plan de entrenamiento"),
+  notes: z.string().optional(),
+});
+
+export type WorkoutPreferences = z.infer<typeof workoutPreferencesSchema>;
+
 // ─── Backward-Compatible Alias ────────────────────────────────────────────
 
 export const UserProfileSchema = profileSchema;
