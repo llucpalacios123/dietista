@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, startTransition, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { JSX } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -102,6 +103,7 @@ export function BodyGoalsSection({ profile }: BodyGoalsSectionProps): JSX.Elemen
   // These string states are for the hidden Preferences array fields —
   // they mirror what is already in the profile so submitting Body & Goals
   // doesn't wipe the Preferences tab data.
+  const [macrosOpen, setMacrosOpen] = useState(false);
   const [allergiesStr] = useState(profile ? arrayToString(profile.allergies) : "");
   const [forbiddenFoodsStr] = useState(
     profile ? arrayToString(profile.forbiddenFoods) : ""
@@ -278,84 +280,101 @@ export function BodyGoalsSection({ profile }: BodyGoalsSectionProps): JSX.Elemen
             )}
           </div>
 
-          {/* Target Calories */}
-          <div>
-            <label htmlFor="bg-calories" className={labelClass}>
-              {t("targetCalories")}
-            </label>
-            <input
-              id="bg-calories"
-              type="number"
-              placeholder="2000"
-              {...form.register("targetCalories", { valueAsNumber: true })}
-              className={inputClass}
-            />
-            {form.formState.errors.targetCalories && (
-              <p className={errorClass}>
-                {form.formState.errors.targetCalories.message}
-              </p>
-            )}
-          </div>
+        </div>
 
-          {/* Target Protein */}
-          <div>
-            <label htmlFor="bg-protein" className={labelClass}>
-              {t("targetProtein")}
-            </label>
-            <input
-              id="bg-protein"
-              type="number"
-              step="0.1"
-              placeholder="150"
-              {...form.register("targetProtein", { valueAsNumber: true })}
-              className={inputClass}
+        {/* Macros collapsible */}
+        <div className="rounded-[var(--dietista-r)] border border-[var(--dietista-border)]">
+          <button
+            type="button"
+            onClick={() => setMacrosOpen((o) => !o)}
+            className="flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium text-[var(--dietista-text)]"
+          >
+            {t("targetMacros")}
+            <ChevronDown
+              className={[
+                "h-4 w-4 text-[var(--dietista-text-2)] transition-transform duration-200",
+                macrosOpen ? "rotate-180" : "",
+              ].join(" ")}
             />
-            {form.formState.errors.targetProtein && (
-              <p className={errorClass}>
-                {form.formState.errors.targetProtein.message}
-              </p>
-            )}
-          </div>
+          </button>
+          {macrosOpen && (
+            <div className="grid gap-4 border-t border-[var(--dietista-border)] p-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="bg-calories" className={labelClass}>
+                  {t("targetCalories")}
+                </label>
+                <input
+                  id="bg-calories"
+                  type="number"
+                  placeholder="2000"
+                  {...form.register("targetCalories", { valueAsNumber: true })}
+                  className={inputClass}
+                />
+                {form.formState.errors.targetCalories && (
+                  <p className={errorClass}>
+                    {form.formState.errors.targetCalories.message}
+                  </p>
+                )}
+              </div>
 
-          {/* Target Carbs */}
-          <div>
-            <label htmlFor="bg-carbs" className={labelClass}>
-              {t("targetCarbs")}
-            </label>
-            <input
-              id="bg-carbs"
-              type="number"
-              step="0.1"
-              placeholder="250"
-              {...form.register("targetCarbs", { valueAsNumber: true })}
-              className={inputClass}
-            />
-            {form.formState.errors.targetCarbs && (
-              <p className={errorClass}>
-                {form.formState.errors.targetCarbs.message}
-              </p>
-            )}
-          </div>
+              <div>
+                <label htmlFor="bg-protein" className={labelClass}>
+                  {t("targetProtein")}
+                </label>
+                <input
+                  id="bg-protein"
+                  type="number"
+                  step="0.1"
+                  placeholder="150"
+                  {...form.register("targetProtein", { valueAsNumber: true })}
+                  className={inputClass}
+                />
+                {form.formState.errors.targetProtein && (
+                  <p className={errorClass}>
+                    {form.formState.errors.targetProtein.message}
+                  </p>
+                )}
+              </div>
 
-          {/* Target Fat */}
-          <div>
-            <label htmlFor="bg-fat" className={labelClass}>
-              {t("targetFat")}
-            </label>
-            <input
-              id="bg-fat"
-              type="number"
-              step="0.1"
-              placeholder="65"
-              {...form.register("targetFat", { valueAsNumber: true })}
-              className={inputClass}
-            />
-            {form.formState.errors.targetFat && (
-              <p className={errorClass}>
-                {form.formState.errors.targetFat.message}
-              </p>
-            )}
-          </div>
+              <div>
+                <label htmlFor="bg-carbs" className={labelClass}>
+                  {t("targetCarbs")}
+                </label>
+                <input
+                  id="bg-carbs"
+                  type="number"
+                  step="0.1"
+                  placeholder="250"
+                  {...form.register("targetCarbs", { valueAsNumber: true })}
+                  className={inputClass}
+                />
+                {form.formState.errors.targetCarbs && (
+                  <p className={errorClass}>
+                    {form.formState.errors.targetCarbs.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="bg-fat" className={labelClass}>
+                  {t("targetFat")}
+                </label>
+                <input
+                  id="bg-fat"
+                  type="number"
+                  step="0.1"
+                  placeholder="65"
+                  {...form.register("targetFat", { valueAsNumber: true })}
+                  className={inputClass}
+                />
+                {form.formState.errors.targetFat && (
+                  <p className={errorClass}>
+                    {form.formState.errors.targetFat.message}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <button

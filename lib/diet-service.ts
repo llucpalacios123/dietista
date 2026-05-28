@@ -1,11 +1,23 @@
 import { prisma } from "./prisma";
 import { generateDiet, type DietGenerationParams } from "./openai";
+import type { NutritionistPreferencesSchema } from "./schemas";
 
 /**
  * Generate a weekly meal plan for a user based on their profile.
  * Creates a MealPlan with status=draft and populates Meal records.
+ *
+ * @param userId - The authenticated user's ID.
+ * @param preferences - Optional plan-level preference overrides from the wizard (step 3).
+ *   Each field is coalesced with the profile: plan value wins when non-null/non-empty,
+ *   otherwise the profile value is used.
+ *
+ *   MAPPING: `preferences.dislikedFoods` → `MealPlan.forbiddenFoods`
+ *   (wizard uses `dislikedFoods`, schema uses `forbiddenFoods`)
  */
-export async function generateMealPlan(userId: string): Promise<{
+export async function generateMealPlan(
+  userId: string,
+  preferences?: NutritionistPreferencesSchema
+): Promise<{
   mealPlanId: string;
   mealCount: number;
 }> {
@@ -18,13 +30,42 @@ export async function generateMealPlan(userId: string): Promise<{
     throw new Error("No tienes perfil. Completa tu perfil primero.");
   }
 
+  // ── Preference coalescence: plan value wins when non-null/non-empty ──────
+  // Arrays: non-empty plan array overrides profile (empty = "no override")
+  // Scalars: non-null plan value overrides profile
+  const effectiveAllergies =
+    preferences?.allergies?.length ? preferences.allergies : profile.allergies;
+
+  const effectiveForbiddenFoods =
+    preferences?.dislikedFoods?.length
+      ? preferences.dislikedFoods // wizard field → MealPlan.forbiddenFoods
+      : profile.forbiddenFoods;
+
+  const effectiveFavoriteFoods =
+    preferences?.favoriteFoods?.length
+      ? preferences.favoriteFoods
+      : profile.favoriteFoods;
+
+  const effectiveDietType = preferences?.dietType ?? profile.dietType;
+  const effectiveMealComplexity = preferences?.mealComplexity ?? profile.mealComplexity;
+  const effectiveMealsPerDay = preferences?.mealsPerDay ?? profile.mealsPerDay;
+  const effectiveIncludeSnacks = preferences?.includeSnacks ?? profile.includeSnacks;
+  const effectiveVarietyPreference =
+    preferences?.varietyPreference ?? profile.varietyPreference;
+  const effectiveBudgetFriendly = preferences?.budgetFriendly ?? profile.budgetFriendly;
+  const effectiveWeeklyBudget = preferences?.weeklyBudget ?? profile.weeklyBudget;
+  const effectiveEatingOutFrequency =
+    preferences?.eatingOutFrequency ?? profile.eatingOutFrequency;
+  const effectiveCookingTime =
+    preferences?.cookingTimeAvailable ?? profile.cookingTimeAvailable;
+
   // Calculate targets (use profile values or defaults based on goal)
   const targetCalories = profile.targetCalories ?? calculateCalories(profile);
   const targetProtein = profile.targetProtein ?? calculateProtein(profile, targetCalories);
   const targetCarbs = profile.targetCarbs ?? calculateCarbs(profile, targetCalories);
   const targetFat = profile.targetFat ?? calculateFat(profile, targetCalories);
 
-  // Build OpenAI params
+  // Build OpenAI params with effective preferences
   const params: DietGenerationParams = {
     targetCalories,
     targetProtein,
@@ -32,8 +73,18 @@ export async function generateMealPlan(userId: string): Promise<{
     targetFat,
     goal: profile.goal,
     activityLevel: profile.activityLevel,
-    allergies: profile.allergies,
-    forbiddenFoods: profile.forbiddenFoods,
+    allergies: effectiveAllergies,
+    forbiddenFoods: effectiveForbiddenFoods,
+    dietType: effectiveDietType ?? undefined,
+    mealComplexity: effectiveMealComplexity ?? undefined,
+    mealsPerDay: effectiveMealsPerDay,
+    includeSnacks: effectiveIncludeSnacks,
+    varietyPreference: effectiveVarietyPreference ?? undefined,
+    favoriteFoods: effectiveFavoriteFoods,
+    budgetFriendly: effectiveBudgetFriendly,
+    weeklyBudget: effectiveWeeklyBudget ?? undefined,
+    eatingOutFrequency: effectiveEatingOutFrequency ?? undefined,
+    cookingTimeAvailable: effectiveCookingTime ?? undefined,
   };
 
   // Call OpenAI
@@ -53,6 +104,37 @@ export async function generateMealPlan(userId: string): Promise<{
 
   // Create MealPlan + Meals in a transaction
   const totalCalories = meals.reduce((sum, m) => sum + m.calories, 0);
+
+  // Preference snapshot to persist — null means "use profile at read time"
+  const planPreferences = preferences
+    ? {
+        dietType: preferences.dietType ?? null,
+        allergies: preferences.allergies ?? [],
+        forbiddenFoods: preferences.dislikedFoods ?? [], // mapping
+        mealComplexity: preferences.mealComplexity ?? null,
+        cookingTimeAvailable: preferences.cookingTimeAvailable ?? null,
+        mealsPerDay: preferences.mealsPerDay ?? null,
+        includeSnacks: preferences.includeSnacks ?? null,
+        varietyPreference: preferences.varietyPreference ?? null,
+        favoriteFoods: preferences.favoriteFoods ?? [],
+        budgetFriendly: preferences.budgetFriendly ?? null,
+        weeklyBudget: preferences.weeklyBudget ?? null,
+        eatingOutFrequency: preferences.eatingOutFrequency ?? null,
+      }
+    : {
+        dietType: null,
+        allergies: [],
+        forbiddenFoods: [],
+        mealComplexity: null,
+        cookingTimeAvailable: null,
+        mealsPerDay: null,
+        includeSnacks: null,
+        varietyPreference: null,
+        favoriteFoods: [],
+        budgetFriendly: null,
+        weeklyBudget: null,
+        eatingOutFrequency: null,
+      };
 
   const result = await prisma.$transaction(async (tx) => {
     // Check if a draft already exists for this week
@@ -74,10 +156,10 @@ export async function generateMealPlan(userId: string): Promise<{
       mealPlanId = existing.id;
       await tx.mealPlan.update({
         where: { id: existing.id },
-        data: { totalCalories },
+        data: { totalCalories, ...planPreferences },
       });
     } else {
-      // Create new plan
+      // Create new plan with preference snapshot
       const plan = await tx.mealPlan.create({
         data: {
           userId,
@@ -85,6 +167,7 @@ export async function generateMealPlan(userId: string): Promise<{
           endDate,
           status: "draft",
           totalCalories,
+          ...planPreferences,
         },
       });
       mealPlanId = plan.id;

@@ -9,7 +9,7 @@ import type {
   InternalMeal,
   MacroTotals,
 } from "@/types/meal-plan";
-import type { UserProfileSchema } from "@/lib/schemas";
+import type { UserProfileSchema, NutritionistPreferencesSchema } from "@/lib/schemas";
 import { redirect } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -24,8 +24,14 @@ export interface GenerateWizardPlanResult {
 /**
  * Generate a meal plan for the wizard flow and return it as InternalMealPlan.
  * Calls the existing generateMealPlan from diet-service synchronously.
+ *
+ * @param preferences - Optional plan-level preferences from wizard step 3.
+ *   Passed directly to generateMealPlan; mapping (dislikedFoods → forbiddenFoods)
+ *   is handled in diet-service.
  */
-export async function generateWizardPlan(): Promise<GenerateWizardPlanResult> {
+export async function generateWizardPlan(
+  preferences?: NutritionistPreferencesSchema
+): Promise<GenerateWizardPlanResult> {
   const session = await auth();
   if (!session?.userId) {
     redirect("/login");
@@ -34,7 +40,7 @@ export async function generateWizardPlan(): Promise<GenerateWizardPlanResult> {
   const userId = session.userId;
 
   // Call existing generation service (creates plan in DB)
-  const result = await generateMealPlan(userId);
+  const result = await generateMealPlan(userId, preferences);
 
   // Fetch the generated plan with meals
   const mealPlan = await prisma.mealPlan.findUnique({

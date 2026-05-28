@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth-config";
+import { auth, signOut } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, hashPassword } from "@/lib/auth";
 import { accountNameSchema, changePasswordSchema } from "@/lib/schemas";
@@ -12,6 +12,17 @@ export interface AccountActionResult {
   success: boolean;
   error?: string;
   data?: unknown;
+}
+
+// ─── logoutAction ────────────────────────────────────────────────────────
+
+/**
+ * Signs the current user out and redirects to the login page.
+ * Intended to be called from a <form action={logoutAction}> inside a client component.
+ * Does NOT require SessionProvider to be mounted.
+ */
+export async function logoutAction(): Promise<void> {
+  await signOut({ redirectTo: "/login" });
 }
 
 // ─── updateName ───────────────────────────────────────────────────────────

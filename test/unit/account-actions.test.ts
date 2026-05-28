@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock modules before imports
 vi.mock("@/lib/auth-config", () => ({
   auth: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -27,15 +28,32 @@ vi.mock("next-auth/react", () => ({
   unstable_update: vi.fn(),
 }));
 
-import { auth } from "@/lib/auth-config";
+import { auth, signOut } from "@/lib/auth-config";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, hashPassword } from "@/lib/auth";
-import { changePassword, updateName } from "@/actions/account";
+import { changePassword, updateName, logoutAction } from "@/actions/account";
 
 const mockAuth = vi.mocked(auth);
+const mockSignOut = vi.mocked(signOut);
 const mockPrisma = vi.mocked(prisma);
 const mockVerifyPassword = vi.mocked(verifyPassword);
 const mockHashPassword = vi.mocked(hashPassword);
+
+// ─── logoutAction ─────────────────────────────────────────────────────────
+
+describe("logoutAction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("calls signOut with { redirectTo: '/login' }", async () => {
+    mockSignOut.mockResolvedValue(undefined as any);
+
+    await logoutAction();
+
+    expect(mockSignOut).toHaveBeenCalledWith({ redirectTo: "/login" });
+  });
+});
 
 // ─── changePassword ───────────────────────────────────────────────────────
 

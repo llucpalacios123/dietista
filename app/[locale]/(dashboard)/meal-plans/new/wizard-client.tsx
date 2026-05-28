@@ -196,7 +196,7 @@ export function WizardClient({ profile }: WizardClientProps): React.ReactElement
     }, 120000); // 2 minutes
 
     try {
-      const result = await generateWizardPlan();
+      const result = await generateWizardPlan(preferences ?? undefined);
       clearTimeout(timeoutId);
       setMealPlan(result.mealPlan);
       setSpringBootJson(result.springBootJson);
