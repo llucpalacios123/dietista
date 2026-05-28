@@ -12,6 +12,8 @@ import {
 } from "@/lib/dates";
 import { TodaysMeals } from "@/components/dietista/todays-meals";
 import { filterAndSortMeals, mapToPlannedMeal } from "@/lib/planned-meal-mapper";
+import { DiaryWorkoutWidget } from "@/components/dietista/gym-plans/diary-workout-widget";
+import { getActiveWorkoutPlan } from "@/lib/workout-plan-service";
 
 export default async function DiarioPage({
   searchParams,
@@ -39,8 +41,8 @@ export default async function DiarioPage({
   // Week bounds for DiaryDateNav and dataDays query
   const { start: weekStart, end: weekEnd } = getWeekBounds(selectedDate);
 
-  // Parallel fetches: logs, profile, active plan, diary entries for selected day, diary groupBy for week
-  const [todayLogs, profile, activePlan, rawDiaryEntries, weekDiaryGroups] =
+  // Parallel fetches: logs, profile, active meal plan, diary entries, week groupBy, active workout plan
+  const [todayLogs, profile, activePlan, rawDiaryEntries, weekDiaryGroups, activeWorkoutPlan] =
     await Promise.all([
       prisma.mealLog.findMany({
         where: {
@@ -70,6 +72,7 @@ export default async function DiarioPage({
           date: { gte: weekStart, lt: weekEnd },
         },
       }),
+      getActiveWorkoutPlan(session.userId),
     ]);
 
   const targets = {
@@ -201,6 +204,14 @@ export default async function DiarioPage({
         <MacroRingSmall label={t("protein")} value={consumed.protein} max={targets.protein} color="var(--ring-pro)" bgColor="var(--ring-pro-bg)" />
         <MacroRingSmall label={t("carbs")} value={consumed.carbs} max={targets.carbs} color="var(--ring-carb)" bgColor="var(--ring-carb-bg)" />
         <MacroRingSmall label={t("fat")} value={consumed.fat} max={targets.fat} color="var(--ring-fat)" bgColor="var(--ring-fat-bg)" />
+      </div>
+
+      {/* Workout Widget */}
+      <div className="px-[var(--dietista-pad-card)]">
+        <DiaryWorkoutWidget
+          plan={activeWorkoutPlan}
+          dayOfWeek={selectedDayIndex}
+        />
       </div>
 
       {/* Meal Timeline */}
