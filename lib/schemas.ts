@@ -197,6 +197,58 @@ export type MealLogSchema = z.infer<typeof mealLogSchema>;
 export type MealItemSchema = z.infer<typeof mealItemSchema>;
 export type InterpretedFoodSchema = z.infer<typeof interpretedFoodSchema>;
 
+// ─── Diary Schemas ────────────────────────────────────────────────────────────
+
+const mealTypeEnum = z.enum(["breakfast", "mid_morning", "lunch", "dinner", "snack"]);
+
+// ─── Chat Message Schema ──────────────────────────────────────────────────────
+
+export const chatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  text: z.string().min(1).max(2000),
+});
+
+export type ChatMessage = z.infer<typeof chatMessageSchema>;
+
+export const toggleMealCompletedSchema = z.object({
+  date: z.coerce.date(),
+  mealType: mealTypeEnum,
+  mealId: z.string().optional(),
+  macros: z
+    .object({
+      calories: z.number().nonnegative(),
+      protein: z.number().nonnegative(),
+      carbs: z.number().nonnegative(),
+      fat: z.number().nonnegative(),
+    })
+    .optional(),
+});
+
+export const suggestMealSchema = z.object({
+  date: z.coerce.date(),
+  mealType: mealTypeEnum,
+  query: z.string().min(1).max(280),
+  history: z.array(chatMessageSchema).max(20).optional(),
+});
+
+export const saveSuggestedMealSchema = z.object({
+  date: z.coerce.date(),
+  mealType: mealTypeEnum,
+  suggestion: z.object({
+    foodName: z.string().min(1),
+    quantity: z.number().positive(),
+    unit: z.string(),
+    calories: z.number().nonnegative(),
+    protein: z.number().nonnegative(),
+    carbs: z.number().nonnegative(),
+    fat: z.number().nonnegative(),
+  }),
+});
+
+export type ToggleMealCompletedInput = z.infer<typeof toggleMealCompletedSchema>;
+export type SuggestMealInput = z.infer<typeof suggestMealSchema>;
+export type SaveSuggestedMealInput = z.infer<typeof saveSuggestedMealSchema>;
+
 // ─── Backward-Compatible Alias ────────────────────────────────────────────
 
 export const UserProfileSchema = profileSchema;

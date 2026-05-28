@@ -21,26 +21,30 @@ export default async function DiarioPage() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const todayLogs = await prisma.mealLog.findMany({
-    where: {
-      userId: session.userId,
-      date: {
-        gte: today,
-        lt: tomorrow,
+  // Parallel fetches: logs, profile, active plan, diary entries
+  const [todayLogs, profile, activePlan, rawDiaryEntries] = await Promise.all([
+    prisma.mealLog.findMany({
+      where: {
+        userId: session.userId,
+        date: { gte: today, lt: tomorrow },
       },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.userId },
-  });
-
-  const activePlan = await prisma.mealPlan.findFirst({
-    where: { userId: session.userId, status: "active" },
-    orderBy: { startDate: "desc" },
-    include: { meals: true },
-  });
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.profile.findUnique({
+      where: { userId: session.userId },
+    }),
+    prisma.mealPlan.findFirst({
+      where: { userId: session.userId, status: "active" },
+      orderBy: { startDate: "desc" },
+      include: { meals: true },
+    }),
+    prisma.diaryEntry.findMany({
+      where: {
+        userId: session.userId,
+        date: { gte: today, lt: tomorrow },
+      },
+    }),
+  ]);
 
   const targets = {
     calories: profile?.targetCalories ?? 2000,
@@ -49,7 +53,30 @@ export default async function DiarioPage() {
     fat: profile?.targetFat ?? 65,
   };
 
-  const consumed = todayLogs.reduce(
+  // Build diaryByType map: mealType -> entry snapshot
+  type DiaryEntryData = {
+    completed: boolean;
+    actualCalories: number | null;
+    actualProtein: number | null;
+    actualCarbs: number | null;
+    actualFat: number | null;
+    aiSuggestion: string | null;
+  };
+
+  const diaryByType: Record<string, DiaryEntryData> = {};
+  for (const entry of rawDiaryEntries) {
+    diaryByType[entry.mealType] = {
+      completed: entry.completed,
+      actualCalories: entry.actualCalories,
+      actualProtein: entry.actualProtein,
+      actualCarbs: entry.actualCarbs,
+      actualFat: entry.actualFat,
+      aiSuggestion: entry.aiSuggestion,
+    };
+  }
+
+  // Consumed macros from MealLog (interpreted foods) — existing behavior
+  const mealLogConsumed = todayLogs.reduce(
     (acc, log) => {
       const foods = (log.interpretedFoods as Array<{
         calories: number;
@@ -67,6 +94,26 @@ export default async function DiarioPage() {
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
+
+  // Additive: also include completed DiaryEntry actual macros (per design decision)
+  const diaryConsumed = rawDiaryEntries
+    .filter((e) => e.completed)
+    .reduce(
+      (acc, e) => ({
+        calories: acc.calories + (e.actualCalories ?? 0),
+        protein: acc.protein + (e.actualProtein ?? 0),
+        carbs: acc.carbs + (e.actualCarbs ?? 0),
+        fat: acc.fat + (e.actualFat ?? 0),
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+
+  const consumed = {
+    calories: mealLogConsumed.calories + diaryConsumed.calories,
+    protein: mealLogConsumed.protein + diaryConsumed.protein,
+    carbs: mealLogConsumed.carbs + diaryConsumed.carbs,
+    fat: mealLogConsumed.fat + diaryConsumed.fat,
+  };
 
   const dayLabels = t.raw("dayLabels") as unknown as string[];
   const todayIndex = (today.getDay() + 6) % 7; // Convert to Monday=0
@@ -94,7 +141,13 @@ export default async function DiarioPage() {
       <DayStrip days={dayLabels} activeIndex={todayIndex} />
 
       {/* Today's Planned Meals */}
-      <TodaysMeals meals={todayMeals} hasActivePlan={hasActivePlan} />
+      <TodaysMeals
+        meals={todayMeals}
+        hasActivePlan={hasActivePlan}
+        diaryByType={diaryByType}
+        dateISO={today.toISOString()}
+        targets={targets}
+      />
 
       {/* Macro Summary */}
       <div className="flex justify-center gap-6 py-4">
