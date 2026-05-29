@@ -650,7 +650,14 @@
       "sometimes": "Sometimes",
       "often": "Often"
     },
-    "mealsCount": "{count, plural, one {# meal} other {# meals}}"
+    "mealsCount": "{count, plural, one {# meal} other {# meals}}",
+    "model": {
+      "title": "AI Model",
+      "gpt-4o-mini": "GPT-4o mini (fast, economical)",
+      "gpt-4o": "GPT-4o (best quality)",
+      "gpt-4-turbo": "GPT-4 Turbo",
+      "gpt-3.5-turbo": "GPT-3.5 Turbo (fast)"
+    }
   },
   "MealPlans": {
     "title": "Meal Plans",
@@ -805,7 +812,14 @@
       "redirectingToPlans": "Redirecting to your plan...",
       "loadingPlan": "Loading plan...",
       "errorFocusGroups": "Select at least one muscle group.",
-      "errorEquipment": "Select at least one equipment type."
+      "errorEquipment": "Select at least one equipment type.",
+      "model": "AI Model",
+      "models": {
+        "gpt-4o-mini": "GPT-4o mini (fast, economical)",
+        "gpt-4o": "GPT-4o (best quality)",
+        "gpt-4-turbo": "GPT-4 Turbo",
+        "gpt-3.5-turbo": "GPT-3.5 Turbo (fast)"
+      }
     }
   }
 }

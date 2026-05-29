@@ -14,6 +14,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useTranslations } from "next-intl";
 import type { NutritionistPreferencesSchema } from "@/lib/schemas";
+import { OPENAI_MODELS, type OpenAIModel } from "@/lib/schemas";
 import { ChefHat, BadgeDollarSign, Apple, Clock, Heart } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -40,6 +41,14 @@ const DEFAULTS: NutritionistPreferencesSchema = {
   favoriteFoods: [],
   eatingOutFrequency: null,
   cookingTimeAvailable: null,
+  model: "gpt-4o-mini",
+};
+
+const MODEL_LABELS: Record<OpenAIModel, string> = {
+  "gpt-4o-mini": "GPT-4o mini (fast, economical)",
+  "gpt-4o": "GPT-4o (best quality)",
+  "gpt-4-turbo": "GPT-4 Turbo",
+  "gpt-3.5-turbo": "GPT-3.5 Turbo (fast)",
 };
 
 const VARIETY_KEY_MAP: Record<string, string> = {
@@ -447,6 +456,26 @@ export function PreferencesForm({
               min={5}
               step={5}
             />
+          </div>
+
+          {/* AI Model */}
+          <div className="space-y-1.5">
+            <Label>{t("model.title")}</Label>
+            <Select
+              value={values.model ?? "gpt-4o-mini"}
+              onValueChange={(v) => update("model", v as OpenAIModel)}
+            >
+              <SelectTrigger data-testid="select-model">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {OPENAI_MODELS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {MODEL_LABELS[m]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Submit */}
