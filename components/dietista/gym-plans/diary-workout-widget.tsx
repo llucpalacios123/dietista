@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useState, useMemo } from "react";
 import type { WorkoutPlanContent, WorkoutPlanDay } from "@/lib/schemas";
 import type { WorkoutPlanRecord } from "@/lib/workout-plan-service";
+import { getSelectableDays } from "@/lib/workout-plan-days";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -12,6 +15,7 @@ export interface DiaryWorkoutWidgetProps {
   selectedDayIndex: number; // 0-based index into training days
   selectedDate?: string;    // ISO string, to preserve ?date= in card links
   hasSessionToday?: boolean;
+  completedDayIndexes?: number[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -33,15 +37,6 @@ function buildCardHref(index: number, selectedDate?: string): string {
   if (selectedDate) params.set("date", selectedDate);
   params.set("workoutDay", String(index));
   return `?${params.toString()}`;
-}
-
-function getSelectableDays(content: WorkoutPlanContent): WorkoutPlanDay[] {
-  if (content.version === 2) {
-    // v2: all days are training days (no rest-day fillers)
-    return content.days;
-  }
-  // v1: filter out rest days
-  return content.days.filter((d) => !d.isRestDay);
 }
 
 function getDayLabel(
@@ -100,8 +95,16 @@ export function DiaryWorkoutWidget({
   selectedDayIndex,
   selectedDate,
   hasSessionToday = false,
+  completedDayIndexes = [],
 }: DiaryWorkoutWidgetProps): React.ReactElement {
   const t = useTranslations("GymPlans");
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  const completedSet = useMemo(
+    () => new Set(completedDayIndexes),
+    [completedDayIndexes]
+  );
 
   if (!plan) {
     return <EmptyState />;
@@ -129,6 +132,23 @@ export function DiaryWorkoutWidget({
 
   const selectedDay = selectableDays[safeIndex];
 
+  async function handleMarkComplete() {
+    if (!plan) return;
+    setPending(true);
+    try {
+      const res = await fetch(`/api/workout-plans/${plan.id}/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planDayIndex: safeIndex }),
+      });
+      if (res.ok) {
+        router.refresh();
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <div
       data-testid="diary-workout-widget"
@@ -155,6 +175,7 @@ export function DiaryWorkoutWidget({
       <div className="flex gap-2 overflow-x-auto pb-1">
         {selectableDays.map((day, idx) => {
           const isSelected = idx === safeIndex;
+          const isCompleted = completedSet.has(idx);
           const label = getDayLabel(day, idx, content!.version as 1 | 2);
           return (
             <Link
@@ -162,13 +183,21 @@ export function DiaryWorkoutWidget({
               href={buildCardHref(idx, selectedDate)}
               data-testid="day-card"
               data-selected={String(isSelected)}
-              className={`flex-shrink-0 rounded-[var(--dietista-r-md)] border px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`relative flex-shrink-0 rounded-[var(--dietista-r-md)] border px-3 py-1.5 text-xs font-medium transition-colors ${
                 isSelected
                   ? "border-[var(--brand-500)] bg-[var(--brand-500)] text-white"
                   : "border-[var(--dietista-border)] bg-[var(--dietista-bg)] text-[var(--dietista-text-2)] hover:border-[var(--brand-300)]"
               }`}
             >
               {label}
+              {isCompleted && (
+                <span
+                  data-testid="day-completed-badge"
+                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-[9px] font-bold text-white"
+                >
+                  ✓
+                </span>
+              )}
             </Link>
           );
         })}
@@ -201,6 +230,17 @@ export function DiaryWorkoutWidget({
               </li>
             )}
           </ul>
+
+          {/* Mark as complete CTA */}
+          <button
+            data-testid="mark-complete-btn"
+            type="button"
+            disabled={pending}
+            onClick={handleMarkComplete}
+            className="mt-2 w-full rounded-[var(--dietista-r-md)] border border-[var(--brand-500)] px-4 py-2 text-xs font-semibold text-[var(--brand-600)] transition-colors hover:bg-[var(--brand-50)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {pending ? t("diary.markingComplete") : t("diary.markComplete")}
+          </button>
         </div>
       )}
 

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { DiaryWorkoutWidget } from "../diary-workout-widget";
 import type { WorkoutPlanRecord } from "@/lib/workout-plan-service";
 import type { WorkoutPlanContent } from "@/lib/schemas";
@@ -20,6 +20,11 @@ vi.mock("next/link", () => ({
     href: string;
     [key: string]: unknown;
   }) => <a href={href} {...rest}>{children}</a>,
+}));
+
+const mockRefresh = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: mockRefresh }),
 }));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -257,5 +262,144 @@ describe("DiaryWorkoutWidget — empty training days", () => {
     const plan = makePlan(contentAllRest);
     render(<DiaryWorkoutWidget plan={plan} selectedDayIndex={0} />);
     expect(screen.getByTestId("diary-workout-widget-empty-days")).toBeInTheDocument();
+  });
+});
+
+// ─── Tests — completedDayIndexes badges ───────────────────────────────────────
+
+describe("DiaryWorkoutWidget — completedDayIndexes badges", () => {
+  it("shows checkmark badge on completed card (index 0), not on others", () => {
+    render(
+      <DiaryWorkoutWidget
+        plan={planV2}
+        selectedDayIndex={0}
+        completedDayIndexes={[0]}
+      />
+    );
+    const cards = screen.getAllByTestId("day-card");
+    expect(cards[0].querySelector("[data-testid='day-completed-badge']")).toBeInTheDocument();
+    expect(cards[1].querySelector("[data-testid='day-completed-badge']")).not.toBeInTheDocument();
+    expect(cards[2].querySelector("[data-testid='day-completed-badge']")).not.toBeInTheDocument();
+  });
+
+  it("completed card is still a link (repeat allowed)", () => {
+    render(
+      <DiaryWorkoutWidget
+        plan={planV2}
+        selectedDayIndex={0}
+        completedDayIndexes={[0]}
+      />
+    );
+    const cards = screen.getAllByTestId("day-card");
+    expect(cards[0].tagName.toLowerCase()).toBe("a");
+  });
+
+  it("renders no badges when completedDayIndexes is empty", () => {
+    render(
+      <DiaryWorkoutWidget
+        plan={planV2}
+        selectedDayIndex={0}
+        completedDayIndexes={[]}
+      />
+    );
+    expect(screen.queryByTestId("day-completed-badge")).not.toBeInTheDocument();
+  });
+
+  it("renders no badges when completedDayIndexes is omitted (default)", () => {
+    render(<DiaryWorkoutWidget plan={planV2} selectedDayIndex={0} />);
+    expect(screen.queryByTestId("day-completed-badge")).not.toBeInTheDocument();
+  });
+
+  it("handles multiple completed days", () => {
+    render(
+      <DiaryWorkoutWidget
+        plan={planV2}
+        selectedDayIndex={0}
+        completedDayIndexes={[0, 2]}
+      />
+    );
+    const cards = screen.getAllByTestId("day-card");
+    expect(cards[0].querySelector("[data-testid='day-completed-badge']")).toBeInTheDocument();
+    expect(cards[1].querySelector("[data-testid='day-completed-badge']")).not.toBeInTheDocument();
+    expect(cards[2].querySelector("[data-testid='day-completed-badge']")).toBeInTheDocument();
+  });
+});
+
+// ─── Tests — "Marcar como completado" CTA ─────────────────────────────────────
+
+describe("DiaryWorkoutWidget — mark complete CTA", () => {
+  beforeEach(() => {
+    mockRefresh.mockReset();
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  it("renders the mark-complete button in detail view for a non-rest day", () => {
+    render(<DiaryWorkoutWidget plan={planV2} selectedDayIndex={0} />);
+    expect(screen.getByTestId("mark-complete-btn")).toBeInTheDocument();
+  });
+
+  it("does not render mark-complete button when no plan", () => {
+    render(<DiaryWorkoutWidget plan={null} selectedDayIndex={0} />);
+    expect(screen.queryByTestId("mark-complete-btn")).not.toBeInTheDocument();
+  });
+
+  it("calls fetch POST to correct URL with planDayIndex on click", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", mockFetch);
+
+    render(<DiaryWorkoutWidget plan={planV2} selectedDayIndex={1} />);
+    const btn = screen.getByTestId("mark-complete-btn");
+    fireEvent.click(btn);
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        `/api/workout-plans/plan-1/log`,
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ planDayIndex: 1 }),
+        })
+      );
+    });
+  });
+
+  it("calls router.refresh() after successful POST", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+
+    render(<DiaryWorkoutWidget plan={planV2} selectedDayIndex={0} />);
+    fireEvent.click(screen.getByTestId("mark-complete-btn"));
+
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("disables button while request is pending", async () => {
+    let resolveFetch!: (v: unknown) => void;
+    const pendingPromise = new Promise((resolve) => { resolveFetch = resolve; });
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(pendingPromise));
+
+    render(<DiaryWorkoutWidget plan={planV2} selectedDayIndex={0} />);
+    const btn = screen.getByTestId("mark-complete-btn");
+    fireEvent.click(btn);
+
+    // Button should be disabled while request is in-flight
+    await waitFor(() => {
+      expect(btn).toBeDisabled();
+    });
+
+    // Clean up
+    resolveFetch({ ok: true });
+  });
+
+  it("does not call router.refresh() when fetch fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+
+    render(<DiaryWorkoutWidget plan={planV2} selectedDayIndex={0} />);
+    fireEvent.click(screen.getByTestId("mark-complete-btn"));
+
+    await waitFor(() => {
+      expect(mockRefresh).not.toHaveBeenCalled();
+    });
   });
 });
