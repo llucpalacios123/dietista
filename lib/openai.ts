@@ -38,8 +38,17 @@ Requirements:
 - Return ONLY valid JSON array, no markdown, no explanation`;
 
 // ─── Model Routing ────────────────────────────────────────────────────────
-
-// GPT-5 family requires the Responses API (/v1/responses), not Chat Completions
+//
+// OpenAI model compatibility matrix (as of 2026):
+//
+//   Model family        │ Endpoint              │ temperature │ response_format
+//   ─────────────────────┼───────────────────────┼─────────────┼────────────────
+//   gpt-4o, gpt-4o-mini │ /v1/chat/completions  │ ✅          │ response_format
+//   gpt-4.1 family      │ /v1/chat/completions  │ ✅          │ response_format
+//   gpt-4-turbo         │ /v1/chat/completions  │ ✅          │ response_format
+//   gpt-5 family        │ /v1/responses only    │ ❌          │ text.format
+//
+// GPT-5 models are reasoning models (like o1/o3) — temperature is unsupported.
 const RESPONSES_API_MODELS = new Set<string>(["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-5-pro"]);
 
 async function callModelForJson(options: {

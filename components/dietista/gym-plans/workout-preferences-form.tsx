@@ -57,7 +57,6 @@ const MODEL_LABELS: Record<OpenAIModel, string> = {
   "gpt-4.1-mini": "GPT-4.1 mini",
   "gpt-4.1-nano": "GPT-4.1 nano",
   "gpt-4-turbo": "GPT-4 Turbo",
-  "gpt-3.5-turbo": "GPT-3.5 Turbo",
   "gpt-5": "GPT-5",
   "gpt-5-mini": "GPT-5 mini",
   "gpt-5-nano": "GPT-5 nano",

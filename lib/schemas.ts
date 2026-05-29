@@ -3,6 +3,9 @@ import { MuscleGroup } from "@prisma/client";
 
 // ─── OpenAI Model Constants ──────────────────────────────────────────────────
 
+// Routing rules (enforced in lib/openai.ts):
+//   GPT-4.x, gpt-4-turbo → /v1/chat/completions, temperature supported
+//   GPT-5 family         → /v1/responses only, temperature NOT supported
 export const OPENAI_MODELS = [
   "gpt-4o-mini",
   "gpt-4o",
@@ -10,7 +13,6 @@ export const OPENAI_MODELS = [
   "gpt-4.1-mini",
   "gpt-4.1-nano",
   "gpt-4-turbo",
-  "gpt-3.5-turbo",
   "gpt-5",
   "gpt-5-mini",
   "gpt-5-nano",

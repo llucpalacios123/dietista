@@ -22,8 +22,8 @@ const minimalWorkoutPrefs = {
 // ─── OPENAI_MODELS constant ───────────────────────────────────────────────────
 
 describe("OPENAI_MODELS constant", () => {
-  it("exports 11 model IDs", () => {
-    expect(OPENAI_MODELS).toHaveLength(11);
+  it("exports 10 model IDs", () => {
+    expect(OPENAI_MODELS).toHaveLength(10);
   });
 
   it("includes all expected model IDs", () => {
@@ -33,7 +33,6 @@ describe("OPENAI_MODELS constant", () => {
     expect(OPENAI_MODELS).toContain("gpt-4.1-mini");
     expect(OPENAI_MODELS).toContain("gpt-4.1-nano");
     expect(OPENAI_MODELS).toContain("gpt-4-turbo");
-    expect(OPENAI_MODELS).toContain("gpt-3.5-turbo");
     expect(OPENAI_MODELS).toContain("gpt-5");
     expect(OPENAI_MODELS).toContain("gpt-5-mini");
     expect(OPENAI_MODELS).toContain("gpt-5-nano");
@@ -63,9 +62,9 @@ describe("userPreferencesSchema — model field", () => {
     expect(result.model).toBe("gpt-4-turbo");
   });
 
-  it("accepts gpt-3.5-turbo as a valid model", () => {
-    const result = userPreferencesSchema.parse({ model: "gpt-3.5-turbo" });
-    expect(result.model).toBe("gpt-3.5-turbo");
+  it("rejects deprecated gpt-3.5-turbo", () => {
+    const result = userPreferencesSchema.safeParse({ model: "gpt-3.5-turbo" });
+    expect(result.success).toBe(false);
   });
 
   it("rejects an invalid model value (o1)", () => {
