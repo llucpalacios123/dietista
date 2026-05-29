@@ -202,7 +202,7 @@ export async function generateDiet(
 
 // ─── Workout Generation ───────────────────────────────────────────────────────
 
-export const WORKOUT_GENERATION_SYSTEM = `You are an expert strength & conditioning coach. Generate a structured weekly workout plan as valid JSON.
+export const WORKOUT_GENERATION_SYSTEM = `You are an expert strength & conditioning coach. Generate a structured workout plan of {daysPerWeek} training days as valid JSON.
 
 Profile:
 - Sex: {sex}, Age: {age}, Goal: {goal}, Activity level: {activityLevel}
@@ -227,17 +227,48 @@ core: {catalogCore}
 cardio: {catalogCardio}
 
 Requirements:
-- Generate exactly 7 day entries (dayOfWeek 0=Monday..6=Sunday).
-- Training days: distribute {daysPerWeek} training days with exercises.
-- Rest days: remaining days MUST have isRestDay=true and exercises=[].
-- Each training day: 4-8 exercises, 2-5 sets each.
+- Generate exactly {daysPerWeek} day entries (one per training day, no rest-day fillers).
+- "dayOfWeek" is a 0-based DAY INDEX, not a weekday: 0 = Día 1, 1 = Día 2, ..., {daysPerWeek-1} = last day. Use consecutive indices starting at 0.
+- Every entry is a training day: isRestDay=false, exercises non-empty, focus non-empty.
+- Each day MUST include "focus": a JSON array of 1+ muscle-group strings from [legs, back, chest, shoulders, arms, core, cardio] reflecting that day's work.
+- Each exercise MUST include "muscleGroup": exactly one string from [legs, back, chest, shoulders, arms, core, cardio], matching the catalog section it came from.
+- Each training day: 4-8 exercises. Each exercise's "sets" MUST be a JSON ARRAY of 2-5 set objects, each: {"reps": number|null, "weightKg": number|null, "rir"?: number (1-3 for strength/hypertrophy), "durationSec"?: number (for cardio/isometric)}. reps=null means to-failure; weightKg=null means bodyweight.
 - For strength/hypertrophy: reps 4-12, rir 1-3. For endurance: reps 12-25 or use durationSec. For weight_loss: include 1 cardio block per week.
 - Set isFromCatalog=true when exercise name exactly matches catalog (case-insensitive), false otherwise.
 - All exercise names, day titles and notes MUST be in Spanish (Spain).
 - restSec: 60-90s for hypertrophy, 120-180s for strength, 30-60s for endurance.
 - warmupMin: 5-10 for all training days. cooldownMin: 5 for all training days.
-- Return ONLY the JSON object matching: { "version": 1, "days": [...], "weeklyVolumeNotes": "..." }
-- No markdown, no code fences, no extra prose.`;
+- Return ONLY valid JSON, no markdown, no code fences, no extra prose. Shape:
+{
+  "version": 2,
+  "days": [
+    {
+      "dayOfWeek": 0,
+      "focus": ["legs"],
+      "title": "Día 1 · Piernas fuerza",
+      "warmupMin": 5,
+      "cooldownMin": 5,
+      "isRestDay": false,
+      "exercises": [{
+        "name": "Sentadilla",
+        "muscleGroup": "legs",
+        "isFromCatalog": true,
+        "restSec": 90,
+        "sets": [{"reps": 10, "weightKg": 60, "rir": 2}, {"reps": 8, "weightKg": 65, "rir": 2}]
+      }]
+    },
+    {
+      "dayOfWeek": 1,
+      "focus": ["back", "chest"],
+      "title": "Día 2 · Empuje/Tirón",
+      "warmupMin": 5,
+      "cooldownMin": 5,
+      "isRestDay": false,
+      "exercises": []
+    }
+  ],
+  "weeklyVolumeNotes": "Progressive overload — increase weight 2.5kg when completing all reps with rir>=2"
+}`;
 
 export interface WorkoutGenerationProfile {
   sex: string;

@@ -47,6 +47,7 @@ export default async function GymPlanDetailPage({
   }
 
   const content = contentParsed.data;
+  const isV2 = content.version === 2;
   const trainingDays = content.days.filter((d) => !d.isRestDay);
 
   const goalLabel = t(`goals.${plan.goal}` as `goals.${string}`);
@@ -125,7 +126,7 @@ export default async function GymPlanDetailPage({
           <WorkoutDayView
             key={idx}
             day={day}
-            dayLabel={DAY_LABELS_ES[day.dayOfWeek]}
+            dayLabel={isV2 ? `${t("dayN")} ${idx + 1}` : DAY_LABELS_ES[day.dayOfWeek]}
           />
         ))}
       </div>

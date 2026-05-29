@@ -15,10 +15,18 @@ import { filterAndSortMeals, mapToPlannedMeal } from "@/lib/planned-meal-mapper"
 import { DiaryWorkoutWidget } from "@/components/dietista/gym-plans/diary-workout-widget";
 import { getActiveWorkoutPlan } from "@/lib/workout-plan-service";
 
+function parseWorkoutDayParam(raw: string | undefined, maxIndex: number): number {
+  if (raw === undefined || raw === null) return 0;
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isNaN(parsed)) return 0;
+  if (parsed < 0 || parsed > maxIndex) return 0;
+  return parsed;
+}
+
 export default async function DiarioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; workoutDay?: string }>;
 }) {
   const session = await auth();
   if (!session?.userId) {
@@ -210,7 +218,13 @@ export default async function DiarioPage({
       <div className="px-[var(--dietista-pad-card)]">
         <DiaryWorkoutWidget
           plan={activeWorkoutPlan}
-          dayOfWeek={selectedDayIndex}
+          selectedDayIndex={parseWorkoutDayParam(
+            params.workoutDay,
+            activeWorkoutPlan
+              ? Math.max(0, (activeWorkoutPlan.content as unknown as { days?: unknown[] })?.days?.length ?? 1) - 1
+              : 0
+          )}
+          selectedDate={selectedDate.toISOString()}
         />
       </div>
 

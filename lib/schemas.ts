@@ -284,7 +284,7 @@ export const workoutPlanExerciseSchema = z.object({
 
 export const workoutPlanDaySchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),       // 0=Mon..6=Sun
-  focus: z.array(z.nativeEnum(MuscleGroup)).min(1),
+  focus: z.array(z.nativeEnum(MuscleGroup)),
   title: z.string().min(1),
   warmupMin: z.number().int().min(0).default(5),
   cooldownMin: z.number().int().min(0).default(5),
@@ -301,13 +301,41 @@ export const workoutPlanDaySchema = z.object({
       path: ["exercises"],
     });
   }
+  if (!day.isRestDay && day.focus.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.too_small,
+      minimum: 1,
+      type: "array",
+      inclusive: true,
+      message: "Non-rest days must have at least one focus muscle group",
+      path: ["focus"],
+    });
+  }
 });
 
-export const workoutPlanContentSchema = z.object({
-  version: z.literal(1),
+// v1: legacy calendar-week plans (dayOfWeek = 0=Mon..6=Sun)
+// v2: day-relative plans (dayOfWeek = 0-based day index, 0=Día 1)
+// TODO(rename): rename `dayOfWeek` -> `dayIndex` in a future change; kept now to avoid DB content migration.
+
+const workoutPlanContentBase = {
   days: z.array(workoutPlanDaySchema).min(1).max(7),
   weeklyVolumeNotes: z.string().optional(),
+};
+
+export const workoutPlanContentV1Schema = z.object({
+  version: z.literal(1),
+  ...workoutPlanContentBase,
 });
+
+export const workoutPlanContentV2Schema = z.object({
+  version: z.literal(2),
+  ...workoutPlanContentBase,
+});
+
+export const workoutPlanContentSchema = z.discriminatedUnion("version", [
+  workoutPlanContentV1Schema,
+  workoutPlanContentV2Schema,
+]);
 
 export type WorkoutPlanSet = z.infer<typeof workoutPlanSetSchema>;
 export type WorkoutPlanExercise = z.infer<typeof workoutPlanExerciseSchema>;
