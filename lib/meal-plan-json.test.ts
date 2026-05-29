@@ -52,6 +52,7 @@ const mockPreferences: NutritionistPreferencesSchema = {
   favoriteFoods: [],
   eatingOutFrequency: null,
   cookingTimeAvailable: null,
+  model: "gpt-4o-mini",
 };
 
 function makeMockMeal(overrides?: Partial<InternalMeal>): InternalMeal {

@@ -1,6 +1,19 @@
 import { z } from "zod";
 import { MuscleGroup } from "@prisma/client";
 
+// ─── OpenAI Model Constants ──────────────────────────────────────────────────
+
+export const OPENAI_MODELS = [
+  "gpt-4o-mini",
+  "gpt-4o",
+  "gpt-4-turbo",
+  "gpt-3.5-turbo",
+] as const;
+
+export type OpenAIModel = (typeof OPENAI_MODELS)[number];
+
+export const DEFAULT_MODEL: OpenAIModel = "gpt-4o-mini";
+
 // ─── Auth Schemas ────────────────────────────────────────────────────────
 
 export const registerSchema = z.object({
@@ -355,6 +368,7 @@ export const workoutPreferencesSchema = z.object({
   sessionDurationMin: z.number().int().positive(),
   name: z.string().min(1).default("Mi plan de entrenamiento"),
   notes: z.string().optional(),
+  model: z.enum(OPENAI_MODELS).default("gpt-4o-mini"),
 });
 
 export type WorkoutPreferences = z.infer<typeof workoutPreferencesSchema>;
@@ -391,6 +405,7 @@ export const userPreferencesSchema = z.object({
     .nullable()
     .default(null),
   cookingTimeAvailable: z.number().int().positive().nullable().default(null),
+  model: z.enum(OPENAI_MODELS).default("gpt-4o-mini"),
 });
 
 export type NutritionistPreferencesSchema = z.infer<

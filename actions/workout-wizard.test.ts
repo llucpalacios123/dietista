@@ -22,6 +22,7 @@ const validPreferences = {
   equipment: ["gym" as const],
   sessionDurationMin: 60,
   name: "Mi plan de fuerza",
+  model: "gpt-4o-mini" as const,
 };
 
 const authenticatedSession = { userId: "user-1" };

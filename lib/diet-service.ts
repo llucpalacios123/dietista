@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { generateDiet, type DietGenerationParams } from "./openai";
-import type { NutritionistPreferencesSchema } from "./schemas";
+import { DEFAULT_MODEL, type NutritionistPreferencesSchema } from "./schemas";
 
 /**
  * Generate a weekly meal plan for a user based on their profile.
@@ -85,6 +85,7 @@ export async function generateMealPlan(
     weeklyBudget: effectiveWeeklyBudget ?? undefined,
     eatingOutFrequency: effectiveEatingOutFrequency ?? undefined,
     cookingTimeAvailable: effectiveCookingTime ?? undefined,
+    model: preferences?.model ?? DEFAULT_MODEL,
   };
 
   // Call OpenAI

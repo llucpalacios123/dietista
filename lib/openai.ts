@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, suggestedMealSchema, workoutPlanContentSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage, type WorkoutPlanContent, type WorkoutPreferences } from "./schemas";
+import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, suggestedMealSchema, workoutPlanContentSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage, type WorkoutPlanContent, type WorkoutPreferences, DEFAULT_MODEL, type OpenAIModel } from "./schemas";
 import { GYM_EXERCISES } from "./gym-exercises";
 
 // ─── Client ───────────────────────────────────────────────────────────────
@@ -8,8 +8,6 @@ import { GYM_EXERCISES } from "./gym-exercises";
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const MODEL = "gpt-4o-mini";
 
 // ─── Prompt Templates ─────────────────────────────────────────────────────
 
@@ -83,6 +81,7 @@ export interface DietGenerationParams {
   weeklyBudget?: number;
   eatingOutFrequency?: string;
   cookingTimeAvailable?: number;
+  model?: OpenAIModel;
 }
 
 function buildOptionalPreferencesBlock(params: DietGenerationParams): string {
@@ -124,7 +123,7 @@ export async function generateDiet(
 
   const response = await withRetry(async () => {
     const completion = await openai.chat.completions.create({
-      model: MODEL,
+      model: params.model ?? DEFAULT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.7,
@@ -312,7 +311,7 @@ export async function generateWorkoutContent(
 
   const response = await withRetry(async () => {
     const completion = await openai.chat.completions.create({
-      model: MODEL,
+      model: preferences.model ?? DEFAULT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.6,
@@ -404,7 +403,7 @@ export async function suggestMeal(p: SuggestMealParams): Promise<SuggestMealResp
 
   const content = await withRetry(async () => {
     const completion = await openai.chat.completions.create({
-      model: MODEL,
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         ...historyMessages,
@@ -441,7 +440,7 @@ export async function suggestMeal(p: SuggestMealParams): Promise<SuggestMealResp
 export async function interpretMeal(rawInput: string): Promise<InterpretedFoodSchema[]> {
   const response = await withRetry(async () => {
     const completion = await openai.chat.completions.create({
-      model: MODEL,
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: MEAL_INTERPRET_SYSTEM },
         { role: "user", content: rawInput },

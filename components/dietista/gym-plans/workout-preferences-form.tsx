@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { MuscleGroup } from "@prisma/client";
 import type { WorkoutPreferences } from "@/lib/schemas";
+import { OPENAI_MODELS, type OpenAIModel } from "@/lib/schemas";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,13 @@ const EQUIPMENT_OPTIONS: Equipment[] = [
 
 const DURATION_OPTIONS = [30, 45, 60, 75, 90];
 
+const MODEL_LABELS: Record<OpenAIModel, string> = {
+  "gpt-4o-mini": "GPT-4o mini (rápido, económico)",
+  "gpt-4o": "GPT-4o (máxima calidad)",
+  "gpt-4-turbo": "GPT-4 Turbo",
+  "gpt-3.5-turbo": "GPT-3.5 Turbo (rápido)",
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function WorkoutPreferencesForm({
@@ -80,6 +88,9 @@ export function WorkoutPreferencesForm({
     initialValues?.sessionDurationMin ?? 60
   );
   const [notes, setNotes] = useState(initialValues?.notes ?? "");
+  const [model, setModel] = useState<OpenAIModel>(
+    initialValues?.model ?? "gpt-4o-mini"
+  );
   const [error, setError] = useState<string | null>(null);
 
   function toggleFocusGroup(group: MuscleGroup) {
@@ -116,6 +127,7 @@ export function WorkoutPreferencesForm({
       equipment,
       sessionDurationMin,
       notes: notes.trim() || undefined,
+      model,
     });
   }
 
@@ -295,6 +307,30 @@ export function WorkoutPreferencesForm({
           placeholder={t("wizard.notesPlaceholder")}
           data-testid="input-notes"
         />
+      </div>
+
+      {/* AI Model */}
+      <div>
+        <label className="block text-sm font-medium text-[var(--dietista-text)] mb-2">
+          {t("wizard.model")}
+        </label>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {OPENAI_MODELS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setModel(m)}
+              data-testid={`model-${m}`}
+              className={`rounded-[var(--dietista-r-md)] border px-3 py-2 text-xs font-medium transition-colors ${
+                model === m
+                  ? "border-[var(--brand-400)] bg-[var(--brand-50)] text-[var(--brand-700)]"
+                  : "border-[var(--dietista-border)] bg-[var(--dietista-surface)] text-[var(--dietista-text)]"
+              }`}
+            >
+              {MODEL_LABELS[m]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Error */}
