@@ -1,9 +1,17 @@
-interface RootLayoutProps {
-  children: React.ReactNode;
-}
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
-}: RootLayoutProps): React.ReactNode {
-  return children;
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        {children}
+      </body>
+    </html>
+  );
 }
