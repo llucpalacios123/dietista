@@ -37,6 +37,41 @@ Requirements:
 - Use standard units (g, ml, piece, cup, tbsp)
 - Return ONLY valid JSON array, no markdown, no explanation`;
 
+// ─── Model Routing ────────────────────────────────────────────────────────
+
+// GPT-5 family requires the Responses API (/v1/responses), not Chat Completions
+const RESPONSES_API_MODELS = new Set<string>(["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-5-pro"]);
+
+async function callModelForJson(options: {
+  model: string;
+  prompt: string;
+  temperature: number;
+}): Promise<string> {
+  const { model, prompt, temperature } = options;
+
+  if (RESPONSES_API_MODELS.has(model)) {
+    const response = await openai.responses.create({
+      model,
+      input: prompt,
+      text: { format: { type: "json_object" } },
+      temperature,
+    });
+    const text = response.output_text;
+    if (!text) throw new Error("La IA ha devuelto una respuesta vacía");
+    return text;
+  }
+
+  const completion = await openai.chat.completions.create({
+    model,
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature,
+  });
+  const text = completion.choices[0]?.message?.content;
+  if (!text) throw new Error("La IA ha devuelto una respuesta vacía");
+  return text;
+}
+
 // ─── Retry with Exponential Backoff ───────────────────────────────────────
 
 const MAX_RETRIES = 3;
@@ -121,21 +156,9 @@ export async function generateDiet(
     .replace("{forbiddenFoods}", params.forbiddenFoods.join(", ") || "none")
     .replace("{optionalPreferences}", buildOptionalPreferencesBlock(params));
 
-  const response = await withRetry(async () => {
-    const completion = await openai.chat.completions.create({
-      model: params.model ?? DEFAULT_MODEL,
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("La IA ha devuelto una respuesta vacía");
-    }
-
-    return content;
-  });
+  const response = await withRetry(() =>
+    callModelForJson({ model: params.model ?? DEFAULT_MODEL, prompt, temperature: 0.7 })
+  );
 
   // Parse and validate
   let parsed: unknown;
@@ -309,21 +332,9 @@ export async function generateWorkoutContent(
     .replace("{catalogCore}", GYM_EXERCISES.core.join(", "))
     .replace("{catalogCardio}", GYM_EXERCISES.cardio.join(", "));
 
-  const response = await withRetry(async () => {
-    const completion = await openai.chat.completions.create({
-      model: preferences.model ?? DEFAULT_MODEL,
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.6,
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("La IA ha devuelto una respuesta vacía para el plan de entrenamiento");
-    }
-
-    return content;
-  });
+  const response = await withRetry(() =>
+    callModelForJson({ model: preferences.model ?? DEFAULT_MODEL, prompt, temperature: 0.6 })
+  );
 
   let parsed: unknown;
   try {
