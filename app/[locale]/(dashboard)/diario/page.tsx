@@ -13,7 +13,9 @@ import {
 import { TodaysMeals } from "@/components/dietista/todays-meals";
 import { filterAndSortMeals, mapToPlannedMeal } from "@/lib/planned-meal-mapper";
 import { DiaryWorkoutWidget } from "@/components/dietista/gym-plans/diary-workout-widget";
-import { getActiveWorkoutPlan } from "@/lib/workout-plan-service";
+import { getActiveWorkoutPlan, getWeekWorkoutLogs } from "@/lib/workout-plan-service";
+import { getSelectableDays } from "@/lib/workout-plan-days";
+import type { WorkoutPlanContent } from "@/lib/schemas";
 
 function parseWorkoutDayParam(raw: string | undefined, maxIndex: number): number {
   if (raw === undefined || raw === null) return 0;
@@ -166,6 +168,12 @@ export default async function DiarioPage({
     fat: mealLogConsumed.fat + diaryConsumed.fat,
   };
 
+  // Fetch completion logs for the active plan in the current week
+  const weekWorkoutLogs = activeWorkoutPlan
+    ? await getWeekWorkoutLogs(session.userId, activeWorkoutPlan.id, weekStart, weekEnd)
+    : [];
+  const completedDayIndexes: number[] = weekWorkoutLogs.map((l) => l.planDayIndex);
+
   const dayLabels = t.raw("dayLabels") as unknown as string[];
   const selectedDayIndex = dayOfWeekMondayFirst(selectedDate);
 
@@ -221,10 +229,14 @@ export default async function DiarioPage({
           selectedDayIndex={parseWorkoutDayParam(
             params.workoutDay,
             activeWorkoutPlan
-              ? Math.max(0, (activeWorkoutPlan.content as unknown as { days?: unknown[] })?.days?.length ?? 1) - 1
+              ? Math.max(
+                  0,
+                  getSelectableDays(activeWorkoutPlan.content as unknown as WorkoutPlanContent).length - 1
+                )
               : 0
           )}
           selectedDate={selectedDate.toISOString()}
+          completedDayIndexes={completedDayIndexes}
         />
       </div>
 

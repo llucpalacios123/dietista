@@ -772,7 +772,10 @@
       "goToPlans": "Crear un plan",
       "restDayToday": "Hoy es día de descanso. ¡Descansa bien!",
       "logWorkout": "Registrar entrenamiento",
-      "sessionDone": "Completado"
+      "sessionDone": "Completado",
+      "markComplete": "Marcar como completado",
+      "markingComplete": "Marcando...",
+      "completed": "Completado"
     },
     "wizard": {
       "newPlanTitle": "Nuevo Plan de Entrenamiento",

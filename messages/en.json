@@ -769,7 +769,10 @@
       "goToPlans": "Create a plan",
       "restDayToday": "Today is a rest day. Recover well!",
       "logWorkout": "Log workout",
-      "sessionDone": "Completed"
+      "sessionDone": "Completed",
+      "markComplete": "Mark as completed",
+      "markingComplete": "Marking...",
+      "completed": "Completed"
     },
     "wizard": {
       "newPlanTitle": "New Workout Plan",
