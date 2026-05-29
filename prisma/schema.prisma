@@ -205,6 +205,7 @@ model MealPlan {
   budgetFriendly       Boolean?
   weeklyBudget         Float?
   eatingOutFrequency   EatingOutFrequency?
+  aiModel              String?
 
   @@unique([userId, startDate])
   @@index([userId, status])
@@ -452,6 +453,7 @@ model WorkoutPlan {
   daysPerWeek Int          // 1..7
   status      PlanStatus   @default(draft)
   content     Json         // WorkoutPlanContent (Zod-validated)
+  aiModel     String?
   startDate   DateTime
   endDate     DateTime?
   createdAt   DateTime     @default(now())

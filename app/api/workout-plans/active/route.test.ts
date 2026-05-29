@@ -35,6 +35,7 @@ const mockActivePlan = {
   daysPerWeek: 4,
   status: "active",
   content: { version: 1, days: [] },
+  aiModel: null,
   startDate: new Date("2024-01-01"),
   endDate: null,
   createdAt: new Date(),

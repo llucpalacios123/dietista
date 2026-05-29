@@ -34,6 +34,7 @@ export default async function MealPlanDetailPage({
     endDate: plan.endDate,
     status: plan.status,
     totalCalories: plan.totalCalories,
+    aiModel: plan.aiModel,
     meals: plan.meals.map((meal): MealData => ({
       id: meal.id,
       dayOfWeek: meal.dayOfWeek,

@@ -157,7 +157,7 @@ export async function generateMealPlan(
       mealPlanId = existing.id;
       await tx.mealPlan.update({
         where: { id: existing.id },
-        data: { totalCalories, ...planPreferences },
+        data: { totalCalories, aiModel: params.model, ...planPreferences },
       });
     } else {
       // Create new plan with preference snapshot
@@ -168,6 +168,7 @@ export async function generateMealPlan(
           endDate,
           status: "draft",
           totalCalories,
+          aiModel: params.model,
           ...planPreferences,
         },
       });

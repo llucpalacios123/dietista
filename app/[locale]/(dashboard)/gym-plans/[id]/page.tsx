@@ -87,6 +87,7 @@ export default async function GymPlanDetailPage({
         {/* Meta */}
         <p className="mt-1 text-sm text-[var(--dietista-text-2)]">
           {goalLabel} · {levelLabel} · {plan.daysPerWeek} {t("daysPerWeek")}
+          {plan.aiModel && <span className="ml-2 rounded bg-[var(--dietista-surface-2)] px-1.5 py-0.5 text-xs font-mono text-[var(--dietista-text-3)]">{plan.aiModel}</span>}
         </p>
 
         {/* Weekly notes */}
