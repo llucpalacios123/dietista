@@ -129,6 +129,54 @@ export async function listWorkoutPlans(
   return plans as WorkoutPlanRecord[];
 }
 
+// ─── Workout Plan Log Types ───────────────────────────────────────────────────
+
+export type WorkoutPlanLogRecord = {
+  id: string;
+  userId: string;
+  planId: string;
+  planDayIndex: number;
+  completedAt: Date;
+};
+
+// ─── Workout Plan Log Functions ───────────────────────────────────────────────
+
+/**
+ * Create one completion log row.
+ * Caller MUST have validated ownership and index range before calling.
+ */
+export async function createWorkoutPlanLog(
+  userId: string,
+  planId: string,
+  planDayIndex: number
+): Promise<WorkoutPlanLogRecord> {
+  const log = await prisma.workoutPlanLog.create({
+    data: { userId, planId, planDayIndex },
+  });
+  return log as WorkoutPlanLogRecord;
+}
+
+/**
+ * Returns all completion logs for a user+plan within [weekStart, weekEnd).
+ * Half-open interval: gte weekStart, lt weekEnd — consistent with getWeekBounds().
+ */
+export async function getWeekWorkoutLogs(
+  userId: string,
+  planId: string,
+  weekStart: Date,
+  weekEnd: Date
+): Promise<WorkoutPlanLogRecord[]> {
+  const logs = await prisma.workoutPlanLog.findMany({
+    where: {
+      userId,
+      planId,
+      completedAt: { gte: weekStart, lt: weekEnd },
+    },
+    orderBy: { completedAt: "asc" },
+  });
+  return logs as WorkoutPlanLogRecord[];
+}
+
 /**
  * Soft-deletes (hard-delete) a workout plan, enforcing ownership.
  * Throws if the plan does not exist or belongs to a different user.

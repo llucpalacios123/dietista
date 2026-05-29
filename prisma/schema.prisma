@@ -141,6 +141,7 @@ model User {
   workoutSessions    WorkoutSession[]
   diaryEntries       DiaryEntry[]
   workoutPlans       WorkoutPlan[]
+  workoutPlanLogs    WorkoutPlanLog[]
 }
 
 model Profile {
@@ -456,7 +457,24 @@ model WorkoutPlan {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
+  logs        WorkoutPlanLog[]
+
   @@index([userId, status])
+}
+
+// ─── Workout Tracking ────────────────────────────────────────────────────
+
+model WorkoutPlanLog {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId       String
+  plan         WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planDayIndex Int         // 0-based index into getSelectableDays(content) output
+  completedAt  DateTime    @default(now())
+
+  @@index([userId, planId, completedAt])
+  @@index([planId, completedAt])
 }
 
 // ─── Progress Snapshots ──────────────────────────────────────────────────

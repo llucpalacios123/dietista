@@ -77,9 +77,9 @@ describe("WORKOUT_GENERATION_SYSTEM", () => {
     expect(WORKOUT_GENERATION_SYSTEM).toContain("{equipment}");
   });
 
-  it("instructs the model to return JSON with version:1 shape", async () => {
+  it("instructs the model to return JSON with version:2 shape", async () => {
     const { WORKOUT_GENERATION_SYSTEM } = await import("@/lib/openai");
-    expect(WORKOUT_GENERATION_SYSTEM).toContain('"version": 1');
+    expect(WORKOUT_GENERATION_SYSTEM).toContain('"version": 2');
   });
 
   it("explicitly forbids markdown output", async () => {

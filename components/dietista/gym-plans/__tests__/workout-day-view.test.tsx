@@ -54,6 +54,11 @@ describe("WorkoutDayView — training day", () => {
     expect(screen.getByText("Lunes")).toBeInTheDocument();
   });
 
+  it("renders a v2 day-index label when passed as dayLabel prop", () => {
+    render(<WorkoutDayView day={trainingDay} dayLabel="Día 1" />);
+    expect(screen.getByText("Día 1")).toBeInTheDocument();
+  });
+
   it("falls back to default Spanish label when no dayLabel prop", () => {
     render(<WorkoutDayView day={trainingDay} />);
     expect(screen.getByText("Lunes")).toBeInTheDocument(); // dayOfWeek=0

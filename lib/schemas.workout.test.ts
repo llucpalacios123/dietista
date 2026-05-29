@@ -27,7 +27,7 @@ const validDay = {
 
 const validRestDay = {
   dayOfWeek: 1,
-  focus: ["legs"],
+  focus: [],
   title: "Descanso",
   exercises: [],
   isRestDay: true,
@@ -86,12 +86,16 @@ describe("workoutPlanContentSchema", () => {
   });
 
   describe("invalid content", () => {
-    it("rejects version mismatch (version=2)", () => {
+    it("accepts version=2 (day-relative plan)", () => {
+      // v2 is valid since the schema was upgraded to a discriminated union
       const result = workoutPlanContentSchema.safeParse({
         ...validContent,
         version: 2,
       });
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.version).toBe(2);
+      }
     });
 
     it("rejects missing version", () => {
@@ -189,6 +193,156 @@ describe("workoutPlanContentSchema", () => {
         days,
       });
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe("regression: LLM output shape bugs", () => {
+    const trainingDayBase = {
+      dayOfWeek: 2,
+      title: "Pecho fuerza",
+      warmupMin: 5,
+      cooldownMin: 5,
+      isRestDay: false,
+    };
+
+    const validSetObject = { reps: 10, weightKg: 80, rir: 2 };
+
+    const validExerciseFull = {
+      name: "Press banca",
+      muscleGroup: "chest",
+      isFromCatalog: true,
+      sets: [validSetObject, { reps: 8, weightKg: 85, rir: 1 }],
+      restSec: 120,
+    };
+
+    it("rejects sets as scalar number", () => {
+      const result = workoutPlanContentSchema.safeParse({
+        version: 1,
+        days: [
+          {
+            ...trainingDayBase,
+            focus: ["chest"],
+            exercises: [{ ...validExerciseFull, sets: 3 }],
+          },
+        ],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const paths = result.error.issues.map((i) => i.path.join("."));
+        expect(paths.some((p) => p.includes("sets"))).toBe(true);
+      }
+    });
+
+    it("rejects training day missing focus field", () => {
+      const { focus: _focus, ...dayWithoutFocus } = {
+        ...trainingDayBase,
+        focus: ["chest"],
+        exercises: [validExerciseFull],
+      };
+      const result = workoutPlanContentSchema.safeParse({
+        version: 1,
+        days: [dayWithoutFocus],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const paths = result.error.issues.map((i) => i.path.join("."));
+        expect(paths.some((p) => p.includes("focus"))).toBe(true);
+      }
+    });
+
+    it("rejects exercise missing muscleGroup", () => {
+      const { muscleGroup: _mg, ...exerciseWithoutMG } = validExerciseFull;
+      const result = workoutPlanContentSchema.safeParse({
+        version: 1,
+        days: [
+          {
+            ...trainingDayBase,
+            focus: ["chest"],
+            exercises: [exerciseWithoutMG],
+          },
+        ],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const paths = result.error.issues.map((i) => i.path.join("."));
+        expect(paths.some((p) => p.includes("muscleGroup"))).toBe(true);
+      }
+    });
+
+    it("accepts training day with correct focus, muscleGroup and sets array", () => {
+      const result = workoutPlanContentSchema.safeParse({
+        version: 1,
+        days: [
+          {
+            ...trainingDayBase,
+            focus: ["legs"],
+            exercises: [
+              {
+                name: "Sentadilla",
+                muscleGroup: "legs",
+                isFromCatalog: true,
+                sets: [{ reps: 10, weightKg: 60, rir: 2 }],
+                restSec: 90,
+              },
+            ],
+          },
+        ],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts rest day with empty focus and empty exercises", () => {
+      const result = workoutPlanContentSchema.safeParse({
+        version: 1,
+        days: [
+          {
+            dayOfWeek: 6,
+            focus: [],
+            title: "Descanso",
+            warmupMin: 0,
+            cooldownMin: 0,
+            isRestDay: true,
+            exercises: [],
+          },
+        ],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects training day with empty focus", () => {
+      const result = workoutPlanContentSchema.safeParse({
+        version: 1,
+        days: [
+          {
+            ...trainingDayBase,
+            focus: [],
+            exercises: [validExerciseFull],
+          },
+        ],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const paths = result.error.issues.map((i) => i.path.join("."));
+        expect(paths.some((p) => p.includes("focus"))).toBe(true);
+      }
+    });
+
+    it("accepts rest day with empty focus (schema relaxation)", () => {
+      const result = workoutPlanContentSchema.safeParse({
+        version: 1,
+        days: [
+          {
+            dayOfWeek: 6,
+            focus: [],
+            title: "Descanso dominical",
+            warmupMin: 0,
+            cooldownMin: 0,
+            isRestDay: true,
+            exercises: [],
+          },
+        ],
+      });
+      expect(result.success).toBe(true);
     });
   });
 });
