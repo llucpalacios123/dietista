@@ -13,6 +13,10 @@ const mockPrisma = {
     update: vi.fn(),
     delete: vi.fn(),
   },
+  workoutPlanLog: {
+    create: vi.fn(),
+    findMany: vi.fn(),
+  },
   profile: {
     findUnique: vi.fn(),
   },
@@ -321,5 +325,106 @@ describe("generateWorkoutPlan (full service flow)", () => {
 
     const { generateWorkoutPlan } = await import("@/lib/workout-plan-service");
     await expect(generateWorkoutPlan("user-1", validPreferences)).rejects.toThrow("OpenAI error");
+  });
+});
+
+// ─── createWorkoutPlanLog ──────────────────────────────────────────────────────
+
+describe("createWorkoutPlanLog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("calls prisma.workoutPlanLog.create with the correct userId, planId, and planDayIndex", async () => {
+    const mockLog = {
+      id: "log-1",
+      userId: "user-1",
+      planId: "plan-1",
+      planDayIndex: 2,
+      completedAt: new Date("2026-05-29T10:00:00Z"),
+    };
+    mockPrisma.workoutPlanLog.create.mockResolvedValue(mockLog);
+
+    const { createWorkoutPlanLog } = await import("@/lib/workout-plan-service");
+    const result = await createWorkoutPlanLog("user-1", "plan-1", 2);
+
+    expect(mockPrisma.workoutPlanLog.create).toHaveBeenCalledWith({
+      data: { userId: "user-1", planId: "plan-1", planDayIndex: 2 },
+    });
+    expect(result.id).toBe("log-1");
+    expect(result.planDayIndex).toBe(2);
+  });
+
+  it("returns the created log record with all fields", async () => {
+    const completedAt = new Date("2026-05-29T10:00:00Z");
+    const mockLog = {
+      id: "log-42",
+      userId: "user-7",
+      planId: "plan-99",
+      planDayIndex: 0,
+      completedAt,
+    };
+    mockPrisma.workoutPlanLog.create.mockResolvedValue(mockLog);
+
+    const { createWorkoutPlanLog } = await import("@/lib/workout-plan-service");
+    const result = await createWorkoutPlanLog("user-7", "plan-99", 0);
+
+    expect(result.id).toBe("log-42");
+    expect(result.userId).toBe("user-7");
+    expect(result.planId).toBe("plan-99");
+    expect(result.planDayIndex).toBe(0);
+    expect(result.completedAt).toEqual(completedAt);
+  });
+});
+
+// ─── getWeekWorkoutLogs ────────────────────────────────────────────────────────
+
+describe("getWeekWorkoutLogs", () => {
+  const weekStart = new Date("2026-05-25T00:00:00.000Z"); // Monday
+  const weekEnd = new Date("2026-06-01T00:00:00.000Z");   // Following Monday (half-open)
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("queries with half-open interval gte/lt and scoped by userId+planId, ordered asc", async () => {
+    mockPrisma.workoutPlanLog.findMany.mockResolvedValue([]);
+
+    const { getWeekWorkoutLogs } = await import("@/lib/workout-plan-service");
+    await getWeekWorkoutLogs("user-1", "plan-1", weekStart, weekEnd);
+
+    expect(mockPrisma.workoutPlanLog.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        planId: "plan-1",
+        completedAt: { gte: weekStart, lt: weekEnd },
+      },
+      orderBy: { completedAt: "asc" },
+    });
+  });
+
+  it("returns the matching log records for the week window", async () => {
+    const mockLogs = [
+      { id: "log-1", userId: "user-1", planId: "plan-1", planDayIndex: 0, completedAt: new Date("2026-05-26T09:00:00Z") },
+      { id: "log-2", userId: "user-1", planId: "plan-1", planDayIndex: 2, completedAt: new Date("2026-05-28T09:00:00Z") },
+    ];
+    mockPrisma.workoutPlanLog.findMany.mockResolvedValue(mockLogs);
+
+    const { getWeekWorkoutLogs } = await import("@/lib/workout-plan-service");
+    const result = await getWeekWorkoutLogs("user-1", "plan-1", weekStart, weekEnd);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].planDayIndex).toBe(0);
+    expect(result[1].planDayIndex).toBe(2);
+  });
+
+  it("returns empty array when no logs exist for the week", async () => {
+    mockPrisma.workoutPlanLog.findMany.mockResolvedValue([]);
+
+    const { getWeekWorkoutLogs } = await import("@/lib/workout-plan-service");
+    const result = await getWeekWorkoutLogs("user-1", "plan-1", weekStart, weekEnd);
+
+    // Empty result is valid — it means no completions this week
+    expect(result).toHaveLength(0);
   });
 });
