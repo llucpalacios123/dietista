@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { generateWorkoutContent, type WorkoutGenerationParams } from "./openai";
+import { DEFAULT_MODEL } from "./schemas";
 import type { WorkoutPlanContent, WorkoutPreferences } from "./schemas";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -13,6 +14,7 @@ export type WorkoutPlanRecord = {
   daysPerWeek: number;
   status: string;
   content: unknown;
+  aiModel: string | null;
   startDate: Date;
   endDate: Date | null;
   createdAt: Date;
@@ -81,6 +83,7 @@ export async function createWorkoutPlan(
         daysPerWeek: preferences.daysPerWeek,
         status: "active",
         content: content as object,
+        aiModel: preferences.model ?? DEFAULT_MODEL,
         startDate: new Date(),
       },
     });

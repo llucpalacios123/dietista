@@ -29,6 +29,7 @@ interface MealPlan {
   endDate: string;
   status: "draft" | "active" | "completed";
   totalCalories: number | null;
+  aiModel?: string | null;
   meals: Meal[];
 }
 

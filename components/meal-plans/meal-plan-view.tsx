@@ -31,6 +31,7 @@ export interface MealPlanData {
   endDate: Date | string;
   status: "draft" | "active" | "completed";
   totalCalories: number | null;
+  aiModel?: string | null;
   meals: MealData[];
 }
 
@@ -140,6 +141,11 @@ export function MealPlanView({ plan }: { plan: MealPlanData }): React.ReactEleme
             </svg>
             {t("viewShoppingList")}
           </Link>
+          {plan.aiModel && (
+            <span className="rounded bg-[var(--dietista-surface-2)] px-1.5 py-0.5 text-xs font-mono text-[var(--dietista-text-3)]">
+              {plan.aiModel}
+            </span>
+          )}
           <span
             className={`rounded-full px-3 py-1 text-sm font-medium capitalize ${STATUS_COLORS[plan.status]}`}
           >
