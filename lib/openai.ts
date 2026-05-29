@@ -54,7 +54,6 @@ async function callModelForJson(options: {
       model,
       input: prompt,
       text: { format: { type: "json_object" } },
-      temperature,
     });
     const text = response.output_text;
     if (!text) throw new Error("La IA ha devuelto una respuesta vacía");
