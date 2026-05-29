@@ -210,7 +210,7 @@ export function WizardClient({ profile }: WizardClientProps): React.ReactElement
       setTimedOut(true);
       setGenerating(false);
     }
-  }, [t, tp]);
+  }, [t, tp, preferences]);
 
   // Trigger generation when entering Step 4
   useEffect(() => {
