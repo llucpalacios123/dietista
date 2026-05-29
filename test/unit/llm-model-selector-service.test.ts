@@ -128,7 +128,7 @@ describe("generateMealPlan — model forwarding", () => {
     setupTransaction();
   });
 
-  it("forwards model=gpt-4o to generateDiet when preferences include it", async () => {
+  it("forwards model=gpt-5-pro to generateDiet when preferences include it", async () => {
     const preferences: NutritionistPreferencesSchema = {
       allergies: [],
       dislikedFoods: [],
@@ -142,17 +142,17 @@ describe("generateMealPlan — model forwarding", () => {
       favoriteFoods: [],
       eatingOutFrequency: null,
       cookingTimeAvailable: null,
-      model: "gpt-4o",
+      model: "gpt-5-pro",
     };
 
     await generateMealPlan("user-1", preferences);
 
     expect(mockGenerateDiet).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gpt-4o" })
+      expect.objectContaining({ model: "gpt-5-pro" })
     );
   });
 
-  it("falls back to gpt-4o-mini when preferences have no model field", async () => {
+  it("falls back to gpt-5-nano when preferences have no model field", async () => {
     const preferences: NutritionistPreferencesSchema = {
       allergies: [],
       dislikedFoods: [],
@@ -171,15 +171,15 @@ describe("generateMealPlan — model forwarding", () => {
     await generateMealPlan("user-1", preferences);
 
     expect(mockGenerateDiet).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gpt-4o-mini" })
+      expect.objectContaining({ model: "gpt-5-nano" })
     );
   });
 
-  it("falls back to gpt-4o-mini when no preferences are passed at all", async () => {
+  it("falls back to gpt-5-nano when no preferences are passed at all", async () => {
     await generateMealPlan("user-1");
 
     expect(mockGenerateDiet).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gpt-4o-mini" })
+      expect.objectContaining({ model: "gpt-5-nano" })
     );
   });
 });
@@ -208,7 +208,7 @@ describe("generateMealPlan — model NOT persisted to DB", () => {
       favoriteFoods: [],
       eatingOutFrequency: null,
       cookingTimeAvailable: null,
-      model: "gpt-4o",
+      model: "gpt-5",
     };
 
     await generateMealPlan("user-1", preferences);

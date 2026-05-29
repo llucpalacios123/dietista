@@ -22,48 +22,42 @@ const minimalWorkoutPrefs = {
 // ─── OPENAI_MODELS constant ───────────────────────────────────────────────────
 
 describe("OPENAI_MODELS constant", () => {
-  it("exports 10 model IDs", () => {
-    expect(OPENAI_MODELS).toHaveLength(10);
+  it("exports 4 model IDs", () => {
+    expect(OPENAI_MODELS).toHaveLength(4);
   });
 
   it("includes all expected model IDs", () => {
-    expect(OPENAI_MODELS).toContain("gpt-4o-mini");
-    expect(OPENAI_MODELS).toContain("gpt-4o");
-    expect(OPENAI_MODELS).toContain("gpt-4.1");
-    expect(OPENAI_MODELS).toContain("gpt-4.1-mini");
-    expect(OPENAI_MODELS).toContain("gpt-4.1-nano");
-    expect(OPENAI_MODELS).toContain("gpt-4-turbo");
-    expect(OPENAI_MODELS).toContain("gpt-5");
-    expect(OPENAI_MODELS).toContain("gpt-5-mini");
     expect(OPENAI_MODELS).toContain("gpt-5-nano");
+    expect(OPENAI_MODELS).toContain("gpt-5-mini");
+    expect(OPENAI_MODELS).toContain("gpt-5");
     expect(OPENAI_MODELS).toContain("gpt-5-pro");
   });
 
-  it("DEFAULT_MODEL is gpt-4o-mini", () => {
-    expect(DEFAULT_MODEL).toBe("gpt-4o-mini");
+  it("DEFAULT_MODEL is gpt-5-nano", () => {
+    expect(DEFAULT_MODEL).toBe("gpt-5-nano");
   });
 });
 
 // ─── userPreferencesSchema — model field ──────────────────────────────────────
 
 describe("userPreferencesSchema — model field", () => {
-  it("defaults model to gpt-4o-mini when field is absent", () => {
+  it("defaults model to gpt-5-nano when field is absent", () => {
     const result = userPreferencesSchema.parse({});
-    expect(result.model).toBe("gpt-4o-mini");
+    expect(result.model).toBe("gpt-5-nano");
   });
 
-  it("accepts gpt-4o as a valid model", () => {
-    const result = userPreferencesSchema.parse({ model: "gpt-4o" });
-    expect(result.model).toBe("gpt-4o");
+  it("accepts gpt-5 as a valid model", () => {
+    const result = userPreferencesSchema.parse({ model: "gpt-5" });
+    expect(result.model).toBe("gpt-5");
   });
 
-  it("accepts gpt-4-turbo as a valid model", () => {
-    const result = userPreferencesSchema.parse({ model: "gpt-4-turbo" });
-    expect(result.model).toBe("gpt-4-turbo");
+  it("accepts gpt-5-pro as a valid model", () => {
+    const result = userPreferencesSchema.parse({ model: "gpt-5-pro" });
+    expect(result.model).toBe("gpt-5-pro");
   });
 
-  it("rejects deprecated gpt-3.5-turbo", () => {
-    const result = userPreferencesSchema.safeParse({ model: "gpt-3.5-turbo" });
+  it("rejects gpt-4o as an invalid model", () => {
+    const result = userPreferencesSchema.safeParse({ model: "gpt-4o" });
     expect(result.success).toBe(false);
   });
 
@@ -75,33 +69,23 @@ describe("userPreferencesSchema — model field", () => {
       expect(fields).toContain("model");
     }
   });
-
-  it("accepts gpt-5 as a valid model value", () => {
-    const result = userPreferencesSchema.safeParse({ model: "gpt-5" });
-    expect(result.success).toBe(true);
-  });
 });
 
 // ─── workoutPreferencesSchema — model field ───────────────────────────────────
 
 describe("workoutPreferencesSchema — model field", () => {
-  it("defaults model to gpt-4o-mini when field is absent", () => {
+  it("defaults model to gpt-5-nano when field is absent", () => {
     const result = workoutPreferencesSchema.parse(minimalWorkoutPrefs);
-    expect(result.model).toBe("gpt-4o-mini");
+    expect(result.model).toBe("gpt-5-nano");
   });
 
-  it("accepts gpt-4o as a valid model", () => {
-    const result = workoutPreferencesSchema.parse({ ...minimalWorkoutPrefs, model: "gpt-4o" });
-    expect(result.model).toBe("gpt-4o");
+  it("accepts gpt-5-pro as a valid model", () => {
+    const result = workoutPreferencesSchema.parse({ ...minimalWorkoutPrefs, model: "gpt-5-pro" });
+    expect(result.model).toBe("gpt-5-pro");
   });
 
-  it("accepts gpt-4-turbo as a valid model", () => {
-    const result = workoutPreferencesSchema.parse({ ...minimalWorkoutPrefs, model: "gpt-4-turbo" });
-    expect(result.model).toBe("gpt-4-turbo");
-  });
-
-  it("rejects o1-mini as an invalid model value", () => {
-    const result = workoutPreferencesSchema.safeParse({ ...minimalWorkoutPrefs, model: "o1-mini" });
+  it("rejects gpt-4o as an invalid model value", () => {
+    const result = workoutPreferencesSchema.safeParse({ ...minimalWorkoutPrefs, model: "gpt-4o" });
     expect(result.success).toBe(false);
     if (!result.success) {
       const fields = result.error.errors.map((e) => e.path.join("."));

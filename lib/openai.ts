@@ -37,45 +37,20 @@ Requirements:
 - Use standard units (g, ml, piece, cup, tbsp)
 - Return ONLY valid JSON array, no markdown, no explanation`;
 
-// ─── Model Routing ────────────────────────────────────────────────────────
+// ─── Model Call ───────────────────────────────────────────────────────────
 //
-// OpenAI model compatibility matrix (as of 2026):
-//
-//   Model family        │ Endpoint              │ temperature │ response_format
-//   ─────────────────────┼───────────────────────┼─────────────┼────────────────
-//   gpt-4o, gpt-4o-mini │ /v1/chat/completions  │ ✅          │ response_format
-//   gpt-4.1 family      │ /v1/chat/completions  │ ✅          │ response_format
-//   gpt-4-turbo         │ /v1/chat/completions  │ ✅          │ response_format
-//   gpt-5 family        │ /v1/responses only    │ ❌          │ text.format
-//
-// GPT-5 models are reasoning models (like o1/o3) — temperature is unsupported.
-const RESPONSES_API_MODELS = new Set<string>(["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-5-pro"]);
+// All models use /v1/responses. GPT-5 family does not support temperature.
 
 async function callModelForJson(options: {
   model: string;
   prompt: string;
-  temperature: number;
 }): Promise<string> {
-  const { model, prompt, temperature } = options;
-
-  if (RESPONSES_API_MODELS.has(model)) {
-    const response = await openai.responses.create({
-      model,
-      input: prompt,
-      text: { format: { type: "json_object" } },
-    });
-    const text = response.output_text;
-    if (!text) throw new Error("La IA ha devuelto una respuesta vacía");
-    return text;
-  }
-
-  const completion = await openai.chat.completions.create({
-    model,
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
-    temperature,
+  const response = await openai.responses.create({
+    model: options.model,
+    input: options.prompt,
+    text: { format: { type: "json_object" } },
   });
-  const text = completion.choices[0]?.message?.content;
+  const text = response.output_text;
   if (!text) throw new Error("La IA ha devuelto una respuesta vacía");
   return text;
 }
@@ -165,7 +140,7 @@ export async function generateDiet(
     .replace("{optionalPreferences}", buildOptionalPreferencesBlock(params));
 
   const response = await withRetry(() =>
-    callModelForJson({ model: params.model ?? DEFAULT_MODEL, prompt, temperature: 0.7 })
+    callModelForJson({ model: params.model ?? DEFAULT_MODEL, prompt })
   );
 
   // Parse and validate
@@ -341,7 +316,7 @@ export async function generateWorkoutContent(
     .replace("{catalogCardio}", GYM_EXERCISES.cardio.join(", "));
 
   const response = await withRetry(() =>
-    callModelForJson({ model: preferences.model ?? DEFAULT_MODEL, prompt, temperature: 0.6 })
+    callModelForJson({ model: preferences.model ?? DEFAULT_MODEL, prompt })
   );
 
   let parsed: unknown;

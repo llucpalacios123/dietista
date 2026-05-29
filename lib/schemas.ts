@@ -4,24 +4,17 @@ import { MuscleGroup } from "@prisma/client";
 // ─── OpenAI Model Constants ──────────────────────────────────────────────────
 
 // Routing rules (enforced in lib/openai.ts):
-//   GPT-4.x, gpt-4-turbo → /v1/chat/completions, temperature supported
-//   GPT-5 family         → /v1/responses only, temperature NOT supported
+//   GPT-5 family → /v1/responses only, temperature NOT supported
 export const OPENAI_MODELS = [
-  "gpt-4o-mini",
-  "gpt-4o",
-  "gpt-4.1",
-  "gpt-4.1-mini",
-  "gpt-4.1-nano",
-  "gpt-4-turbo",
-  "gpt-5",
-  "gpt-5-mini",
   "gpt-5-nano",
+  "gpt-5-mini",
+  "gpt-5",
   "gpt-5-pro",
 ] as const;
 
 export type OpenAIModel = (typeof OPENAI_MODELS)[number];
 
-export const DEFAULT_MODEL: OpenAIModel = "gpt-4o-mini";
+export const DEFAULT_MODEL: OpenAIModel = "gpt-5-nano";
 
 // ─── Auth Schemas ────────────────────────────────────────────────────────
 
@@ -377,7 +370,7 @@ export const workoutPreferencesSchema = z.object({
   sessionDurationMin: z.number().int().positive(),
   name: z.string().min(1).default("Mi plan de entrenamiento"),
   notes: z.string().optional(),
-  model: z.enum(OPENAI_MODELS).default("gpt-4o-mini"),
+  model: z.enum(OPENAI_MODELS).default("gpt-5-nano"),
 });
 
 export type WorkoutPreferences = z.infer<typeof workoutPreferencesSchema>;
@@ -414,7 +407,7 @@ export const userPreferencesSchema = z.object({
     .nullable()
     .default(null),
   cookingTimeAvailable: z.number().int().positive().nullable().default(null),
-  model: z.enum(OPENAI_MODELS).default("gpt-4o-mini"),
+  model: z.enum(OPENAI_MODELS).default("gpt-5-nano"),
 });
 
 export type NutritionistPreferencesSchema = z.infer<

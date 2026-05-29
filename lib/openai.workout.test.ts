@@ -9,7 +9,7 @@ const mockCreate = vi.fn();
 
 vi.mock("openai", () => ({
   default: class MockOpenAI {
-    chat = { completions: { create: mockCreate } };
+    responses = { create: mockCreate };
   },
 }));
 
@@ -56,7 +56,7 @@ const baseParams = {
     equipment: ["gym" as const],
     sessionDurationMin: 60,
     name: "Mi plan de fuerza",
-    model: "gpt-4o-mini" as const,
+    model: "gpt-5-nano" as const,
   },
 };
 
@@ -107,7 +107,7 @@ describe("generateWorkoutContent", () => {
 
   it("returns parsed WorkoutPlanContent on valid response", async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify(validWorkoutContent) } }],
+      output_text: JSON.stringify(validWorkoutContent),
     });
 
     const { generateWorkoutContent } = await import("@/lib/openai");
@@ -120,7 +120,7 @@ describe("generateWorkoutContent", () => {
 
   it("result passes workoutPlanContentSchema validation", async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify(validWorkoutContent) } }],
+      output_text: JSON.stringify(validWorkoutContent),
     });
 
     const { generateWorkoutContent } = await import("@/lib/openai");
@@ -130,9 +130,9 @@ describe("generateWorkoutContent", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("injects catalog into prompt (openai.create called with user message containing catalog exercises)", async () => {
+  it("injects catalog into prompt (openai.create called with prompt containing catalog exercises)", async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify(validWorkoutContent) } }],
+      output_text: JSON.stringify(validWorkoutContent),
     });
 
     const { generateWorkoutContent } = await import("@/lib/openai");
@@ -140,28 +140,27 @@ describe("generateWorkoutContent", () => {
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const callArgs = mockCreate.mock.calls[0][0];
-    const userMessage = callArgs.messages[0].content as string;
-    // Catalog should be injected inline
-    expect(userMessage).toContain("Sentadilla");      // legs catalog
-    expect(userMessage).toContain("Press de banca"); // chest catalog
+    const prompt = callArgs.input as string;
+    expect(prompt).toContain("Sentadilla");      // legs catalog
+    expect(prompt).toContain("Press de banca"); // chest catalog
   });
 
-  it("uses temperature 0.6 and json_object response format", async () => {
+  it("uses json_object text format via responses API (no temperature)", async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify(validWorkoutContent) } }],
+      output_text: JSON.stringify(validWorkoutContent),
     });
 
     const { generateWorkoutContent } = await import("@/lib/openai");
     await generateWorkoutContent(baseParams);
 
     const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs.temperature).toBe(0.6);
-    expect(callArgs.response_format).toEqual({ type: "json_object" });
+    expect(callArgs.temperature).toBeUndefined();
+    expect(callArgs.text).toEqual({ format: { type: "json_object" } });
   });
 
   it("throws when OpenAI returns empty content", async () => {
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: null } }],
+      output_text: null,
     });
 
     const { generateWorkoutContent } = await import("@/lib/openai");
@@ -181,7 +180,7 @@ describe("generateWorkoutContent", () => {
     mockCreate
       .mockRejectedValueOnce(new Error("Service unavailable"))
       .mockResolvedValue({
-        choices: [{ message: { content: JSON.stringify(validWorkoutContent) } }],
+        output_text: JSON.stringify(validWorkoutContent),
       });
 
     const { generateWorkoutContent } = await import("@/lib/openai");
@@ -203,7 +202,7 @@ describe("generateWorkoutContent", () => {
   it("throws a typed error when Zod validation fails on parsed JSON", async () => {
     const invalidContent = { version: 1, days: [] }; // empty days = invalid
     mockCreate.mockResolvedValue({
-      choices: [{ message: { content: JSON.stringify(invalidContent) } }],
+      output_text: JSON.stringify(invalidContent),
     });
 
     const { generateWorkoutContent } = await import("@/lib/openai");
