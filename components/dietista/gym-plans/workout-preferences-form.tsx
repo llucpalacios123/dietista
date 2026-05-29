@@ -52,9 +52,16 @@ const DURATION_OPTIONS = [30, 45, 60, 75, 90];
 
 const MODEL_LABELS: Record<OpenAIModel, string> = {
   "gpt-4o-mini": "GPT-4o mini (rápido, económico)",
-  "gpt-4o": "GPT-4o (máxima calidad)",
+  "gpt-4o": "GPT-4o",
+  "gpt-4.1": "GPT-4.1",
+  "gpt-4.1-mini": "GPT-4.1 mini",
+  "gpt-4.1-nano": "GPT-4.1 nano",
   "gpt-4-turbo": "GPT-4 Turbo",
-  "gpt-3.5-turbo": "GPT-3.5 Turbo (rápido)",
+  "gpt-3.5-turbo": "GPT-3.5 Turbo",
+  "gpt-5": "GPT-5",
+  "gpt-5-mini": "GPT-5 mini",
+  "gpt-5-nano": "GPT-5 nano",
+  "gpt-5-pro": "GPT-5 pro",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
