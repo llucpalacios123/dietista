@@ -6,8 +6,15 @@ import { MuscleGroup } from "@prisma/client";
 export const OPENAI_MODELS = [
   "gpt-4o-mini",
   "gpt-4o",
+  "gpt-4.1",
+  "gpt-4.1-mini",
+  "gpt-4.1-nano",
   "gpt-4-turbo",
   "gpt-3.5-turbo",
+  "gpt-5",
+  "gpt-5-mini",
+  "gpt-5-nano",
+  "gpt-5-pro",
 ] as const;
 
 export type OpenAIModel = (typeof OPENAI_MODELS)[number];
