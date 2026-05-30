@@ -197,10 +197,10 @@ describe("selectModel — individual scoring rules", () => {
 // ─── Manual override tests ────────────────────────────────────────────────────
 
 describe("selectModel — manualOverride precedence", () => {
-  it("manualOverride: gpt-4o with complex profile → returns gpt-4o (ignores scoring)", () => {
+  it("manualOverride: gpt-5-pro with complex profile → returns gpt-5-pro (ignores scoring)", () => {
     const ctx: RouterContext = {
       feature: "diet",
-      manualOverride: "gpt-4o",
+      manualOverride: "gpt-5-pro",
       profile: {
         allergies: ["a", "b"],
         forbiddenFoods: ["c", "d"],
@@ -211,46 +211,46 @@ describe("selectModel — manualOverride precedence", () => {
         weeklyBudget: 100,
       },
     };
-    expect(selectModel(ctx)).toBe("gpt-4o");
+    expect(selectModel(ctx)).toBe("gpt-5-pro");
   });
 
   it("manualOverride: respects override even for non-default model", () => {
     const ctx: RouterContext = {
       feature: "diet",
-      manualOverride: "gpt-4o-mini",
+      manualOverride: "gpt-5-nano",
       profile: {
         allergies: ["a", "b"],
         dietType: "vegan",
         goal: "lose",
       },
     };
-    expect(selectModel(ctx)).toBe("gpt-4o-mini");
+    expect(selectModel(ctx)).toBe("gpt-5-nano");
   });
 });
 
 // ─── Vision guard tests ───────────────────────────────────────────────────────
 
 describe("selectModel — vision guard", () => {
-  it("feature=vision + tier=gpt-5-nano → falls back to first vision-capable (gpt-4o)", () => {
+  it("feature=vision + tier=gpt-5-nano → falls back to first vision-capable (gpt-5)", () => {
     const ctx: RouterContext = { feature: "vision" }; // score 0 → gpt-5-nano
-    expect(selectModel(ctx)).toBe("gpt-4o");
+    expect(selectModel(ctx)).toBe("gpt-5");
   });
 
-  it("override non-vision (gpt-4-turbo) with feature=vision → falls back to gpt-4o", () => {
+  it("override non-vision (gpt-5-nano) with feature=vision → falls back to gpt-5", () => {
     const ctx: RouterContext = {
       feature: "vision",
-      manualOverride: "gpt-4-turbo",
+      manualOverride: "gpt-5-nano",
     };
-    // gpt-4-turbo is not in VISION_CAPABLE_MODELS
-    expect(selectModel(ctx)).toBe("gpt-4o");
+    // gpt-5-nano is not in VISION_CAPABLE_MODELS
+    expect(selectModel(ctx)).toBe("gpt-5");
   });
 
-  it("override vision-capable (gpt-4o-mini) with feature=vision → respects override", () => {
+  it("override vision-capable (gpt-5-mini) with feature=vision → respects override", () => {
     const ctx: RouterContext = {
       feature: "vision",
-      manualOverride: "gpt-4o-mini",
+      manualOverride: "gpt-5-mini",
     };
-    expect(selectModel(ctx)).toBe("gpt-4o-mini");
+    expect(selectModel(ctx)).toBe("gpt-5-mini");
   });
 
   it("feature != vision → guard skipped, returns score-based model", () => {

@@ -146,7 +146,7 @@ describe("generateWorkoutContent", () => {
     expect(userMessage).toContain("Press de banca"); // chest catalog
   });
 
-  it("uses temperature 0.6 and json_object response format", async () => {
+  it("uses json_object response format without temperature", async () => {
     mockCreate.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify(validWorkoutContent) } }],
     });
@@ -155,7 +155,7 @@ describe("generateWorkoutContent", () => {
     await generateWorkoutContent(baseParams);
 
     const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs.temperature).toBe(0.6);
+    expect(callArgs.temperature).toBeUndefined();
     expect(callArgs.response_format).toEqual({ type: "json_object" });
   });
 
