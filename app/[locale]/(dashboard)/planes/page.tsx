@@ -6,6 +6,7 @@ import Link from "next/link";
 import { PlanCard } from "@/components/dietista/planes/plan-card";
 import { WorkoutPlanCard } from "@/components/dietista/gym-plans/workout-plan-card";
 import { listWorkoutPlans } from "@/lib/workout-plan-service";
+import { getNutritionPlansAction } from "@/actions/nutrition-plan";
 
 export default async function PlanesPage() {
   const session = await auth();
@@ -15,8 +16,9 @@ export default async function PlanesPage() {
 
   const t = await getTranslations("PlansPage");
   const tGym = await getTranslations("GymPlans");
+  const tNutrition = await getTranslations("NutritionPlans");
 
-  const [activePlan, pastPlans, workoutPlans] = await Promise.all([
+  const [activePlan, pastPlans, workoutPlans, nutritionPlansResult] = await Promise.all([
     prisma.mealPlan.findFirst({
       where: {
         userId: session.userId,
@@ -34,7 +36,12 @@ export default async function PlanesPage() {
       take: 5,
     }),
     listWorkoutPlans(session.userId),
+    getNutritionPlansAction(),
   ]);
+
+  const nutritionPlansCount = nutritionPlansResult.success
+    ? (nutritionPlansResult.data?.length ?? 0)
+    : 0;
 
   const activeWorkoutPlan = workoutPlans.find((p) => p.status === "active");
   const pastWorkoutPlans = workoutPlans.filter((p) => p.status !== "active").slice(0, 5);
@@ -152,6 +159,51 @@ export default async function PlanesPage() {
               {tGym("newPlan")}
             </Link>
           </div>
+        )}
+      </div>
+
+      {/* ── Nutrition Plans Section ── */}
+      <div className="mx-[var(--dietista-pad-card)] border-t border-[var(--dietista-border)] pt-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--dietista-text)]">
+              {tNutrition("sectionTitle")}
+            </h2>
+            <p className="mt-0.5 text-xs text-[var(--dietista-text-3)]">
+              {tNutrition("sectionDescription")}
+            </p>
+          </div>
+          <Link
+            href="/nutrition-plans"
+            className="flex-shrink-0 rounded-[var(--dietista-r-md)] bg-[var(--brand-500)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
+          >
+            {nutritionPlansCount > 0 ? `Ver (${nutritionPlansCount})` : tNutrition("newPlan")}
+          </Link>
+        </div>
+
+        {nutritionPlansCount === 0 ? (
+          <div className="rounded-[var(--dietista-r-lg)] border border-dashed border-[var(--dietista-border)] bg-[var(--dietista-bg)] p-6 text-center">
+            <p className="text-sm text-[var(--dietista-text-3)]">
+              {tNutrition("noPlan")}
+            </p>
+            <Link
+              href="/nutrition-plans/new"
+              className="mt-3 inline-block rounded-[var(--dietista-r-md)] bg-[var(--brand-500)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-600)]"
+            >
+              {tNutrition("createFirst")}
+            </Link>
+          </div>
+        ) : (
+          <Link
+            href="/nutrition-plans"
+            className="flex items-center justify-between rounded-[var(--dietista-r-lg)] border border-[var(--dietista-border)] bg-[var(--dietista-surface)] px-4 py-3 transition-colors hover:border-[var(--brand-300)] hover:bg-[var(--brand-50)]"
+          >
+            <p className="text-sm font-medium text-[var(--dietista-text)]">
+              {nutritionPlansCount}{" "}
+              {nutritionPlansCount === 1 ? "plan nutricional" : "planes nutricionales"}
+            </p>
+            <span className="text-xs text-[var(--brand-500)]">Ver todos →</span>
+          </Link>
         )}
       </div>
     </div>
