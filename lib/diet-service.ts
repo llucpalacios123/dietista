@@ -1,7 +1,8 @@
 import { prisma } from "./prisma";
-import { generateDiet, type DietGenerationParams } from "./openai";
-import { DEFAULT_MODEL, type NutritionistPreferencesSchema } from "./schemas";
+import { generateDiet, generateDietFromPlanAI, type DietGenerationParams } from "./openai";
+import { DEFAULT_MODEL, type NutritionistPreferencesSchema, type OpenAIModel } from "./schemas";
 import { selectModel } from "./llm-router";
+import { calculateTargets, coalescePreferences } from "./nutrition-targets";
 
 /**
  * Generate a weekly meal plan for a user based on their profile.
@@ -31,40 +32,25 @@ export async function generateMealPlan(
     throw new Error("No tienes perfil. Completa tu perfil primero.");
   }
 
-  // ── Preference coalescence: plan value wins when non-null/non-empty ──────
-  // Arrays: non-empty plan array overrides profile (empty = "no override")
-  // Scalars: non-null plan value overrides profile
-  const effectiveAllergies =
-    preferences?.allergies?.length ? preferences.allergies : profile.allergies;
+  // ── Preference coalescence (shared helper) ───────────────────────────────
+  const eff = coalescePreferences(profile, preferences);
 
-  const effectiveForbiddenFoods =
-    preferences?.dislikedFoods?.length
-      ? preferences.dislikedFoods // wizard field → MealPlan.forbiddenFoods
-      : profile.forbiddenFoods;
+  const effectiveAllergies = eff.allergies;
+  const effectiveForbiddenFoods = eff.forbiddenFoods;
+  const effectiveFavoriteFoods = eff.favoriteFoods;
+  const effectiveDietType = eff.dietType;
+  const effectiveMealComplexity = eff.mealComplexity;
+  const effectiveMealsPerDay = eff.mealsPerDay;
+  const effectiveIncludeSnacks = eff.includeSnacks;
+  const effectiveVarietyPreference = eff.varietyPreference;
+  const effectiveBudgetFriendly = eff.budgetFriendly;
+  const effectiveWeeklyBudget = eff.weeklyBudget;
+  const effectiveEatingOutFrequency = eff.eatingOutFrequency;
+  const effectiveCookingTime = eff.cookingTimeAvailable;
 
-  const effectiveFavoriteFoods =
-    preferences?.favoriteFoods?.length
-      ? preferences.favoriteFoods
-      : profile.favoriteFoods;
-
-  const effectiveDietType = preferences?.dietType ?? profile.dietType;
-  const effectiveMealComplexity = preferences?.mealComplexity ?? profile.mealComplexity;
-  const effectiveMealsPerDay = preferences?.mealsPerDay ?? profile.mealsPerDay;
-  const effectiveIncludeSnacks = preferences?.includeSnacks ?? profile.includeSnacks;
-  const effectiveVarietyPreference =
-    preferences?.varietyPreference ?? profile.varietyPreference;
-  const effectiveBudgetFriendly = preferences?.budgetFriendly ?? profile.budgetFriendly;
-  const effectiveWeeklyBudget = preferences?.weeklyBudget ?? profile.weeklyBudget;
-  const effectiveEatingOutFrequency =
-    preferences?.eatingOutFrequency ?? profile.eatingOutFrequency;
-  const effectiveCookingTime =
-    preferences?.cookingTimeAvailable ?? profile.cookingTimeAvailable;
-
-  // Calculate targets (use profile values or defaults based on goal)
-  const targetCalories = profile.targetCalories ?? calculateCalories(profile);
-  const targetProtein = profile.targetProtein ?? calculateProtein(profile, targetCalories);
-  const targetCarbs = profile.targetCarbs ?? calculateCarbs(profile, targetCalories);
-  const targetFat = profile.targetFat ?? calculateFat(profile, targetCalories);
+  // ── Macro targets (shared helper — Mifflin-St Jeor) ──────────────────────
+  const { calories: targetCalories, protein: targetProtein, carbs: targetCarbs, fat: targetFat } =
+    calculateTargets(profile);
 
   // Build OpenAI params with effective preferences
   const params: DietGenerationParams = {
@@ -214,58 +200,127 @@ export async function generateMealPlan(
   return result;
 }
 
-// ─── Calorie/Macro Calculations (fallback when not set explicitly) ────────
+/**
+ * Generate a Diet (MealPlan) from an existing NutritionPlan (Phase 2).
+ *
+ * This function is completely independent of generateMealPlan — it does NOT
+ * recalculate macros; it uses the ones already stored in the NutritionPlan.
+ *
+ * @param nutritionPlanId - ID of the NutritionPlan to generate a Diet from.
+ * @param model - Optional OpenAI model override.
+ */
+export async function generateDietFromNutritionPlan(
+  nutritionPlanId: string,
+  model?: OpenAIModel
+): Promise<{ mealPlanId: string; mealCount: number }> {
+  // 1. Load the NutritionPlan
+  const plan = await prisma.nutritionPlan.findUnique({
+    where: { id: nutritionPlanId },
+  });
 
-function calculateCalories(profile: {
-  weight: number;
-  height: number;
-  age: number;
-  sex: string;
-  goal: string;
-  activityLevel: string;
-}): number {
-  // Mifflin-St Jeor BMR
-  let bmr = 10 * profile.weight + 6.25 * profile.height - 5 * profile.age;
-  bmr += profile.sex === "male" ? 5 : -161;
-
-  // Activity multiplier
-  const multipliers: Record<string, number> = {
-    sedentary: 1.2,
-    light: 1.375,
-    moderate: 1.55,
-    active: 1.725,
-    veryActive: 1.9,
-  };
-  const tdee = bmr * (multipliers[profile.activityLevel] ?? 1.55);
-
-  // Goal adjustment
-  switch (profile.goal) {
-    case "lose":
-      return Math.round(tdee - 500);
-    case "gain":
-      return Math.round(tdee + 300);
-    default:
-      return Math.round(tdee);
+  if (!plan) {
+    throw new Error(
+      `No se ha encontrado el plan nutricional con id: ${nutritionPlanId}`
+    );
   }
+
+  // 2. Derive mealsPerDay from mealDistribution keys
+  const mealDistribution = plan.mealDistribution as Record<string, unknown>;
+  const mealsPerDay = Object.keys(mealDistribution).length;
+
+  // 3. Call AI Phase 2 (measure duration)
+  const t0 = Date.now();
+  const effectiveModel = model ?? (plan.aiModel as OpenAIModel | undefined) ?? DEFAULT_MODEL;
+  const meals = await generateDietFromPlanAI({
+    mealDistribution,
+    recommendedFoods: plan.recommendedFoods as Record<string, unknown>,
+    weeklyFrequency: plan.weeklyFrequency as Record<string, unknown>,
+    allergies: plan.allergies,
+    forbiddenFoods: plan.forbiddenFoods,
+    goal: plan.goal,
+    mealsPerDay,
+    model: effectiveModel,
+  });
+  const generationDurationMs = Date.now() - t0;
+
+  // 4. Calculate week boundaries (same logic as generateMealPlan)
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const startDate = new Date(now);
+  startDate.setDate(now.getDate() + mondayOffset);
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+  endDate.setHours(23, 59, 59, 999);
+
+  const totalCalories = meals.reduce((sum, m) => sum + m.calories, 0);
+
+  // 5. Persist MealPlan + Meals in a transaction, linking to NutritionPlan
+  const result = await prisma.$transaction(async (tx) => {
+    // Check for existing draft for this week and user
+    const existing = await tx.mealPlan.findFirst({
+      where: {
+        userId: plan.userId,
+        startDate,
+        status: "draft",
+        nutritionPlanId,
+      },
+    });
+
+    let mealPlanId: string;
+
+    if (existing) {
+      await tx.meal.deleteMany({ where: { mealPlanId: existing.id } });
+      mealPlanId = existing.id;
+      await tx.mealPlan.update({
+        where: { id: existing.id },
+        data: {
+          totalCalories,
+          aiModel: effectiveModel,
+          nutritionPlanId,
+        },
+      });
+    } else {
+      const mealPlan = await tx.mealPlan.create({
+        data: {
+          userId: plan.userId,
+          startDate,
+          endDate,
+          status: "draft",
+          totalCalories,
+          aiModel: effectiveModel,
+          nutritionPlanId,
+          // Snapshot preference fields from the NutritionPlan
+          allergies: plan.allergies,
+          forbiddenFoods: plan.forbiddenFoods,
+        },
+      });
+      mealPlanId = mealPlan.id;
+    }
+
+    await tx.meal.createMany({
+      data: meals.map((m) => ({
+        mealPlanId,
+        dayOfWeek: m.dayOfWeek,
+        mealType: m.mealType,
+        name: m.name,
+        description: m.description,
+        calories: m.calories,
+        protein: m.protein,
+        carbs: m.carbs,
+        fat: m.fat,
+        ingredients: m.ingredients ?? [],
+        instructions: m.instructions || null,
+      })),
+    });
+
+    return { mealPlanId, mealCount: meals.length };
+  });
+
+  void generationDurationMs; // available for future generationDurationMs field on MealPlan
+
+  return result;
 }
 
-function calculateProtein(
-  profile: { weight: number; goal: string },
-  calories: number
-): number {
-  // 1.6-2.2g per kg for active individuals, higher for cutting
-  const multiplier = profile.goal === "lose" ? 2.2 : profile.goal === "gain" ? 1.8 : 1.6;
-  return Math.round(profile.weight * multiplier);
-}
-
-function calculateCarbs(profile: { goal: string }, calories: number): number {
-  // Carbs as percentage of calories: 40-50%
-  const pct = profile.goal === "lose" ? 0.35 : 0.45;
-  return Math.round((calories * pct) / 4); // 4 cal per gram
-}
-
-function calculateFat(profile: { goal: string }, calories: number): number {
-  // Fat as percentage of calories: 25-30%
-  const pct = profile.goal === "lose" ? 0.35 : 0.25;
-  return Math.round((calories * pct) / 9); // 9 cal per gram
-}
