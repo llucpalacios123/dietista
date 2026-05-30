@@ -63,7 +63,7 @@ export async function interpretShoppingListImage(
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages: [
         { role: "system", content: SHOPPING_LIST_INTERPRET_SYSTEM },
         {
@@ -76,7 +76,7 @@ export async function interpretShoppingListImage(
           ],
         },
       ],
-      max_tokens: 1024,
+      max_completion_tokens: 1024,
       response_format: { type: "json_object" },
     });
 

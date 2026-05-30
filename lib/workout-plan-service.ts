@@ -1,7 +1,8 @@
 import { prisma } from "./prisma";
 import { generateWorkoutContent, type WorkoutGenerationParams } from "./openai";
 import { DEFAULT_MODEL } from "./schemas";
-import type { WorkoutPlanContent, WorkoutPreferences } from "./schemas";
+import type { WorkoutPlanContent, WorkoutPreferences, OpenAIModel } from "./schemas";
+import { selectModel } from "./llm-router";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,16 @@ export async function generateWorkoutPlan(
     throw new Error("No tienes perfil. Completa tu perfil primero.");
   }
 
+  // Resolve model: if user chose something other than DEFAULT_MODEL, treat as override.
+  // Otherwise call the router (ADR-5: compare against DEFAULT_MODEL).
+  const resolvedModel: OpenAIModel =
+    preferences.model !== DEFAULT_MODEL
+      ? preferences.model
+      : selectModel({
+          feature: "workout",
+          profile: { goal: preferences.goal, level: preferences.level },
+        });
+
   const generationParams: WorkoutGenerationParams = {
     profile: {
       sex: profile.sex,
@@ -50,8 +61,11 @@ export async function generateWorkoutPlan(
     preferences,
   };
 
+  const t0 = Date.now();
   const content = await generateWorkoutContent(generationParams);
-  const plan = await createWorkoutPlan(userId, preferences, content);
+  const generationDurationMs = Date.now() - t0;
+
+  const plan = await createWorkoutPlan(userId, preferences, content, resolvedModel, generationDurationMs);
 
   const dayCount = content.days.filter((d) => !d.isRestDay).length;
 
@@ -65,9 +79,18 @@ export async function generateWorkoutPlan(
 export async function createWorkoutPlan(
   userId: string,
   preferences: WorkoutPreferences,
-  content: WorkoutPlanContent
+  content: WorkoutPlanContent,
+  resolvedModel?: OpenAIModel,
+  generationDurationMs?: number
 ): Promise<WorkoutPlanRecord> {
+  const aiModel = resolvedModel ?? preferences.model ?? DEFAULT_MODEL;
+
   return prisma.$transaction(async (tx) => {
+    // Count active plans BEFORE completing them (for wasRegenerated tracking)
+    const hadActive = await tx.workoutPlan.count({
+      where: { userId, status: "active" },
+    });
+
     // Enforce single-active invariant: complete all currently active plans
     await tx.workoutPlan.updateMany({
       where: { userId, status: "active" },
@@ -83,7 +106,9 @@ export async function createWorkoutPlan(
         daysPerWeek: preferences.daysPerWeek,
         status: "active",
         content: content as object,
-        aiModel: preferences.model ?? DEFAULT_MODEL,
+        aiModel,
+        wasRegenerated: hadActive > 0,
+        generationDurationMs,
         startDate: new Date(),
       },
     });

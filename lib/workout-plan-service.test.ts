@@ -12,6 +12,7 @@ const mockPrisma = {
     updateMany: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    count: vi.fn(),
   },
   workoutPlanLog: {
     create: vi.fn(),
@@ -33,6 +34,12 @@ const mockGenerateWorkoutContent = vi.fn();
 
 vi.mock("@/lib/openai", () => ({
   generateWorkoutContent: mockGenerateWorkoutContent,
+}));
+
+// ─── Mock LLM Router ─────────────────────────────────────────────────────────
+
+vi.mock("@/lib/llm-router", () => ({
+  selectModel: vi.fn().mockReturnValue("gpt-5-nano"),
 }));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -135,6 +142,7 @@ describe("createWorkoutPlan", () => {
   });
 
   it("creates a new workout plan with status active", async () => {
+    mockPrisma.workoutPlan.count.mockResolvedValue(0);
     mockPrisma.workoutPlan.updateMany.mockResolvedValue({ count: 0 });
     mockPrisma.workoutPlan.create.mockResolvedValue(mockNewPlan);
 
@@ -155,6 +163,7 @@ describe("createWorkoutPlan", () => {
   });
 
   it("deactivates previous active plan before creating new one (single-active invariant)", async () => {
+    mockPrisma.workoutPlan.count.mockResolvedValue(1);
     mockPrisma.workoutPlan.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.workoutPlan.create.mockResolvedValue(mockNewPlan);
 
@@ -173,6 +182,7 @@ describe("createWorkoutPlan", () => {
   });
 
   it("runs deactivation and creation in a transaction", async () => {
+    mockPrisma.workoutPlan.count.mockResolvedValue(1);
     mockPrisma.workoutPlan.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.workoutPlan.create.mockResolvedValue(mockNewPlan);
 
@@ -299,6 +309,7 @@ describe("generateWorkoutPlan (full service flow)", () => {
   it("fetches user profile, calls generateWorkoutContent, and creates plan", async () => {
     mockPrisma.profile.findUnique.mockResolvedValue(validProfile);
     mockGenerateWorkoutContent.mockResolvedValue(validContent);
+    mockPrisma.workoutPlan.count.mockResolvedValue(0);
     mockPrisma.workoutPlan.updateMany.mockResolvedValue({ count: 0 });
     mockPrisma.workoutPlan.create.mockResolvedValue(mockNewPlan);
 

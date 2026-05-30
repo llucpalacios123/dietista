@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { suggestMeal, type SuggestMealResponse } from "@/lib/openai";
+import { selectModel } from "@/lib/llm-router";
 import { toggleMealCompletedSchema, suggestMealSchema, saveSuggestedMealSchema } from "@/lib/schemas";
 import { isPastDate } from "@/lib/dates";
 
@@ -189,7 +190,12 @@ export async function getSuggestion(
   const allergies = profile?.allergies ?? [];
 
   try {
-    const aiResult = await suggestMeal({ mealType, query, history, remaining, allergies });
+    const model = selectModel({
+      feature: "chat",
+      profile: { allergies },
+      chatHistoryLength: history?.length ?? 0,
+    });
+    const aiResult = await suggestMeal({ mealType, query, history, remaining, allergies, model });
     return { success: true, result: aiResult };
   } catch {
     return { success: false, error: "ai_parse_error" };

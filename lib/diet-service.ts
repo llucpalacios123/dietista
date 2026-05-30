@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { generateDiet, type DietGenerationParams } from "./openai";
 import { DEFAULT_MODEL, type NutritionistPreferencesSchema } from "./schemas";
+import { selectModel } from "./llm-router";
 
 /**
  * Generate a weekly meal plan for a user based on their profile.
@@ -85,11 +86,24 @@ export async function generateMealPlan(
     weeklyBudget: effectiveWeeklyBudget ?? undefined,
     eatingOutFrequency: effectiveEatingOutFrequency ?? undefined,
     cookingTimeAvailable: effectiveCookingTime ?? undefined,
-    model: preferences?.model ?? DEFAULT_MODEL,
+    model: preferences?.model ?? selectModel({
+      feature: 'diet',
+      profile: {
+        allergies: effectiveAllergies,
+        forbiddenFoods: effectiveForbiddenFoods,
+        dietType: effectiveDietType ?? null,
+        goal: profile.goal,
+        mealComplexity: effectiveMealComplexity ?? null,
+        mealsPerDay: effectiveMealsPerDay,
+        weeklyBudget: effectiveWeeklyBudget ?? null,
+      },
+    }),
   };
 
-  // Call OpenAI
+  // Call OpenAI — measure generation duration
+  const t0 = Date.now();
   const meals = await generateDiet(params);
+  const generationDurationMs = Date.now() - t0;
 
   // Calculate week boundaries (start of current week = Monday)
   const now = new Date();
@@ -157,7 +171,7 @@ export async function generateMealPlan(
       mealPlanId = existing.id;
       await tx.mealPlan.update({
         where: { id: existing.id },
-        data: { totalCalories, aiModel: params.model, ...planPreferences },
+        data: { totalCalories, aiModel: params.model, generationDurationMs, wasRegenerated: true, ...planPreferences },
       });
     } else {
       // Create new plan with preference snapshot
@@ -169,6 +183,8 @@ export async function generateMealPlan(
           status: "draft",
           totalCalories,
           aiModel: params.model,
+          generationDurationMs,
+          wasRegenerated: false,
           ...planPreferences,
         },
       });

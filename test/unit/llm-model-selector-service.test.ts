@@ -21,15 +21,15 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/openai", () => ({
   generateDiet: vi.fn(),
+  generateWorkoutContent: vi.fn(),
 }));
 
 vi.mock("@/lib/workout-plan-service", () => ({
   generateWorkoutPlan: vi.fn(),
 }));
 
-vi.mock("@/lib/openai", () => ({
-  generateDiet: vi.fn(),
-  generateWorkoutContent: vi.fn(),
+vi.mock("@/lib/llm-router", () => ({
+  selectModel: vi.fn().mockReturnValue("gpt-5-nano"),
 }));
 
 import { prisma } from "@/lib/prisma";
@@ -152,7 +152,7 @@ describe("generateMealPlan — model forwarding", () => {
     );
   });
 
-  it("falls back to gpt-4o-mini when preferences have no model field", async () => {
+  it("routes to gpt-5-nano via router when preferences have no model field", async () => {
     const preferences: NutritionistPreferencesSchema = {
       allergies: [],
       dislikedFoods: [],
@@ -170,16 +170,18 @@ describe("generateMealPlan — model forwarding", () => {
 
     await generateMealPlan("user-1", preferences);
 
+    // Router is now called when no explicit model override — returns gpt-5-nano (mocked)
     expect(mockGenerateDiet).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gpt-4o-mini" })
+      expect.objectContaining({ model: "gpt-5-nano" })
     );
   });
 
-  it("falls back to gpt-4o-mini when no preferences are passed at all", async () => {
+  it("routes to gpt-5-nano via router when no preferences are passed at all", async () => {
     await generateMealPlan("user-1");
 
+    // Router is always called when no explicit model override — returns gpt-5-nano (mocked)
     expect(mockGenerateDiet).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gpt-4o-mini" })
+      expect.objectContaining({ model: "gpt-5-nano" })
     );
   });
 });
