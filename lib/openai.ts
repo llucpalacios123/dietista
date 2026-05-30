@@ -1,7 +1,10 @@
 import OpenAI from "openai";
 import { z } from "zod";
-import { mealPlanResponseSchema, interpretedFoodSchema, chatMessageSchema, suggestedMealSchema, workoutPlanContentSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage, type WorkoutPlanContent, type WorkoutPreferences, DEFAULT_MODEL, type OpenAIModel } from "./schemas";
+import { mealPlanResponseSchema, nutritionPlanSchema, interpretedFoodSchema, chatMessageSchema, suggestedMealSchema, workoutPlanContentSchema, type MealItemSchema, type InterpretedFoodSchema, type ChatMessage, type WorkoutPlanContent, type WorkoutPreferences, DEFAULT_MODEL, type OpenAIModel, type NutritionPlanStructure } from "./schemas";
 import { GYM_EXERCISES } from "./gym-exercises";
+
+// Explicit re-export so downstream modules can import the type directly from openai.ts
+export type { NutritionPlanStructure };
 
 // ─── Client ───────────────────────────────────────────────────────────────
 
@@ -428,6 +431,229 @@ export async function suggestMeal(p: SuggestMealParams): Promise<SuggestMealResp
   const validated = suggestMealResponseSchema.safeParse(parsed);
   if (!validated.success) {
     throw new Error("Estructura de sugerencia no válida");
+  }
+
+  return validated.data;
+}
+
+// ─── Meal Interpretation ──────────────────────────────────────────────────
+
+// ─── Phase 1: Nutrition Plan Generation ───────────────────────────────────────
+
+export const NUTRITION_PLAN_GENERATION_SYSTEM = `You are a clinical nutritionist AI. Generate ONLY the nutritional structure for a 7-day meal plan — NO recipes, NO dish names, NO ingredients, NO preparation steps.
+
+User parameters:
+- Daily calorie target: {targetCalories} kcal
+- Macros: Protein {targetProtein}g, Carbs {targetCarbs}g, Fat {targetFat}g
+- Goal: {goal}
+- Activity level: {activityLevel}
+- Allergies to avoid: {allergies}
+- Forbidden foods: {forbiddenFoods}
+- Meals per day: {mealsPerDay}
+
+Output a single JSON object (NOT an array) with this exact structure:
+{
+  "dailyTargets": {"calories": N, "protein": N, "carbs": N, "fat": N},
+  "mealDistribution": {
+    "breakfast": {"calories": N, "protein": N, "carbs": N, "fat": N},
+    "lunch": {"calories": N, "protein": N, "carbs": N, "fat": N},
+    "dinner": {"calories": N, "protein": N, "carbs": N, "fat": N}
+  },
+  "recommendedFoods": {
+    "proteins": ["..."],
+    "carbohydrates": ["..."],
+    "vegetables": ["..."],
+    "fruits": ["..."],
+    "healthyFats": ["..."]
+  },
+  "weeklyFrequency": {"fishMeals": N, "legumeMeals": N, "redMeatMeals": N}
+}
+
+Rules:
+- Include "snack" key in mealDistribution ONLY if mealsPerDay >= 4
+- All food names MUST be in Spanish (Spain — Castellano)
+- Distribute macros across meals proportionally (mealDistribution totals must equal dailyTargets)
+- Do NOT include any food from the allergies or forbidden foods lists
+- Return ONLY valid JSON. No markdown, no explanation, no code blocks.`;
+
+export interface NutritionPlanGenerationParams {
+  targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
+  goal: string;
+  activityLevel: string;
+  allergies: string[];
+  forbiddenFoods: string[];
+  mealsPerDay: number;
+  model?: OpenAIModel;
+}
+
+export async function generateNutritionPlanAI(
+  params: NutritionPlanGenerationParams
+): Promise<NutritionPlanStructure> {
+  const prompt = NUTRITION_PLAN_GENERATION_SYSTEM
+    .replace("{targetCalories}", String(params.targetCalories))
+    .replace("{targetProtein}", String(params.targetProtein))
+    .replace("{targetCarbs}", String(params.targetCarbs))
+    .replace("{targetFat}", String(params.targetFat))
+    .replace("{goal}", params.goal)
+    .replace("{activityLevel}", params.activityLevel)
+    .replace("{allergies}", params.allergies.join(", ") || "ninguna")
+    .replace("{forbiddenFoods}", params.forbiddenFoods.join(", ") || "ninguno")
+    .replace("{mealsPerDay}", String(params.mealsPerDay));
+
+  const response = await withRetry(async () => {
+    const completion = await openai.chat.completions.create({
+      model: params.model ?? DEFAULT_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("La IA ha devuelto una respuesta vacía para el plan nutricional");
+    }
+
+    return content;
+  });
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(response);
+  } catch {
+    throw new Error("No se ha podido parsear la respuesta de la IA como JSON (plan nutricional)");
+  }
+
+  const validated = nutritionPlanSchema.safeParse(parsed);
+  if (!validated.success) {
+    const details = validated.error.errors
+      .map((e) => `${e.path.join(".")}: ${e.message}`)
+      .join("; ");
+    throw new Error(`Estructura del plan nutricional no válida: ${details}`);
+  }
+
+  return validated.data;
+}
+
+// ─── Phase 2: Diet Generation from Nutrition Plan ──────────────────────────────
+
+export const DIET_FROM_NUTRITION_PLAN_SYSTEM = `You are a nutritionist AI. Generate a 7-day meal plan (with specific dishes) based on a pre-computed nutritional structure. The macro targets per meal are ALREADY DEFINED — do NOT recalculate or redistribute calories.
+
+Per-meal macro targets (follow exactly):
+{mealDistribution}
+
+Recommended food groups (use these as ingredients):
+{recommendedFoods}
+
+Weekly frequency guidelines:
+{weeklyFrequency}
+
+User constraints:
+- Goal: {goal}
+- Allergies to avoid: {allergies}
+- Forbidden foods: {forbiddenFoods}
+- Meals per day: {mealsPerDay}
+
+Requirements:
+- 7 days (dayOfWeek: 0=Monday to 6=Sunday) × {mealsPerDay} meal types
+- Each meal MUST hit the calorie/macro targets from mealDistribution (±10% tolerance)
+- Use ingredients from recommendedFoods when appropriate
+- Respect weekly frequencies (e.g. fishMeals times per week)
+- ALL meal names and descriptions MUST be in Spanish (Spain — Castellano)
+- Use typical Spanish dishes (tortilla de patatas, gazpacho, lentejas, etc.)
+- Each meal: {dayOfWeek, mealType, name, description, calories, protein, carbs, fat, ingredients, instructions}
+- "ingredients": array of {name (Spanish), quantity (number), unit (string)}
+- "instructions": brief preparation steps in Spanish (1-3 sentences)
+- Return ONLY valid JSON array, no markdown, no explanation, no code blocks`;
+
+export interface DietFromNutritionPlanParams {
+  mealDistribution: Record<string, unknown>;
+  recommendedFoods: Record<string, unknown>;
+  weeklyFrequency: Record<string, unknown>;
+  allergies: string[];
+  forbiddenFoods: string[];
+  goal: string;
+  mealsPerDay: number;
+  model?: OpenAIModel;
+}
+
+export async function generateDietFromPlanAI(
+  params: DietFromNutritionPlanParams
+): Promise<MealItemSchema[]> {
+  const prompt = DIET_FROM_NUTRITION_PLAN_SYSTEM
+    .replace("{mealDistribution}", JSON.stringify(params.mealDistribution, null, 2))
+    .replace("{recommendedFoods}", JSON.stringify(params.recommendedFoods, null, 2))
+    .replace("{weeklyFrequency}", JSON.stringify(params.weeklyFrequency, null, 2))
+    .replace("{goal}", params.goal)
+    .replace("{allergies}", params.allergies.join(", ") || "ninguna")
+    .replace("{forbiddenFoods}", params.forbiddenFoods.join(", ") || "ninguno")
+    .replace(/\{mealsPerDay\}/g, String(params.mealsPerDay));
+
+  const response = await withRetry(async () => {
+    const completion = await openai.chat.completions.create({
+      model: params.model ?? DEFAULT_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("La IA ha devuelto una respuesta vacía para la dieta");
+    }
+
+    return content;
+  });
+
+  // Parse and validate — reuse the same normalization logic as generateDiet
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(response);
+  } catch {
+    throw new Error("No se ha podido parsear la respuesta de la IA como JSON (dieta desde plan)");
+  }
+
+  let rawItems: unknown[] = [];
+  if (Array.isArray(parsed)) {
+    rawItems = parsed;
+  } else if (typeof parsed === "object" && parsed !== null) {
+    const found = Object.values(parsed).find(Array.isArray);
+    rawItems = found ?? [];
+  }
+
+  const meals: unknown[] = [];
+  for (const item of rawItems) {
+    if (
+      typeof item === "object" &&
+      item !== null &&
+      "meals" in item &&
+      Array.isArray((item as Record<string, unknown>).meals)
+    ) {
+      const dayOfWeek = (item as Record<string, unknown>).dayOfWeek;
+      for (const meal of (item as Record<string, unknown>).meals as unknown[]) {
+        if (typeof meal === "object" && meal !== null) {
+          const mealObj = meal as Record<string, unknown>;
+          if (dayOfWeek !== undefined && mealObj.dayOfWeek === undefined) {
+            mealObj.dayOfWeek = dayOfWeek;
+          }
+          meals.push(mealObj);
+        }
+      }
+    } else {
+      meals.push(item);
+    }
+  }
+
+  if (meals.length === 0) {
+    throw new Error("No se han encontrado comidas en la respuesta de la IA (dieta desde plan)");
+  }
+
+  const validated = mealPlanResponseSchema.safeParse(meals);
+  if (!validated.success) {
+    const details = validated.error.errors
+      .map((e) => `${e.path.join(".")}: ${e.message}`)
+      .join("; ");
+    throw new Error(`Estructura de la dieta desde plan no válida: ${details}`);
   }
 
   return validated.data;

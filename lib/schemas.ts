@@ -463,6 +463,33 @@ export type NutritionistChatStateSchema = z.infer<
   typeof nutritionistChatStateSchema
 >;
 
+// ─── Nutrition Plan Schema (AI output contract — Phase 1) ─────────────────
+
+const macroSchema = z.object({
+  calories: z.number().nonnegative(),
+  protein: z.number().nonnegative(),
+  carbs: z.number().nonnegative(),
+  fat: z.number().nonnegative(),
+});
+
+export const nutritionPlanSchema = z.object({
+  dailyTargets: macroSchema,
+  mealDistribution: z.record(
+    z.enum(["breakfast", "mid_morning", "lunch", "dinner", "snack"]),
+    macroSchema
+  ),
+  recommendedFoods: z.object({
+    proteins: z.array(z.string()).default([]),
+    carbohydrates: z.array(z.string()).default([]),
+    vegetables: z.array(z.string()).default([]),
+    fruits: z.array(z.string()).default([]),
+    healthyFats: z.array(z.string()).default([]),
+  }),
+  weeklyFrequency: z.record(z.string(), z.number().nonnegative()).default({}),
+});
+
+export type NutritionPlanStructure = z.infer<typeof nutritionPlanSchema>;
+
 // ─── Spring Boot Output Schemas ───────────────────────────────────────────
 
 export const dailyTotalsSchema = z.object({

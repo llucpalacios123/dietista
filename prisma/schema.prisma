@@ -123,6 +123,28 @@ enum FitnessLevel {
 
 // ─── Entities ────────────────────────────────────────────────────────────
 
+model NutritionPlan {
+  id                   String        @id @default(cuid())
+  userId               String
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyTargets         Json          // {calories, protein, carbs, fat}
+  mealDistribution     Json          // {breakfast:{calories,protein,carbs,fat}, lunch:{...}, ...}
+  recommendedFoods     Json          // {proteins[], carbohydrates[], vegetables[], fruits[], healthyFats[]}
+  weeklyFrequency      Json          // {fishMeals, legumeMeals, redMeatMeals, ...}
+  goal                 Goal
+  activityLevel        ActivityLevel
+  allergies            String[]      @default([])
+  forbiddenFoods       String[]      @default([])
+  aiModel              String?
+  generationDurationMs Int?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  diets                MealPlan[]    // Phase 2 meal plans generated from this plan
+
+  @@index([userId])
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -134,6 +156,7 @@ model User {
   profile           Profile?
   conversationState ConversationState?
   mealPlans          MealPlan[]
+  nutritionPlans     NutritionPlan[]
   mealLogs           MealLog[]
   weightLogs         WeightLog[]
   shoppingLists      ShoppingList[]
@@ -192,6 +215,10 @@ model MealPlan {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
+  // ── Phase 2: link to NutritionPlan (nullable — legacy plans have null) ──
+  nutritionPlanId String?
+  nutritionPlan   NutritionPlan? @relation(fields: [nutritionPlanId], references: [id])
+
   // ── Plan-level preference overrides (nullable = "use profile value") ──
   dietType             DietType?
   allergies            String[]          @default([])
@@ -211,6 +238,7 @@ model MealPlan {
 
   @@unique([userId, startDate])
   @@index([userId, status])
+  @@index([nutritionPlanId])
 }
 
 model Meal {
