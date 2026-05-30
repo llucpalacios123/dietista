@@ -821,5 +821,79 @@
         "gpt-5-pro": "GPT-5 pro"
       }
     }
+  },
+  "NutritionPlans": {
+    "title": "Nutrition Plans",
+    "subtitle": "Your personalized nutritional structure",
+    "sectionTitle": "Nutrition plans",
+    "sectionDescription": "Your nutritional structure: calorie targets, macros per meal, and recommended foods.",
+    "newPlan": "Generate new plan",
+    "noPlan": "No nutrition plans",
+    "noPlanHint": "Generate your first personalized nutrition plan with AI.",
+    "createFirst": "Create my first plan",
+    "dailyTargets": "Daily targets",
+    "mealDistribution": "Meal distribution",
+    "recommendedFoods": "Recommended foods",
+    "weeklyFrequency": "Weekly frequencies",
+    "generatedDiets": "Diets generated from this plan",
+    "noDiets": "You haven't generated any diet from this plan yet.",
+    "generateDiet": "Generate new diet",
+    "generatingDiet": "Generating diet...",
+    "generatingPlan": "Generating nutrition plan...",
+    "generatePlan": "Generate nutrition plan",
+    "calories": "Calories",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "fat": "Fat",
+    "kcalPerDay": "kcal/day",
+    "grams": "g",
+    "viewDiet": "View diet",
+    "createdAt": "Created on",
+    "dietsCount": "{count, plural, one {# diet generated} other {# diets generated}}",
+    "noContent": "Plan has no content",
+    "notFound": "Nutrition plan not found",
+    "errorLoading": "Could not load the nutrition plan",
+    "errorGenerating": "Could not generate the nutrition plan",
+    "errorGeneratingDiet": "Could not generate the diet",
+    "goal": "Goal",
+    "activityLevel": "Activity level",
+    "aiModel": "AI Model",
+    "mealTypes": {
+      "breakfast": "Breakfast",
+      "mid_morning": "Mid-morning",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
+    "foodGroups": {
+      "proteins": "Proteins",
+      "carbohydrates": "Carbohydrates",
+      "vegetables": "Vegetables",
+      "fruits": "Fruits",
+      "healthyFats": "Healthy fats"
+    },
+    "weeklyFrequencyItems": {
+      "fishMeals": "Fish",
+      "legumeMeals": "Legumes",
+      "redMeatMeals": "Red meat"
+    },
+    "timesPerWeek": "{count}x/wk.",
+    "goalLabels": {
+      "lose": "Lose weight",
+      "maintain": "Maintain weight",
+      "gain": "Gain weight"
+    },
+    "activityLabels": {
+      "sedentary": "Sedentary",
+      "light": "Light",
+      "moderate": "Moderate",
+      "active": "Active",
+      "veryActive": "Very active"
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "completed": "Completed"
+    }
   }
 }

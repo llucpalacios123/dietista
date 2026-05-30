@@ -824,5 +824,79 @@
         "gpt-5-pro": "GPT-5 pro"
       }
     }
+  },
+  "NutritionPlans": {
+    "title": "Planes nutricionales",
+    "subtitle": "Tu estructura nutricional personalizada",
+    "sectionTitle": "Planes nutricionales",
+    "sectionDescription": "Tu estructura nutricional: objetivos calóricos, macros por comida y alimentos recomendados.",
+    "newPlan": "Generar nuevo plan",
+    "noPlan": "Sin planes nutricionales",
+    "noPlanHint": "Genera tu primer plan nutricional personalizado con IA.",
+    "createFirst": "Crear mi primer plan",
+    "dailyTargets": "Objetivos diarios",
+    "mealDistribution": "Distribución por comida",
+    "recommendedFoods": "Alimentos recomendados",
+    "weeklyFrequency": "Frecuencias semanales",
+    "generatedDiets": "Dietas generadas desde este plan",
+    "noDiets": "Aún no has generado ninguna dieta desde este plan.",
+    "generateDiet": "Generar nueva dieta",
+    "generatingDiet": "Generando dieta...",
+    "generatingPlan": "Generando plan nutricional...",
+    "generatePlan": "Generar plan nutricional",
+    "calories": "Calorías",
+    "protein": "Proteína",
+    "carbs": "Carbos",
+    "fat": "Grasa",
+    "kcalPerDay": "kcal/día",
+    "grams": "g",
+    "viewDiet": "Ver dieta",
+    "createdAt": "Creado el",
+    "dietsCount": "{count, plural, one {# dieta generada} other {# dietas generadas}}",
+    "noContent": "Plan sin contenido",
+    "notFound": "Plan nutricional no encontrado",
+    "errorLoading": "No se ha podido cargar el plan nutricional",
+    "errorGenerating": "No se ha podido generar el plan nutricional",
+    "errorGeneratingDiet": "No se ha podido generar la dieta",
+    "goal": "Objetivo",
+    "activityLevel": "Nivel de actividad",
+    "aiModel": "Modelo IA",
+    "mealTypes": {
+      "breakfast": "Desayuno",
+      "mid_morning": "Media mañana",
+      "lunch": "Comida",
+      "dinner": "Cena",
+      "snack": "Snack"
+    },
+    "foodGroups": {
+      "proteins": "Proteínas",
+      "carbohydrates": "Carbohidratos",
+      "vegetables": "Verduras",
+      "fruits": "Frutas",
+      "healthyFats": "Grasas saludables"
+    },
+    "weeklyFrequencyItems": {
+      "fishMeals": "Pescado",
+      "legumeMeals": "Legumbres",
+      "redMeatMeals": "Carne roja"
+    },
+    "timesPerWeek": "{count}x/sem.",
+    "goalLabels": {
+      "lose": "Perder peso",
+      "maintain": "Mantener peso",
+      "gain": "Ganar peso"
+    },
+    "activityLabels": {
+      "sedentary": "Sedentario",
+      "light": "Ligero",
+      "moderate": "Moderado",
+      "active": "Activo",
+      "veryActive": "Muy activo"
+    },
+    "status": {
+      "draft": "Borrador",
+      "active": "Activo",
+      "completed": "Completado"
+    }
   }
 }
