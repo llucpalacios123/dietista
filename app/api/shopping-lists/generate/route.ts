@@ -70,10 +70,9 @@ Usa cantidades razonables para una semana. Agrupa ingredientes similares (ej: no
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-nano",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.3,
     });
 
     const content = completion.choices[0]?.message?.content;

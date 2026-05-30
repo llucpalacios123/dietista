@@ -126,7 +126,6 @@ export async function generateDiet(
       model: params.model ?? DEFAULT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.7,
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -314,7 +313,6 @@ export async function generateWorkoutContent(
       model: preferences.model ?? DEFAULT_MODEL,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.6,
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -382,6 +380,7 @@ export interface SuggestMealParams {
   remaining: { cal: number; pro: number; carb: number; fat: number };
   slotTarget?: { cal: number; pro: number; carb: number; fat: number };
   allergies: string[];
+  model?: OpenAIModel;
 }
 
 export async function suggestMeal(p: SuggestMealParams): Promise<SuggestMealResponse> {
@@ -403,14 +402,13 @@ export async function suggestMeal(p: SuggestMealParams): Promise<SuggestMealResp
 
   const content = await withRetry(async () => {
     const completion = await openai.chat.completions.create({
-      model: DEFAULT_MODEL,
+      model: p.model ?? DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         ...historyMessages,
         { role: "user", content: p.query },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.4,
     });
 
     const text = completion.choices[0]?.message?.content;
@@ -437,16 +435,15 @@ export async function suggestMeal(p: SuggestMealParams): Promise<SuggestMealResp
 
 // ─── Meal Interpretation ──────────────────────────────────────────────────
 
-export async function interpretMeal(rawInput: string): Promise<InterpretedFoodSchema[]> {
+export async function interpretMeal(rawInput: string, model?: OpenAIModel): Promise<InterpretedFoodSchema[]> {
   const response = await withRetry(async () => {
     const completion = await openai.chat.completions.create({
-      model: DEFAULT_MODEL,
+      model: model ?? DEFAULT_MODEL,
       messages: [
         { role: "system", content: MEAL_INTERPRET_SYSTEM },
         { role: "user", content: rawInput },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.3,
     });
 
     const content = completion.choices[0]?.message?.content;
